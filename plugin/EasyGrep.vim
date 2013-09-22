@@ -1755,7 +1755,7 @@ function! s:SetCurrentExtension()
         " This is so small of an issue that it's almost a non-issue, so I'm
         " not going to bother fixing it
     else
-        let tempList = split(s:FilesToGrep)
+        let tempList = split(s:GetPatternList(" ", 0), ' ')
 
         " When in tracked mode, change the tracked extension if it isn't
         " already in the list of files to be grepped
