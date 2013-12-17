@@ -184,9 +184,13 @@ function! s:ShellEscapeList(lst, seperator)
 endfunction
 "}}}
 " Escape{{{
-function! s:Escape(str, lst)
+function! s:Escape(str, lst, dlst)
     let str = a:str
     for i in a:lst
+        let str = escape(str, i)
+    endfor
+    for i in a:dlst "needs escaping twice
+        let str = escape(str, i)
         let str = escape(str, i)
     endfor
     return str
@@ -194,12 +198,23 @@ endfunction
 "}}}
 " EscapeSpecial {{{
 function! s:EscapeSpecial(str)
-    let lst = [ '\', '/', '^', '$' ]
-    if &magic
-        let magicLst = [ '*', '.', '~', '[', ']' ]
-        call extend(lst, magicLst)
+    let lst = [ '\', '^', '$' ]
+    let dlst = []
+    if s:IsCommandVimgrep()
+        call extend(lst, [ '/' ])
+        if &magic
+            let magicLst = [ '*', '.', '~', '[', ']' ]
+            call extend(lst, magicLst)
+        endif
+    elseif s:IsCommandFindstr()
+        call extend(lst, [ '.', '*' ])
+    elseif s:IsCommandGrep()
+        call extend(lst, [ '.', '*' ])
+    elseif s:IsCommandAck()
+        call extend(lst,  [ '.', '*', '+', '?', '(', ')', '[', ']', '{', '}' ])
+        call extend(dlst, [ '|' ])
     endif
-    return s:Escape(a:str, lst)
+    return s:Escape(a:str, lst, dlst)
 endfunction
 "}}}
 " IsRecursivePattern {{{
@@ -337,7 +352,10 @@ let s:Commands = [ "vimgrep", "grep" ]
 let s:CommandChoice = 0
 let s:LastSeenGrepprg = &grepprg
 function! s:InitializeCommandChoice()
-    let s:CommandChoice = g:EasyGrepCommand < len(s:Commands) ? g:EasyGrepCommand : 0
+    let result = s:SetGrepCommand(g:EasyGrepCommand)
+    if !result
+        call s:Error("Invalid option to g:EasyGrepCommand")
+    endif
 endfunction
 let s:CurrentFileCurrentDirChecked = 0
 let s:SanitizeLock = 0
@@ -413,12 +431,8 @@ function! s:GetPatternList(sp, addAdditionalLocations)
 endfunction
 " }}}
 " BuildListOfFilesToGrep {{{
-function! s:BuildListOfFilesToGrep(...)
-    if a:0 > 0
-        let sp = a:1
-    else
-        let sp = " "
-    endif
+function! s:BuildListOfFilesToGrep()
+    let sp = " "
     let s:FilesToGrep = s:GetPatternList(sp, 1)
     return s:FilesToGrep
 endfunction
@@ -657,7 +671,7 @@ endfunction
 " Mapped Functions {{{
 " EchoFilesSearched {{{
 function! <sid>EchoFilesSearched()
-    let filesToGrep = s:BuildListOfFilesToGrep("\n")
+    let filesToGrep = s:BuildListOfFilesToGrep()
 
     if s:IsModeBuffers()
         let str = filesToGrep
@@ -667,7 +681,7 @@ function! <sid>EchoFilesSearched()
         for p in patternList
             let s = glob(p)
             if !empty(s)
-                let fileList = split(s, "\n")
+                let fileList = split(s, " ")
                 for f in fileList
                     if filereadable(f)
                         let str .= f."\n"
@@ -704,9 +718,120 @@ function! <sid>SetFilesToExclude()
     endif
 endfunction
 "}}}
+" ChooseGrepCommand {{{
+function! <sid>ChooseGrepCommand(...)
+
+    if a:0 > 0
+        let grepChoiceStr = a:1
+    else
+        let lst = [ "Select grep command: " ]
+        let i = 1
+        " vimgrep
+        let chooseVimgrep = i
+        call extend(lst, [ i.". vimgrep" ])
+        let i = i + 1
+        " findstr
+        if has("win32") && executable("findstr")
+            let chooseFindstr = i
+            call extend(lst, [ i.". findstr" ])
+            let i = i + 1
+        else
+            let chooseFindstr = -1
+        endif
+        " grep
+        if executable("grep")
+            let chooseGrep = i
+            call extend(lst, [ i.". grep" ])
+            let i = i + 1
+        else
+            let chooseGrep = -1
+        endif
+        " awk
+        if executable("ack")
+            let chooseAck = i
+            call extend(lst, [ i.". ack" ])
+            let i = i + 1
+        else
+            let chooseAck = -1
+        endif
+        " ag
+        if executable("ag")
+            let chooseAg = i
+            call extend(lst, [ i.". ag" ])
+            let i = i + 1
+        else
+            let chooseAg = -1
+        endif
+
+        let grepChoice = inputlist(lst)
+
+        if grepChoice == 0
+            return
+        elseif grepChoice == chooseVimgrep
+            let grepChoiceStr = "vimgrep"
+        elseif grepChoice == chooseFindstr
+            let grepChoiceStr = "findstr"
+        elseif grepChoice == chooseGrep
+            let grepChoiceStr = "grep"
+        elseif grepChoice == chooseAck
+            let grepChoiceStr = "ack"
+        elseif grepChoice == chooseAg
+            let grepChoiceStr = "ag"
+        else
+            echo " "
+            call s:Error("Invalid GrepCommand choice")
+            return
+        endif
+    endif
+    let result = s:SetGrepCommand(grepChoiceStr)
+
+    if result
+        if a:0 > 1
+            echo " "
+            echo " "
+        endif
+        call s:Echo("-- Grep configuration changed --")
+        call s:EchoGrepCommand()
+    else 
+        call s:Error("Unknown program '".a:1."'")
+    endif
+endfunction
+"}}}
+" SetGrepCommand {{{
+function! s:SetGrepCommand(grepChoice)
+    if a:grepChoice == "1"
+        let g:EasyGrepCommand = 1
+        let s:CommandChoice = 1
+    elseif a:grepChoice == "0" || a:grepChoice == "vimgrep"
+        let g:EasyGrepCommand = 0
+        let s:CommandChoice = 0
+    else
+        let g:EasyGrepCommand = 1
+        let s:CommandChoice = 1
+        if a:grepChoice == "findstr"
+            set grepprg=findstr\ /n
+        elseif a:grepChoice == "grep"
+            if has("win32")
+                set grepprg=grep\ -n
+            else
+                set grepprg=grep\ -n\ $*\ /dev/null
+            endif
+        elseif a:grepChoice == "ack"
+            set grepprg=ack\ --nogroup\ --nocolor\ --column
+        elseif a:grepChoice == "ag"
+            set grepprg=ag\ --nogroup\ --nocolor\ --column
+        else
+            return 0
+        endif
+    endif
+    let s:LastSeenGrepprg = &grepprg
+
+    return 1
+endfunction
+"}}}
 " EchoGrepCommand {{{
 function! <sid>EchoGrepCommand()
-    if !s:IsCommandVimgrep() && !s:ValidateGrepCommand()
+    if !s:ValidateGrepCommand()
         return 0
     endif
 
@@ -1692,11 +1817,20 @@ endfunction
 " }}}
 " ValidateGrepCommand {{{
 function! s:ValidateGrepCommand()
-    if empty(&grepprg)
+    if !s:IsCommandVimgrep() && empty(&grepprg)
         call s:Error("Cannot proceed; the 'grepprg' setting is empty while EasyGrep is configured to use the grep command")
         call s:Info("If you are unsure what to do, revert grepprg to it's default with 'set grepprg&'")
         return 0
     endif
+
+    if    !s:IsCommandVimgrep() &&
+        \ !s:IsCommandGrep()    &&
+        \ !s:IsCommandFindstr() &&
+        \ !s:IsCommandAck()
+        call s:Error("Cannot proceed; the configured 'grepprg' setting is not a known program")
+        return 0
+    endif
+
     return 1
 endfunction
 " }}}
@@ -2386,11 +2520,11 @@ endfunction
 function! s:HasFilesThatMatch()
     let saveFilesToGrep = s:FilesToGrep
 
-    call s:BuildListOfFilesToGrep("\n")
-    let patternList = split(s:FilesToGrep, "\n")
+    call s:BuildListOfFilesToGrep()
+    let patternList = split(s:FilesToGrep, " ")
     for p in patternList
         let p = s:Trim(p)
-        let fileList = split(glob(p), "\n")
+        let fileList = split(glob(p), " ")
         for f in fileList
             if filereadable(f)
                 let s:FilesToGrep = saveFilesToGrep
@@ -2974,6 +3108,7 @@ endfunction
 command! -bang -nargs=+ Grep :call s:GrepCommandLine( <q-args> , "", "<bang>")
 command! -bang -nargs=+ GrepAdd :call s:GrepCommandLine( <q-args>, "add", "<bang>")
 command! GrepOptions :call <sid>GrepOptions()
+command! -nargs=? GrepCommand :call <sid>ChooseGrepCommand(<f-args>)
 
 command! -bang -nargs=+ Replace :call s:Replace("<bang>", <q-args>)
 command! -bang ReplaceUndo :call s:ReplaceUndo("<bang>")

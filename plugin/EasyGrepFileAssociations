@@ -1,5 +1,5 @@
 " EasyGrepFileAssociations
-" Version 0.96
+" Version 1.2
 "
 " This file is made up of Key-value pairs that associate file types
 " individual file extensions should only show up in one pair; behavior may be
@@ -12,21 +12,19 @@
 " TODO: consider how extensions dominate another, try this syntax <!C>
 " TODO: consider extension ordering for dominating
 " TODO: consider syntax to set exclusions
-" TODO: perhaps have a global exclude flag
 
 Ada=*.adb *.ads *.ada *.gpr *.ada_m *.adc
 Assembly=*.asm *.[sS] *.[aA] *.mac *.lst *.i
 B=*.mch *.ref *.imp
 Basic=*.vbs *.dsm *.ctl *.bas *.frm *.sba *.iba *.ibi *.fb *.bi
 BibTeX=*.bib *.bst <TeX>
-C#=*.cs <C++>
-C++=*.cpp *.hpp *.cxx *.hxx *.cc *.hh *.c++ *.inl <C>
-C=*.c *.h
-CUDA=*.cu *.cuh <C++>
+C#=*.cs <C>
+C=*.c *.h *.cpp *.hpp *.cxx *.hxx *.cc *.hh *.c++ *.inl *.inc
+CUDA=*.cu *.cuh <C>
 Cobol=*.cbl *.cob
 ColdFusion=*.cfm *.cfi *.cfc
 Configuration=.*rc *.conf *.cf *.cfg *.config *.ini
-D=*.d <C++>
+D=*.d <C>
 Diff=*.diff *.rej *.patch
 EDIF=*.edf *.edif *.edn *.edo
 Eiffel=*.[eE]
@@ -49,7 +47,7 @@ PHP=*.php *.phtml *.ctp
 Perl=*.pl *.PL *.pm *.pod
 PostScript=*.ps *.pfa *.afm *.eps *.epsf *.epsi *.ai *.ppd
 Python=*.py *.pyw
-Qt=*.moc *.qmake *.ui *.ts <C++>
+Qt=*.moc *.qmake *.ui *.ts <C>
 Ruby=*.rb *.rbw *.gem *.gemspec [rR]akefile *.erb *.rhtml
 RubyOnRails=*.builder *.rxml *.rjs <Ruby>
 SQL=*.sql *.sqlj *.msql *.mysql *.pls *.plsql *.zsql
@@ -60,9 +58,9 @@ Tcl=*.tcl *.tk *.itcl *.itk *.jacl
 TeX=*.tex *.latex *.sty *.dtx *.ltx *.bbl *.mkii *.mkiv *.texinfo *.texi *.txi
 Text=*.txt *.inf *.INF
 Vera=*.vr *.vri *.vrh
-Vim=*.vim .vimrc .gvimrc *.vba .exrc _exrc .vim*
+Vim=*.vim .vim* .gvimrc *.vba .exrc _exrc
 Virata=*.hw *.module *.pkg
-VisualStudioProject=*.sln *.vcproj *.icproj *.csproj *.rc *.def
+VisualStudioProject=*.sln *.vcxproj *.vcproj *.icproj *.csproj *.rc *.def
 Web=*.htm *.html *.shtml *.stm *.xhtml *.xht *.css *.js *.javascript *.es *.jsp *.asp *.asa
 X11=XF86* .X* *.ad <Configuration>
 XML=*.xml *.dtd

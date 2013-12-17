@@ -360,12 +360,12 @@ Specifies the grep command to use.
 0 - vimgrep
 1 - grep (follows grepprg)
 
-When the grep command is set to vimgrep, Vim's builtin |:vimgrep| command will
-be used.
-When the grep command is set to , Vim's builtin |:grep| command will be used.
-This command inspects the 'grepprg' variable to determine the external tool
-that will be used for the search. Note that an external tool is often faster
-to search than vimgrep (see |EasyGrep_Performance|).
+When the grep command is set to 0 (vimgrep), Vim's builtin |:vimgrep| command
+will be used.  When the grep command is set to 1 (grep), Vim's builtin |:grep|
+command will be used.  This command inspects the 'grepprg' variable to
+determine the external tool that will be used for the search. Note that an
+external tool is often faster to search than vimgrep (see
+|EasyGrep_Performance|).
 
 *EasyGrepRecursive*  [default=0]
 Specifies that recursive search be activated on start.
@@ -510,6 +510,7 @@ Support canceling a search and print a nice message
 
   1.2
       Fixed: EasyGrepJumpToMatch was not respected when the command was grep.
+      Improved: lots of misc fixes
   1.1
       Improved: much better support when grepprg is ack or grep. These tools
           can search much more quickly than vimgrep and so may be preferable
