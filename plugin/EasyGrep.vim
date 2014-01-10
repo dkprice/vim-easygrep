@@ -161,7 +161,17 @@ function! s:GetVisibleBuffers()
     return tablist
 endfunction
 " }}}
-" EscapeList {{{
+" EscapeDirIfSpace {{{
+function! s:EscapeDirIfSpace(dir)
+    return match(a:dir, ' ') == -1 ? a:dir : s:ShellEscape(a:dir)
+endfunction
+"}}}
+" GetCwdEscaped {{{
+function! s:GetCwdEscaped()
+    return s:EscapeDirIfSpace(getcwd())
+endfunction
+"}}}
+" EscapeList/ShellEscapeList {{{
 function! s:FileEscape(item)
     return escape(a:item, ' \')
 endfunction
@@ -390,11 +400,11 @@ endfunction
 function! s:GetPatternList(sp, addAdditionalLocations)
     let sp = a:sp
     let addAdditionalLocations = a:addAdditionalLocations
+    let str = ""
     if s:IsModeBuffers()
         let str = join(s:EscapeList(s:GetBufferNamesList(), " "), sp)
         let addAdditionalLocations = 0
     elseif s:IsModeTracked()
-
         let str = s:TrackedExt
         let i = s:FindByPattern(s:TrackedExt)
         if i != -1
@@ -555,7 +565,7 @@ endfunction
 " GetRecursiveMinimalSetList {{{
 function! s:GetRecursiveMinimalSetList()
 
-    let currDir = getcwd()
+    let currDir = s:GetCwdEscaped()
     let bufferdirs = sort(s:GetBufferDirsList())
     let bufferSetList = [ currDir ]
 
@@ -572,7 +582,7 @@ function! s:GetRecursiveMinimalSetList()
             endfor
         endif
         if addToList
-            call add(bufferSetList, dir)
+            call add(bufferSetList, s:EscapeDirIfSpace(dir))
         endif
     endfor
 
@@ -718,13 +728,13 @@ function! <sid>SetFilesToExclude()
     endif
 endfunction
 "}}}
-" ChooseGrepCommand {{{
-function! <sid>ChooseGrepCommand(...)
+" ChooseGrepProgram {{{
+function! <sid>ChooseGrepProgram(...)
 
     if a:0 > 0
         let grepChoiceStr = a:1
     else
-        let lst = [ "Select grep command: " ]
+        let lst = [ "Select grep program: " ]
         let i = 1
         " vimgrep
         let chooseVimgrep = i
@@ -937,7 +947,7 @@ function! s:ActivateChoice(choice)
 
     if s:IsCommandAck()
         if selectedMode != s:EasyGrepModeAll && selectedMode != s:EasyGrepModeBuffers
-            call s:Error("Cannot activate '".s:GetModeName(selectedMode)."' mode when ".s:GetGrepProgramPair().", as this grepprg implements its own filtering")
+            call s:Error("Cannot activate '".s:GetModeName(selectedMode)."' mode when ".s:GetGrepProgramVarAndName().", as this grepprg implements its own filtering")
             return
         endif
     endif
@@ -981,10 +991,10 @@ function! s:ActivateChoice(choice)
     if shouldBecomeActivated
         " Handle any incompatible modes
         if choice == s:EasyGrepModeBuffers && g:EasyGrepRecursive == 1
-            let additionalmessage = "And setting g:EasyGrepRecursive to 'Off', as only buffers are searched"
+            "let additionalmessage = "And setting g:EasyGrepRecursive to 'Off', as only buffers are searched"
             let g:EasyGrepRecursive = 0
         elseif s:IsCommandAck() && !g:EasyGrepRecursive
-            let additionalmessage = "And setting g:EasyGrepRecusive to 'On', as ".s:GetGrepProgramPair()." is inherently recursive"
+            let additionalmessage = "And setting g:EasyGrepRecusive to 'On', as ".s:GetGrepProgramVarAndName()." is inherently recursive"
             let g:EasyGrepRecursive = 1
         endif
 
@@ -1096,9 +1106,9 @@ function! s:GetGrepProgramName()
     return substitute(&grepprg, "\\s.*", "", "")
 endfunction
 " }}}
-" GetGrepProgramPair {{{
-function! s:GetGrepProgramPair()
-    return "(grepprg='".&grepprg."')"
+" GetGrepProgramVarAndName {{{
+function! s:GetGrepProgramVarAndName()
+    return "(grepprg='".s:GetGrepProgramName()."')"
 endfunction
 " }}}
 " ToggleCommand {{{
@@ -1113,16 +1123,7 @@ function! <sid>ToggleCommand()
     call s:RefreshAllOptions()
 
     call s:Echo("Set command to (".s:GetGrepCommandNameWithOptions().")")
-    if s:IsCommandAck()
-        if s:IsModeTracked()
-            call s:Echo("And setting g:EasyGrepMode to 'All', as ".s:GetGrepProgramPair()." implements its own filtering")
-            call s:ForceGrepMode(s:EasyGrepModeAll)
-        endif
-        if !s:IsModeBuffers() && !g:EasyGrepRecursive
-            call s:Echo("And setting g:EasyGrepRecusive to 'On', as ".s:GetGrepProgramPair()." is inherently recursive")
-            let g:EasyGrepRecursive=1
-        endif
-    endif
+    call s:CheckCommandRequirements()
 endfunction
 " }}}
 " ToggleRecursion {{{
@@ -1416,7 +1417,7 @@ endfunction
 " GrepOptions {{{
 function! <sid>GrepOptions()
     call s:SetGatewayVariables()
-    call s:CreateDict()
+    call s:CreateGrepDictionary()
     call s:OpenOptionsExplorer()
     return s:ClearGatewayVariables()
 endfunction
@@ -1510,7 +1511,7 @@ function! s:GrepSetManual(str)
     endif
     let pos = s:EasyGrepModeUser
 
-    call s:CreateDict()
+    call s:CreateGrepDictionary()
     let i = s:FindByPattern(str)
     if i != -1
         let s2 = s:Dict[i][1]
@@ -1531,8 +1532,8 @@ endfunction
 "}}}
 " }}}
 " EasyGrepFileAssociations {{{
-" CreateDict {{{
-function! s:CreateDict()
+" CreateGrepDictionary {{{
+function! s:CreateGrepDictionary()
     if exists("s:Dict")
         return
     endif
@@ -1843,7 +1844,7 @@ function! s:CheckGrepCommandForChanges()
                 call s:Info("The 'grepprg' has changed to '".s:GetGrepCommandName()."' since last inspected")
                 call s:Info("Switching to 'All' mode as the '".s:GetModeName(g:EasyGrepMode)."' mode is incompatible with this program")
                 if !g:EasyGrepRecursive
-                    call s:Info("And setting g:EasyGrepRecusive to 'On', as ".s:GetGrepProgramPair()." is inherently recursive")
+                    call s:Info("And setting g:EasyGrepRecusive to 'On', as ".s:GetGrepProgramVarAndName()." is inherently recursive")
                     let g:EasyGrepRecursive = 1
                 endif
                 call s:Info("==================================================================================")
@@ -1856,10 +1857,22 @@ function! s:CheckGrepCommandForChanges()
     return 1
 endfunction
 " }}}
+" CheckCommandRequirements {{{
+function! s:CheckCommandRequirements()
+    if s:IsCommandAck()
+        if s:IsModeTracked()
+            call s:ForceGrepMode(s:EasyGrepModeAll)
+        endif
+        if !s:IsModeBuffers() && !g:EasyGrepRecursive
+            let g:EasyGrepRecursive=1
+        endif
+    endif
+endfunction
+" }}}
 " Extension Tracking {{{
 " SetCurrentExtension {{{
 function! s:SetCurrentExtension()
-    call s:CreateDict()
+    call s:CreateGrepDictionary()
     if !empty(&buftype)
         return
     endif
@@ -2376,6 +2389,11 @@ function! s:GetGrepCommandLine(word, add, whole, count, escapeArgs)
     let filesToGrep = s:BuildListOfFilesToGrep()
     let filesToExclude = g:EasyGrepFilesToExclude
 
+    " TODO: push list-based processing further up into the assembly of filesToGrep;
+    " don't use a single string because splitting is inherently lossy for
+    " patterns that have spaces in them.
+    let patternList = split(filesToGrep, ' ')
+
     " Set extra inclusions and exclusions
     if commandIsGrep
         " Ignore errors
@@ -2385,35 +2403,34 @@ function! s:GetGrepCommandLine(word, add, whole, count, escapeArgs)
         if g:EasyGrepRecursive
             call s:RestoreVariable("g:EasyGrepSearchCurrentBufferDir")
             " The --include paths will contain the file patterns
-            let opts .= " " . join(map(split(filesToGrep, ' '), '"--include=\"" .v:val."\""'), ' ')
+            let opts .= " " . join(map(patternList, '"--include=\"" .v:val."\""'), ' ')
+
+            " while the files we specify will be directories
             if g:EasyGrepSearchCurrentBufferDir
-                let dirs = s:GetRecursiveMinimalSetList()
+                let patternList = s:GetRecursiveMinimalSetList()
             else
-                let dirs = [ getcwd() ]
+                let patternList = [ s:GetCwdEscaped() ]
             endif
-            " the files we specify will be directories
-            let filesToGrep = join(dirs, ' ')
         endif
 
         let opts .= " " . join(map(split(filesToExclude, ','), '"--exclude=\"".v:val."\""." --exclude-dir=\"".v:val."\""'), ' ')
+    elseif commandIsFindstr
+        call s:FilterPatternsWithNoFiles(patternList)
+        call map(patternList, 's:ForwardToBackSlash(v:val)')
     elseif commandIsAck
-        " Patch up the command line in a way that ack understands
+        call s:FilterPatternsWithNoFiles(patternList)
+
+        " Patch up the command line in a way that ack understands; do the
+        " following:
         " 1) Replace a leading star with the current directory
-        let filesToGrep = substitute(filesToGrep, "^\*", getcwd(), "")
         " 2) Replace all trailing stars with a space
-        let filesToGrep = substitute(filesToGrep, '/\*', "", "g")
+        call map(patternList, 'substitute(substitute(v:val, "^\\*$", s:GetCwdEscaped(), ""), "/\\*$", "", "")')
 
         " Add exclusions
         let opts .= " " . join(map(split(filesToExclude, ','), '"--ignore-dir=\"".v:val."\""'), ' ')
     endif
 
-    if commandIsAck || commandIsFindstr
-        let filesToGrep = s:RemovePatternsWithNoFiles(filesToGrep, ' ')
-    endif
-
-    if commandIsFindstr
-        let filesToGrep=s:ForwardToBackSlash(filesToGrep)
-    endif
+    let filesToGrep = join(patternList, ' ')
 
     let win = g:EasyGrepWindow != 0 ? "l" : ""
     let grepCommand = a:count.win.com.a:add." ".opts." ".s1.word.s2." ".filesToGrep
@@ -2444,7 +2461,7 @@ endfunction
 " }}}
 " DoGrep {{{
 function! s:DoGrep(word, add, whole, count, escapeArgs)
-    call s:CreateDict()
+    call s:CreateGrepDictionary()
 
     if s:OptionsExplorerOpen == 1
         call s:Error("Error: Can't Grep while options window is open")
@@ -2537,21 +2554,9 @@ function! s:HasFilesThatMatch()
     return 0
 endfunction
 "}}}
-" RemovePatternsWithNoFiles {{{
-function! s:RemovePatternsWithNoFiles(files, sep)
-    let files = a:files
-    let newList = ""
-
-    let patternList = split(files, a:sep)
-    for p in patternList
-        let p = s:Trim(p)
-        let globbedList = glob(p)
-        if globbedList != ""
-            let newList = newList.a:sep.p
-        endif
-    endfor
-
-    return newList
+" FilterPatternsWithNoFiles {{{
+function! s:FilterPatternsWithNoFiles(patternList)
+    call filter(a:patternList, 'glob(s:Trim(v:val)) != ""')
 endfunction
 "}}}
 " WarnNoMatches {{{
@@ -3108,7 +3113,7 @@ endfunction
 command! -bang -nargs=+ Grep :call s:GrepCommandLine( <q-args> , "", "<bang>")
 command! -bang -nargs=+ GrepAdd :call s:GrepCommandLine( <q-args>, "add", "<bang>")
 command! GrepOptions :call <sid>GrepOptions()
-command! -nargs=? GrepCommand :call <sid>ChooseGrepCommand(<f-args>)
+command! -nargs=? GrepProgram :call <sid>ChooseGrepProgram(<f-args>)
 
 command! -bang -nargs=+ Replace :call s:Replace("<bang>", <q-args>)
 command! -bang ReplaceUndo :call s:ReplaceUndo("<bang>")
@@ -3190,6 +3195,7 @@ function! s:InitializeMode()
             call s:Error("Invalid value for g:EasyGrepMode; reverting to 'All' mode.")
             let g:EasyGrepMode = s:EasyGrepModeAll
         endif
+        call s:CheckCommandRequirements()
     endif
 endfunction
 
@@ -3307,7 +3313,7 @@ endif
 
 " EasyGrepDefaultUserPattern {{{
 function! s:CheckDefaultUserPattern()
-    call s:CreateDict()
+    call s:CreateGrepDictionary()
     let error = ""
     let userModeAndEmpty = (g:EasyGrepMode == s:EasyGrepModeUser) && empty(s:Dict[s:EasyGrepModeUser][1])
     if exists("g:EasyGrepDefaultUserPattern")
@@ -3334,6 +3340,7 @@ endfunction
 
 "}}}
 " Script Finalization {{{
+call s:CreateGrepDictionary()
 call s:InitializeCommandChoice()
 call s:InitializeMode()
 call s:CreateOptionMappings()
