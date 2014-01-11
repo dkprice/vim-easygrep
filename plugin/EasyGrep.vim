@@ -138,7 +138,7 @@ function! s:GetBufferDirsList()
     for buf in bufs
         let d = fnamemodify(expand(buf), ":.:h")
         if d == ""
-            let d = getcwd()
+            let d = s:GetCwdEscaped()
         elseif has("win32") && d[0] == "/"
             " Add the drive prefix and remove the trailing slash
             let d = fnamemodify(d, ":p:s-/$--")
@@ -344,7 +344,6 @@ let s:NumReplaceModeOptions = 3
 
 let s:OptionsExplorerOpen = 0
 
-let s:FilesToGrep = "*"
 let s:TrackedExt  = "*"
 
 function! s:GetReplaceWindowModeString(mode)
@@ -359,7 +358,6 @@ let s:SortFunctions = [ "SortName", "SortNameReversed", "SortExtension", "SortEx
 let s:SortChoice = 0
 
 let s:Commands = [ "vimgrep", "grep" ]
-let s:CommandChoice = 0
 let s:LastSeenGrepprg = &grepprg
 function! s:InitializeCommandChoice()
     let result = s:SetGrepCommand(g:EasyGrepCommand)
@@ -396,21 +394,26 @@ function! <sid>Echo(message)
     echo str
 endfunction
 "}}}
-" GetPatternList {{{
-function! s:GetPatternList(sp, addAdditionalLocations)
-    let sp = a:sp
+" GetFileTargetList_Tracked {{{
+function! s:GetFileTargetList_Tracked()
+    let lst = [s:TrackedExt]
+    let i = s:FindFileTarget(s:TrackedExt)
+    if i != -1
+        let keyList = [ i ]
+        let lst = s:CollectEnabledFileTargets(keyList)
+    endif
+    return lst
+endfunction
+" }}}
+" GetFileTargetList {{{
+function! s:GetFileTargetList(addAdditionalLocations)
     let addAdditionalLocations = a:addAdditionalLocations
-    let str = ""
+    let lst = []
     if s:IsModeBuffers()
-        let str = join(s:EscapeList(s:GetBufferNamesList(), " "), sp)
+        let lst = s:EscapeList(s:GetBufferNamesList(), " ")
         let addAdditionalLocations = 0
     elseif s:IsModeTracked()
-        let str = s:TrackedExt
-        let i = s:FindByPattern(s:TrackedExt)
-        if i != -1
-            let keyList = [ i ]
-            let str = s:BreakDown(keyList)
-        endif
+        let lst = s:GetFileTargetList_Tracked()
     else
         let i = 0
         let numItems = len(s:Dict)
@@ -423,48 +426,36 @@ function! s:GetPatternList(sp, addAdditionalLocations)
         endwhile
 
         if !empty(keyList)
-            let str = s:BreakDown(keyList)
+            let lst = s:CollectEnabledFileTargets(keyList)
         else
             call s:InternalFailure("Keylist should not be empty")
-            let str = "*"
+            let lst = [ "*" ]
         endif
     endif
 
     if addAdditionalLocations
-        let filesToGrep = s:AddAdditionalLocationsToList(str, sp)
-    else
-        let filesToGrep = str
+        let lst = s:AddAdditionalLocationsToFileTargetList(lst)
     endif
 
-    let filesToGrep = s:Trim(filesToGrep)
-    return filesToGrep
+    return lst
 endfunction
 " }}}
-" BuildListOfFilesToGrep {{{
-function! s:BuildListOfFilesToGrep()
-    let sp = " "
-    let s:FilesToGrep = s:GetPatternList(sp, 1)
-    return s:FilesToGrep
-endfunction
-" }}}
-" AddAdditionalLocationsToList {{{
-function! s:AddAdditionalLocationsToList(str, sp)
-    if empty(a:str)
-        return a:str
+" AddAdditionalLocationsToFileTargetList {{{
+function! s:AddAdditionalLocationsToFileTargetList(lst)
+    if empty(a:lst) || s:IsModeBuffers()
+        return a:lst
     endif
 
-    let str = a:str
-    let sp = a:sp
-    if !s:IsModeBuffers() && g:EasyGrepSearchCurrentBufferDir
-        let str = s:AddBufferDirsToPatternList(str,sp)
+    let lst = a:lst
+    if g:EasyGrepSearchCurrentBufferDir
+        let lst = s:AddBufferDirsToFileTargetList(lst)
     endif
-    let patternList = split(str)
 
     if g:EasyGrepHidden
         let i = 0
-        let size = len(patternList)
+        let size = len(lst)
         while i < size
-            let item = patternList[i]
+            let item = lst[i]
             let lastpiece = strridx(item, '/')
             if lastpiece == -1 && item[0] == '.'
                 " skip this item, it's already hidden
@@ -480,68 +471,68 @@ function! s:AddAdditionalLocationsToList(str, sp)
                 endif
                 let i += 1
                 let size += 1
-                call insert(patternList, newItem, i)
+                call insert(lst, newItem, i)
             endif
             let i += 1
         endwhile
     endif
 
-    let str = ""
-    for item in patternList
-        if g:EasyGrepRecursive && s:IsCommandVimgrep()
-            let str .= "**/"
+    let newlst = []
+    for item in lst
+        if g:EasyGrepRecursive && s:IsCommandVimgrep() && fnamemodify(item, ":p") != item
+            let str = "**/".item
+        else
+            let str = item
         endif
-        let str .= item.sp
+        call add(newlst, str)
     endfor
 
-    return str
+    return newlst
 endfunction
 "}}}
-" AddBufferDirsToPatternList {{{
-function! s:AddBufferDirsToPatternList(str,sp)
-    let str = a:str
-    let sp = a:sp
+" AddBufferDirsToFileTargetList {{{
+function! s:AddBufferDirsToFileTargetList(lst)
+    let lst = a:lst
 
     " Build a list of the directories in buffers
     let dirs = sort(s:GetBufferDirsList())
 
-    let patternList = split(str, sp)
+    let newlst = copy(lst)
 
-    let currDir = getcwd()
+    let currDir = s:GetCwdEscaped()
     let accepteddirs = [ currDir ]
-    for key in dirs
-        let newDir = key
+    for dir in dirs
         let addToList = 1
-        if newDir == currDir || newDir == '.'
+        if dir == currDir || dir == '.'
             let addToList = 0
         elseif g:EasyGrepRecursive
             for d in accepteddirs
-                if s:IsRecursivelyReachable(d, newDir)
+                if s:IsRecursivelyReachable(d, dir)
                     let addToList = 0
                     break
                 endif
             endfor
         endif
         if addToList
-            call add(accepteddirs, newDir)
-            for p in patternList
-                let str = str.sp.newDir."/".p
+            call add(accepteddirs, dir)
+            for p in lst
+                call add(newlst, dir."/".p)
             endfor
         endif
     endfor
-    return str
+    return newlst
 endfunction
 "}}}
-" FindByPattern {{{
-function! s:FindByPattern(pattern)
-    let pattern = a:pattern
+" FindFileTarget {{{
+function! s:FindFileTarget(target)
+    let target = a:target
     let i = 0
     let numItems = len(s:Dict)
     while i < numItems
         if i != s:EasyGrepModeTracked
             let patterns = split(s:Dict[i][1])
             for p in patterns
-                if pattern ==# p
+                if target ==# p
                     return i
                 endif
             endfor
@@ -595,10 +586,10 @@ function! s:GetDirectorySearchList()
         if g:EasyGrepRecursive
             return s:GetRecursiveMinimalSetList()
         else
-            return extend([getcwd()], s:GetBufferDirsList())
+            return extend([s:GetCwdEscaped()], s:GetBufferDirsList())
         endif
     else
-        return [ getcwd() ]
+        return [ s:GetCwdEscaped() ]
     endif
 endfunction
 " }}}
@@ -619,7 +610,7 @@ function! s:CheckIfCurrentFileIsSearched()
         endif
         let fileDir = fnamemodify(currFile, ":p:h")
         if !empty(fileDir) && !g:EasyGrepSearchCurrentBufferDir
-            let cwd = getcwd()
+            let cwd = s:GetCwdEscaped()
             let willmatch = 1
             if g:EasyGrepRecursive
                 if match(fileDir, cwd) != 0
@@ -674,40 +665,33 @@ function! s:OpenOptionsExplorer()
 
     call s:MapOptionsKeys()
 
-    call s:BuildListOfFilesToGrep()
     call s:FillWindow()
 endfunction
 " }}}
 " Mapped Functions {{{
 " EchoFilesSearched {{{
 function! <sid>EchoFilesSearched()
-    let filesToGrep = s:BuildListOfFilesToGrep()
-
-    if s:IsModeBuffers()
-        let str = filesToGrep
-    else
-        let str = ""
-        let patternList = split(filesToGrep)
-        for p in patternList
-            let s = glob(p)
-            if !empty(s)
-                let fileList = split(s, " ")
-                for f in fileList
-                    if filereadable(f)
-                        let str .= f."\n"
-                    endif
-                endfor
-            endif
-        endfor
-    endif
+    let str = ""
+    let fileTargetList = s:GetFileTargetList(1)
+    for f in fileTargetList
+        if s:IsModeBuffers()
+            let str .= "    ".f."\n"
+        else
+            let globList = glob(f, 0, 1)
+            for g in globList
+                if filereadable(g)
+                    let str .= "    ".g."\n"
+                endif
+            endfor
+        endif
+    endfor
 
     if !empty(str)
-        call s:Echo("Files that will be searched")
+        call s:Echo("Files that will be searched:")
         echo str
     else
         call s:Echo("No files match the current options")
     endif
-    call s:BuildListOfFilesToGrep()
 endfunction
 "}}}
 " SetFilesToExclude {{{
@@ -715,7 +699,6 @@ function! <sid>SetFilesToExclude()
     let filesToExclude = input("Enter patterns to exclude, seperated by a comma: ", g:EasyGrepFilesToExclude)
     let g:EasyGrepFilesToExclude = s:Trim(filesToExclude)
 
-    call s:BuildListOfFilesToGrep()
     call s:RefreshAllOptions()
 
     if !empty(g:EasyGrepFilesToExclude)
@@ -796,7 +779,7 @@ function! <sid>ChooseGrepProgram(...)
     let result = s:SetGrepCommand(grepChoiceStr)
 
     if result
-        if a:0 > 1
+        if a:0 == 0
             echo " "
             echo " "
         endif
@@ -811,13 +794,10 @@ endfunction
 function! s:SetGrepCommand(grepChoice)
     if a:grepChoice == "1"
         let g:EasyGrepCommand = 1
-        let s:CommandChoice = 1
     elseif a:grepChoice == "0" || a:grepChoice == "vimgrep"
         let g:EasyGrepCommand = 0
-        let s:CommandChoice = 0
     else
         let g:EasyGrepCommand = 1
-        let s:CommandChoice = 1
         if a:grepChoice == "findstr"
             set grepprg=findstr\ /n
         elseif a:grepChoice == "grep"
@@ -848,19 +828,22 @@ function! <sid>EchoGrepCommand()
     let placeholder = "<pattern>"
     let dirAnnotation = "Current Directory:     "
     let grepCommand = s:GetGrepCommandLine(placeholder, "", 0, "", 1)
-    if g:EasyGrepSearchCurrentBufferDir
+    if g:EasyGrepSearchCurrentBufferDir && !s:IsModeBuffers()
         let dirs = s:GetDirectorySearchList()
         for d in dirs
             call s:Echo(dirAnnotation.d)
             let dirAnnotation = "Additional Directory:  "
         endfor
     else
-        call s:Echo(dirAnnotation.getcwd())
+        call s:Echo(dirAnnotation.s:GetCwdEscaped())
     endif
     call s:Echo("VIM command:           ".grepCommand)
     if s:GetGrepCommandName() == "grep"
         let shellCommand = substitute(grepCommand, "grep", &grepprg, "")
         call s:Echo("Shell command:         ".shellCommand)
+    endif
+    if s:GetGrepCommandChoice(0) != s:GetGrepCommandChoice(1)
+        call s:Echo("Note:                  "."Overriding '".substitute(s:GetGrepCommandName(0), "grep", &grepprg, "")."' with '".s:GetGrepCommandName(1)."' due to 'Buffers' mode")
     endif
 endfunction
 "}}}
@@ -1028,7 +1011,6 @@ function! s:ActivateChoice(choice)
     call s:SetGrepMode(selectedMode)
 
     call s:UpdateSelectionLine(choice)
-    call s:BuildListOfFilesToGrep()
     call s:RefreshAllOptions()
 
     let str = ""
@@ -1087,14 +1069,26 @@ function! SortExtensionReversed(lhs, rhs)
     return r == 0 ? 0 : r == -1 ? 1 : -1
 endfunction
 " }}}
+" GetGrepCommandChoice {{{
+function! s:GetGrepCommandChoice(overrideForBuffersMode)
+    if !exists("g:EasyGrepCommand") || g:EasyGrepCommand > len(s:Commands)
+        let g:EasyGrepCommand=0
+    endif
+    return a:overrideForBuffersMode && s:IsModeBuffers() ? 0 : g:EasyGrepCommand
+endfunction
+" }}}
 " GetGrepCommandName {{{
-function! s:GetGrepCommandName()
-    return s:Commands[s:CommandChoice]
+function! s:GetGrepCommandName(...)
+    let overrideForBuffersMode = 1
+    if a:0 > 0
+        let overrideForBuffersMode = a:1
+    endif
+    return s:Commands[s:GetGrepCommandChoice(overrideForBuffersMode)]
 endfunction
 " }}}
 " GetGrepCommandNameWithOptions {{{
 function! s:GetGrepCommandNameWithOptions()
-    let name = s:GetGrepCommandName()
+    let name = s:GetGrepCommandName(0)
     if name == "grep"
         let name .= "='".&grepprg."'"
     endif
@@ -1113,13 +1107,13 @@ endfunction
 " }}}
 " ToggleCommand {{{
 function! <sid>ToggleCommand()
-    let s:CommandChoice += 1
-    if s:CommandChoice == len(s:Commands)
-        let s:CommandChoice = 0
+    let commandChoice = s:GetGrepCommandChoice(0)
+    let commandChoice += 1
+    if commandChoice == len(s:Commands)
+        let commandChoice = 0
     endif
-    let g:EasyGrepCommand = s:CommandChoice
+    let g:EasyGrepCommand = commandChoice
 
-    call s:BuildListOfFilesToGrep()
     call s:RefreshAllOptions()
 
     call s:Echo("Set command to (".s:GetGrepCommandNameWithOptions().")")
@@ -1135,7 +1129,6 @@ function! <sid>ToggleRecursion()
 
     let g:EasyGrepRecursive = !g:EasyGrepRecursive
 
-    call s:BuildListOfFilesToGrep()
     call s:RefreshAllOptions()
 
     call s:Echo("Set recursive mode to (".s:OnOrOff(g:EasyGrepRecursive).")")
@@ -1152,7 +1145,6 @@ endfunction
 function! <sid>ToggleHidden()
     let g:EasyGrepHidden = !g:EasyGrepHidden
 
-    call s:BuildListOfFilesToGrep()
     call s:RefreshAllOptions()
 
     call s:Echo("Set hidden files included to (".s:OnOrOff(g:EasyGrepHidden).")")
@@ -1162,10 +1154,9 @@ endfunction
 function! <sid>ToggleBufferDirectories()
     let g:EasyGrepSearchCurrentBufferDir = !g:EasyGrepSearchCurrentBufferDir
 
-    call s:BuildListOfFilesToGrep()
     call s:RefreshAllOptions()
 
-    call s:Echo("Set additional directories included to (".s:OnOrOff(g:EasyGrepSearchCurrentBufferDir).")")
+    call s:Echo("Set 'include all buffer directories' to (".s:OnOrOff(g:EasyGrepSearchCurrentBufferDir).")")
 endfunction
 " }}}
 " ToggleWindow {{{
@@ -1429,7 +1420,7 @@ function! s:CreateOptionsString()
 
     call add(s:Options, "\"q: quit")
     call add(s:Options, "\"r: recursive mode (".s:OnOrOff(g:EasyGrepRecursive).")")
-    call add(s:Options, "\"d: additional directories included (".s:OnOrOff(g:EasyGrepSearchCurrentBufferDir).")")
+    call add(s:Options, "\"d: include all buffer directories (".s:OnOrOff(g:EasyGrepSearchCurrentBufferDir).")")
     call add(s:Options, "\"i: ignore case (".s:OnOrOff(g:EasyGrepIgnoreCase).")")
     call add(s:Options, "\"h: hidden files included (".s:OnOrOff(g:EasyGrepHidden).")")
     call add(s:Options, "\"e: echo files that would be searched")
@@ -1457,8 +1448,8 @@ function! s:CreateOptionsString()
     endif
     call add(s:Options, "\"?: show ". (g:EasyGrepAllOptionsInExplorer ? "fewer" : "more")." options")
     call add(s:Options, "")
-    call add(s:Options, "\"Current Directory: ".getcwd())
-    call add(s:Options, "\"Grep Targets: ".s:FilesToGrep)
+    call add(s:Options, "\"Current Directory: ".s:GetCwdEscaped())
+    call add(s:Options, "\"Grep Targets: ".join(s:GetFileTargetList(0), ' '))
     call add(s:Options, "\"Exclusions: ".(!empty(g:EasyGrepFilesToExclude) ? g:EasyGrepFilesToExclude : "none").(empty(g:EasyGrepFilesToExclude) || s:CommandSupportsExclusions() ? "" : " (only supported with grepprg of 'ack' or 'grep')"))
     call add(s:Options, "")
 
@@ -1512,13 +1503,13 @@ function! s:GrepSetManual(str)
     let pos = s:EasyGrepModeUser
 
     call s:CreateGrepDictionary()
-    let i = s:FindByPattern(str)
+    let i = s:FindFileTarget(str)
     if i != -1
         let s2 = s:Dict[i][1]
         if str == s2
             let pos = i
         else
-            let msg = "Pattern '".s:Dict[i][0]."=".s:Dict[i][1]."' matches your input, use this?"
+            let msg = "File target '".s:Dict[i][0]."=".s:Dict[i][1]."' matches your input, use this?"
             let response = confirm(msg, "&Yes\n&No")
             if response == 1
                 let pos = i
@@ -1553,44 +1544,42 @@ function! s:CreateGrepDictionary()
 
 endfunction
 " }}}
-" BreakDown {{{
-function! s:BreakDown(keyList)
+" CollectEnabledFileTargets {{{
+function! s:CollectEnabledFileTargets(keyList)
 
     " Indicates which keys have already been parsed to avoid multiple entries
     " and infinite recursion
     let s:traversed = repeat([0], len(s:Dict))
 
-    let str = ""
+    let lst = []
     for k in a:keyList
-        let str .= s:DoBreakDown(k)." "
+        call extend(lst, s:DoCollectEnabledFileTargets(k))
     endfor
     unlet s:traversed
-    let str = s:Trim(str)
 
-    return str
+    return lst
 endfunction
 "}}}
-" DoBreakDown {{{
-function! s:DoBreakDown(key)
+" DoCollectEnabledFileTargets {{{
+function! s:DoCollectEnabledFileTargets(key)
     if s:traversed[a:key] == 1
-        return ""
+        return []
     endif
     let s:traversed[a:key] = 1
 
-    let str = ""
-    let patternList = split(s:Dict[a:key][1])
-    for p in patternList
+    let lst = []
+    let fileTargetList = split(s:Dict[a:key][1])
+    for p in fileTargetList
         if s:IsLink(p)
-            let k = s:FindByKey(s:GetKeyFromLink(p))
+            let k = s:FindTargetByKey(s:GetKeyFromLink(p))
             if k != -1
-                let str .= s:DoBreakDown(k)
+                call extend(lst, s:DoCollectEnabledFileTargets(k))
             endif
         else
-            let str .= p
+            call add(lst, p)
         endif
-        let str .= ' '
     endfor
-    return str
+    return lst
 endfunction
 "}}}
 " CheckLinks {{{
@@ -1601,7 +1590,7 @@ function! s:CheckLinks()
         let patterns = split(s:Dict[i][1])
         let j = 0
         for p in patterns
-            if s:IsLink(p) && s:FindByKey(s:GetKeyFromLink(p)) == -1
+            if s:IsLink(p) && s:FindTargetByKey(s:GetKeyFromLink(p)) == -1
                 call s:Warning("Key(".p.") links to a nonexistent key")
                 call remove(patterns, j)
                 let j -= 1
@@ -1619,8 +1608,8 @@ function! s:CheckLinks()
     endwhile
 endfunction
 "}}}
-" FindByKey {{{
-function! s:FindByKey(key)
+" FindTargetByKey {{{
+function! s:FindTargetByKey(key)
     let i = 0
     let numItems = len(s:Dict)
     while i < numItems
@@ -1803,7 +1792,7 @@ function! s:SanitizeMode()
 
     " Next ensure that our mode is sensible
     if g:EasyGrepMode < 0 || g:EasyGrepMode >= s:EasyGrepNumModesWithSpecial
-        call s:Error("Invalid value for g:EasyGrepMode; reverting to 'All' mode.")
+        call s:Error("Invalid value for g:EasyGrepMode (".g:EasyGrepMode."); reverting to 'All' mode.")
         call s:ForceGrepMode(s:EasyGrepModeAll)
     elseif g:EasyGrepMode == s:EasyGrepModeMultipleChoice
         " This is OK
@@ -1889,27 +1878,14 @@ function! s:SetCurrentExtension()
             return
         endif
     endif
-    if !s:IsModeTracked()
-        " Always save the extension when not in tracked mode
+
+    let tempList = s:GetFileTargetList_Tracked()
+
+    " When in tracked mode, change the tracked extension if it isn't
+    " already in the list of files to be grepped
+    if index(tempList, ext) == -1
         let s:TrackedExt = ext
-
-        " Note: this has a very, very, very, small issue (is it even an
-        " issue?) where if you're working with C++ files, and you switch to
-        " buffers mode, and then edit a file of another type, like .c (which
-        " should be in the C++ list), and then switch back to tracked mode,
-        " you will lose the C++ association and have to go back to a C++
-        " file before being able to search them.
-        " This is so small of an issue that it's almost a non-issue, so I'm
-        " not going to bother fixing it
-    else
-        let tempList = split(s:GetPatternList(" ", 0), ' ')
-
-        " When in tracked mode, change the tracked extension if it isn't
-        " already in the list of files to be grepped
-        if index(tempList, ext) == -1
-            let s:TrackedExt = ext
-            let s:Dict[s:EasyGrepModeTracked][1] = ext
-        endif
+        let s:Dict[s:EasyGrepModeTracked][1] = ext
     endif
 endfunction
 "}}}
@@ -2307,13 +2283,14 @@ function! s:IsCommandGrep()
 endfunction
 "}}}
 " GetGrepCommandLine{{{
-function! s:GetGrepCommandLine(word, add, whole, count, escapeArgs)
-    let com = s:GetGrepCommandName()
+function! s:GetGrepCommandLine(pattern, add, whole, count, escapeArgs)
 
     let commandIsVimgrep = s:IsCommandVimgrep()
     let commandIsGrep = s:IsCommandGrep()
     let commandIsFindstr = s:IsCommandFindstr()
     let commandIsAck = s:IsCommandAck()
+
+    let com = s:GetGrepCommandName()
 
     let s1 = ""
     let s2 = ""
@@ -2325,7 +2302,7 @@ function! s:GetGrepCommandLine(word, add, whole, count, escapeArgs)
             let s2 .= "g"
         endif
 
-        if g:EasyGrepJumpToMatch
+        if !g:EasyGrepJumpToMatch
             let s2 .= "j"
         endif
     else
@@ -2342,18 +2319,18 @@ function! s:GetGrepCommandLine(word, add, whole, count, escapeArgs)
         let whole = a:whole
     endif
 
-    let word = a:escapeArgs ? s:EscapeSpecial(a:word) : a:word
+    let pattern = a:escapeArgs ? s:EscapeSpecial(a:pattern) : a:pattern
     if commandIsGrep || commandIsAck
-        let word = "\"".word."\""
+        let pattern = "\"".pattern."\""
     endif
 
     if whole
         if commandIsVimgrep
-            let word = "\\<".word."\\>"
+            let pattern = "\\<".pattern."\\>"
         elseif commandIsGrep || commandIsAck
-            let word = "-w ".word
+            let pattern = "-w ".pattern
         elseif commandIsFindstr
-            let word = "\"\\<".word."\\>\""
+            let pattern = "\"\\<".pattern."\\>\""
         endif
     endif
 
@@ -2386,13 +2363,8 @@ function! s:GetGrepCommandLine(word, add, whole, count, escapeArgs)
         let g:EasyGrepSearchCurrentBufferDir = 0
     endif
 
-    let filesToGrep = s:BuildListOfFilesToGrep()
+    let fileTargetList = s:GetFileTargetList(1)
     let filesToExclude = g:EasyGrepFilesToExclude
-
-    " TODO: push list-based processing further up into the assembly of filesToGrep;
-    " don't use a single string because splitting is inherently lossy for
-    " patterns that have spaces in them.
-    let patternList = split(filesToGrep, ' ')
 
     " Set extra inclusions and exclusions
     if commandIsGrep
@@ -2403,46 +2375,46 @@ function! s:GetGrepCommandLine(word, add, whole, count, escapeArgs)
         if g:EasyGrepRecursive
             call s:RestoreVariable("g:EasyGrepSearchCurrentBufferDir")
             " The --include paths will contain the file patterns
-            let opts .= " " . join(map(patternList, '"--include=\"" .v:val."\""'), ' ')
+            let opts .= " " . join(map(fileTargetList, '"--include=\"" .v:val."\""'), ' ')
 
             " while the files we specify will be directories
             if g:EasyGrepSearchCurrentBufferDir
-                let patternList = s:GetRecursiveMinimalSetList()
+                let fileTargetList = s:GetRecursiveMinimalSetList()
             else
-                let patternList = [ s:GetCwdEscaped() ]
+                let fileTargetList = [ s:GetCwdEscaped() ]
             endif
         endif
 
         let opts .= " " . join(map(split(filesToExclude, ','), '"--exclude=\"".v:val."\""." --exclude-dir=\"".v:val."\""'), ' ')
     elseif commandIsFindstr
-        call s:FilterPatternsWithNoFiles(patternList)
-        call map(patternList, 's:ForwardToBackSlash(v:val)')
+        call s:FilterPatternsWithNoFiles(fileTargetList)
+        call map(fileTargetList, 's:ForwardToBackSlash(v:val)')
     elseif commandIsAck
-        call s:FilterPatternsWithNoFiles(patternList)
+        call s:FilterPatternsWithNoFiles(fileTargetList)
 
         " Patch up the command line in a way that ack understands; do the
         " following:
         " 1) Replace a leading star with the current directory
         " 2) Replace all trailing stars with a space
-        call map(patternList, 'substitute(substitute(v:val, "^\\*$", s:GetCwdEscaped(), ""), "/\\*$", "", "")')
+        call map(fileTargetList, 'substitute(substitute(v:val, "^\\*$", s:GetCwdEscaped(), ""), "/\\*$", "", "")')
 
         " Add exclusions
         let opts .= " " . join(map(split(filesToExclude, ','), '"--ignore-dir=\"".v:val."\""'), ' ')
     endif
 
-    let filesToGrep = join(patternList, ' ')
+    let filesToGrep = join(fileTargetList, ' ')
 
     let win = g:EasyGrepWindow != 0 ? "l" : ""
-    let grepCommand = a:count.win.com.a:add." ".opts." ".s1.word.s2." ".filesToGrep
+    let grepCommand = a:count.win.com.a:add." ".opts." ".s1.pattern.s2." ".filesToGrep
 
     return grepCommand
 endfunction
 "}}}
 " HasTargetsThatMatch {{{
-function! s:HasTargetsThatMatch(word)
+function! s:HasTargetsThatMatch(pattern)
     call s:CheckIfCurrentFileIsSearched()
 
-    if s:IsModeBuffers() && empty(s:FilesToGrep)
+    if s:IsModeBuffers() && empty(s:GetFileTargetList(1))
         call s:Warning("No saved buffers to explore")
         return 0
     endif
@@ -2450,7 +2422,7 @@ function! s:HasTargetsThatMatch(word)
     if g:EasyGrepExtraWarnings && !g:EasyGrepRecursive
         " Don't evaluate if in recursive mode, this will take too long
         if !s:HasFilesThatMatch()
-            call s:WarnNoMatches(a:word)
+            call s:WarnNoMatches(a:pattern)
             return 0
         endif
     endif
@@ -2460,7 +2432,7 @@ endfunction
 
 " }}}
 " DoGrep {{{
-function! s:DoGrep(word, add, whole, count, escapeArgs)
+function! s:DoGrep(pattern, add, whole, count, escapeArgs)
     call s:CreateGrepDictionary()
 
     if s:OptionsExplorerOpen == 1
@@ -2468,8 +2440,7 @@ function! s:DoGrep(word, add, whole, count, escapeArgs)
         return 0
     endif
 
-    call s:BuildListOfFilesToGrep()
-    if !s:HasTargetsThatMatch(a:word)
+    if !s:HasTargetsThatMatch(a:pattern)
         return 0
     endif
 
@@ -2479,7 +2450,7 @@ function! s:DoGrep(word, add, whole, count, escapeArgs)
     endif
 
     call s:SetGrepVariables(commandName)
-    let grepCommand = s:GetGrepCommandLine(a:word, a:add, a:whole, a:count, a:escapeArgs)
+    let grepCommand = s:GetGrepCommandLine(a:pattern, a:add, a:whole, a:count, a:escapeArgs)
 
     let failed = 0
     try
@@ -2490,7 +2461,7 @@ function! s:DoGrep(word, add, whole, count, escapeArgs)
         silent execute grepCommand
     catch
         if v:exception != 'E480'
-            call s:WarnNoMatches(a:word)
+            call s:WarnNoMatches(a:pattern)
             try
                 " go to the last error list on no matches
                 if g:EasyGrepWindow == 0
@@ -2521,7 +2492,7 @@ function! s:DoGrep(word, add, whole, count, escapeArgs)
             setlocal nofoldenable
         endif
     else
-        call s:WarnNoMatches(a:word)
+        call s:WarnNoMatches(a:pattern)
         return 0
     endif
 
@@ -2535,28 +2506,23 @@ endfunction
 "}}}
 " HasFilesThatMatch{{{
 function! s:HasFilesThatMatch()
-    let saveFilesToGrep = s:FilesToGrep
-
-    call s:BuildListOfFilesToGrep()
-    let patternList = split(s:FilesToGrep, " ")
-    for p in patternList
+    let fileTargetList = s:GetFileTargetList(1)
+    for p in fileTargetList
         let p = s:Trim(p)
         let fileList = split(glob(p), " ")
         for f in fileList
             if filereadable(f)
-                let s:FilesToGrep = saveFilesToGrep
                 return 1
             endif
         endfor
     endfor
 
-    let s:FilesToGrep = saveFilesToGrep
     return 0
 endfunction
 "}}}
 " FilterPatternsWithNoFiles {{{
-function! s:FilterPatternsWithNoFiles(patternList)
-    call filter(a:patternList, 'glob(s:Trim(v:val)) != ""')
+function! s:FilterPatternsWithNoFiles(fileTargetList)
+    call filter(a:fileTargetList, 'glob(s:Trim(v:val)) != ""')
 endfunction
 "}}}
 " WarnNoMatches {{{
@@ -2566,7 +2532,7 @@ function! s:WarnNoMatches(pattern)
     elseif s:IsModeAll()
         let fpat = "*"
     else
-        let fpat = s:GetPatternList(" ", 0)
+        let fpat = s:GetFileTargetList(0)
     endif
 
     let r = g:EasyGrepRecursive ? " (+Recursive)" : ""
@@ -3191,8 +3157,8 @@ function! s:InitializeMode()
         " 2 - Track
         " 3 - User
     else
-        if g:EasyGrepMode < 0 || g:EasyGrepMode >= s:EasyGrepNumModes
-            call s:Error("Invalid value for g:EasyGrepMode; reverting to 'All' mode.")
+        if g:EasyGrepMode < 0 || g:EasyGrepMode >= s:EasyGrepNumModesWithSpecial
+            call s:Error("Invalid value for g:EasyGrepMode (".g:EasyGrepMode."); reverting to 'All' mode.")
             let g:EasyGrepMode = s:EasyGrepModeAll
         endif
         call s:CheckCommandRequirements()

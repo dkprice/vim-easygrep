@@ -414,7 +414,7 @@ Specifies that multiple matches on the same line be treated as different
 matches, like the g option to vimgrep.
 
 *EasyGrepJumpToMatch*  [default=1]
-Specifies that jump to first match be activated, like the j option to vimgrep.
+Specifies that jump to first match be activated, like vimgrep without the 'j' option.
 
 *EasyGrepSearchCurrentBufferDir*  [default=1]
 Setting this option causes EasyGrep to search not only the current directory,
