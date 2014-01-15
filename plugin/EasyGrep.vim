@@ -2533,7 +2533,7 @@ function! s:WarnNoMatches(pattern)
     elseif s:IsModeAll()
         let fpat = "*"
     else
-        let fpat = s:GetFileTargetList(0)
+        let fpat = join(s:GetFileTargetList(0), ', ')
     endif
 
     let r = g:EasyGrepRecursive ? " (+Recursive)" : ""
