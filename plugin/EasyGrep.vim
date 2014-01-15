@@ -2292,6 +2292,7 @@ function! s:GetGrepCommandLine(pattern, add, whole, count, escapeArgs)
 
     let com = s:GetGrepCommandName()
 
+    let bang = ""
     let s1 = ""
     let s2 = ""
     if commandIsVimgrep
@@ -2307,7 +2308,7 @@ function! s:GetGrepCommandLine(pattern, add, whole, count, escapeArgs)
         endif
     else
         if !g:EasyGrepJumpToMatch
-            let com .= "!"
+            let bang = "!"
         endif
     endif
 
@@ -2405,7 +2406,7 @@ function! s:GetGrepCommandLine(pattern, add, whole, count, escapeArgs)
     let filesToGrep = join(fileTargetList, ' ')
 
     let win = g:EasyGrepWindow != 0 ? "l" : ""
-    let grepCommand = a:count.win.com.a:add." ".opts." ".s1.pattern.s2." ".filesToGrep
+    let grepCommand = a:count.win.com.a:add.bang." ".opts." ".s1.pattern.s2." ".filesToGrep
 
     return grepCommand
 endfunction
