@@ -366,7 +366,7 @@ function! s:InitializeCommandChoice()
     endif
 endfunction
 let s:CurrentFileCurrentDirChecked = 0
-let s:SanitizeLock = 0
+let s:SanitizeModeLock = 0
 
 " SetGatewayVariables {{{
 function! s:SetGatewayVariables()
@@ -1772,21 +1772,23 @@ endfunction
 " }}}
 " ForceGrepMode {{{
 function! s:ForceGrepMode(mode)
-    call s:ClearActivatedItems()
     call s:SetGrepMode(a:mode)
-    let s:Dict[a:mode][2] = 1
+    if exists("s:Dict")
+        call s:ClearActivatedItems()
+        let s:Dict[a:mode][2] = 1
+    endif
 endfunction
 " }}}
 " SanitizeMode {{{
 function! s:SanitizeMode()
-    if s:SanitizeLock
+    if s:SanitizeModeLock
         return
     endif
-    let s:SanitizeLock = 1
+    let s:SanitizeModeLock = 1
 
     " First check the grep command
     if !s:CheckGrepCommandForChanges()
-        let s:SanitizeLock = 0
+        let s:SanitizeModeLock = 0
         return
     endif
 
@@ -1802,7 +1804,7 @@ function! s:SanitizeMode()
         call s:ForceGrepMode(g:EasyGrepMode)
     endif
 
-    let s:SanitizeLock = 0
+    let s:SanitizeModeLock = 0
 endfunction
 " }}}
 " ValidateGrepCommand {{{
@@ -3151,6 +3153,7 @@ endif
 "}}}
 " User Options {{{
 function! s:InitializeMode()
+    let s:SanitizeModeLock = 1
     if !exists("g:EasyGrepMode")
         let g:EasyGrepMode=s:EasyGrepModeAll
         " 0 - All
@@ -3164,6 +3167,7 @@ function! s:InitializeMode()
         endif
         call s:CheckCommandRequirements()
     endif
+    let s:SanitizeModeLock = 0
 endfunction
 
 if !exists("g:EasyGrepCommand")
@@ -3307,9 +3311,9 @@ endfunction
 
 "}}}
 " Script Finalization {{{
+call s:InitializeMode()
 call s:CreateGrepDictionary()
 call s:InitializeCommandChoice()
-call s:InitializeMode()
 call s:CreateOptionMappings()
 call s:SetWatchExtension()
 call s:CheckDefaultUserPattern()
