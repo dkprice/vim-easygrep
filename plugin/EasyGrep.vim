@@ -334,7 +334,7 @@ let s:EasyGrepModeAll=0
 let s:EasyGrepModeBuffers=1
 let s:EasyGrepModeTracked=2
 let s:EasyGrepModeUser=3
-let s:EasyGrepNumModes = 4
+let s:EasyGrepNumModes=4
 
 " This is a special mode
 let s:EasyGrepModeMultipleChoice=4
@@ -3075,6 +3075,39 @@ function! s:ResultListDo(command)
 
 endfunction
 "}}}
+" ResultListSave {{{
+function! s:ResultListSave(f)
+    if filereadable(a:f)
+        let confirmed = confirm("File '".a:f."' exists; overwrite it?", "&Yes\n&No")-1
+        if confirmed
+            return
+        endif
+        call s:Echo("Proceeding to overwrite '".a:f."'")
+    endif
+
+    let lst = s:GetErrorList()
+
+    if empty(lst)
+        call s:Error("No result list to save")
+        return
+    endif
+
+    try
+        let contents = []
+        for e in lst
+            let line = bufname(e.bufnr)."|".e.lnum." col ".e.col."| ".e.text
+            call insert(contents, line, len(contents))
+        endfor
+
+        call writefile(contents, a:f)
+    catch
+        call s:Error("Error saving result list to '".a:f."'")
+        return
+    endtry
+
+    call s:Echo("Result list was saved to '".a:f."' successfully")
+endfunction
+"}}}
 " }}}
 " }}}
 
@@ -3090,6 +3123,7 @@ command! -bang ReplaceUndo :call s:ReplaceUndo("<bang>")
 command! -nargs=0 ResultListOpen :call s:ResultListOpen()
 command! -nargs=+ ResultListFilter :call s:ResultListFilter(<f-args>)
 command! -nargs=+ ResultListDo :call s:ResultListDo(<q-args>)
+command! -nargs=1 ResultListSave :call s:ResultListSave(<q-args>)
 "}}}
 " Keymaps {{{
 if !hasmapto("<plug>EgMapGrepOptions")

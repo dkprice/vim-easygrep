@@ -1,0 +1,4 @@
+
+I'm just getting started here. Hopefully I'll be able to add more tests over time.
+
+These tests use runVimTests as a testing framework. It is expected to be located in its own directory two directories up; see runall.sh
