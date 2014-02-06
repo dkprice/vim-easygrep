@@ -330,6 +330,7 @@ endfunction
 "}}}
 " }}}
 " Script Variables {{{
+let s:EasyGrepSourceFile=expand("<sfile>")
 let s:EasyGrepModeAll=0
 let s:EasyGrepModeBuffers=1
 let s:EasyGrepModeTracked=2
@@ -740,7 +741,11 @@ function! <sid>ChooseGrepProgram(...)
             let chooseGrep = -1
         endif
         " awk
-        if executable("ack")
+        if executable("ack-grep")
+            let chooseAckGrep = i
+            call extend(lst, [ i.". ack-grep" ])
+            let i = i + 1
+        elseif executable("ack")
             let chooseAck = i
             call extend(lst, [ i.". ack" ])
             let i = i + 1
@@ -766,6 +771,8 @@ function! <sid>ChooseGrepProgram(...)
             let grepChoiceStr = "findstr"
         elseif grepChoice == chooseGrep
             let grepChoiceStr = "grep"
+        elseif grepChoice == chooseAckGrep
+            let grepChoiceStr = "ack-grep"
         elseif grepChoice == chooseAck
             let grepChoiceStr = "ack"
         elseif grepChoice == chooseAg
@@ -806,8 +813,10 @@ function! s:SetGrepCommand(grepChoice)
             else
                 set grepprg=grep\ -n\ $*\ /dev/null
             endif
+        elseif a:grepChoice == "ack-grep"
+            set grepprg=ack-grep\ --nogroup\ --nocolor\ --column\ --with-filename
         elseif a:grepChoice == "ack"
-            set grepprg=ack\ --nogroup\ --nocolor\ --column
+            set grepprg=ack\ --nogroup\ --nocolor\ --column\ --with-filename
         elseif a:grepChoice == "ag"
             set grepprg=ag\ --nogroup\ --nocolor\ --column
         else
@@ -1649,6 +1658,7 @@ function! s:ParseFileAssociationList()
     let lst = s:GetFileAssociationList()
 
     if empty(lst)
+        call s:Error("Grep Pattern file list can't be read")
         return
     endif
 
@@ -1996,7 +2006,6 @@ function! s:ParseCommandLine(argv)
         return opts
     endif
 
-    let nextiscount = 0
     let tokens = split(a:argv, ' \zs')
     let numtokens = len(tokens)
     let j = 0
@@ -2462,6 +2471,9 @@ function! s:DoGrep(pattern, add, whole, count, escapeArgs)
         endif
 
         silent execute grepCommand
+    catch /.*E303.*/
+        " This error reports that a swap file could not be opened; this is not a critical error
+        let failed = 0
     catch
         if v:exception != 'E480'
             call s:WarnNoMatches(a:pattern)
@@ -3250,22 +3262,36 @@ endif
 
 " EasyGrepFileAssociations {{{
 function! s:GetFileAssociationList()
+    let sawError = 0
     if exists("g:EasyGrepFileAssociations")
-        return g:EasyGrepFileAssociations
+        if filereadable(g:EasyGrepFileAssociations)
+            return g:EasyGrepFileAssociations
+        endif
+        let sawError = 1
+        call s:Error("The file specified by g:EasyGrepFileAssociations=".g:EasyGrepFileAssociations." cannot be read")
+        call s:Error("    Attempting to look for 'EasyGrepFileAssociations' in other locations")
     endif
 
-    let VimfilesDirs=split(&runtimepath, ',')
-    for v in VimfilesDirs
-        let f = s:BackToForwardSlash(v)."/plugin/EasyGrepFileAssociations"
-        if filereadable(f)
-            let g:EasyGrepFileAssociations=f
-            return f
-        endif
-    endfor
+    let nextToSource=fnamemodify(s:EasyGrepSourceFile, ":h")."/EasyGrepFileAssociations"
+    if filereadable(nextToSource)
+        let g:EasyGrepFileAssociations = nextToSource
+    else
+        let VimfilesDirs=split(&runtimepath, ',')
+        for v in VimfilesDirs
+            let f = s:BackToForwardSlash(v)."/plugin/EasyGrepFileAssociations"
+            if filereadable(f)
+                let g:EasyGrepFileAssociations=f
+            endif
+        endfor
+    endif
 
-    call s:Error("Grep Pattern file list can't be read")
-    let g:EasyGrepFileAssociations=""
-    return ""
+    if empty(g:EasyGrepFileAssociations)
+        let g:EasyGrepFileAssociations=""
+    elseif sawError
+        call s:Error("    Found at: ".g:EasyGrepFileAssociations)
+        call s:Error("    Please fix your configuration to suppress these messages")
+    endif
+    return g:EasyGrepFileAssociations
 endfunction
 " }}}
 

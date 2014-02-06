@@ -4,6 +4,7 @@
 ==============================================================================
 
 Author:      Dan Price   vim@danprice.fastmail.net       *EasyGrep_Author*
+Repository:  https://github.com/dkprice/vim-easygrep     *EasyGrep_Repository*
 
 Goal:        To be an easy to use, powerful find and     |EasyGrep_Motivation|
              replace tool for users of all skill levels.
@@ -489,6 +490,7 @@ Make buffers mode always use vimgrep
 ==============================================================================
 
 If you discover any bugs not listed here, please contact the |EasyGrep_Author|
+or post an issue to the |EasyGrep_Repository|
 
 ------------------------------------------------------------------------------
 Successive warning messages can hide a previous message
