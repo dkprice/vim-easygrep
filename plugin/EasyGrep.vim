@@ -715,6 +715,13 @@ endfunction
 " ChooseGrepProgram {{{
 function! <sid>ChooseGrepProgram(...)
 
+    let chooseVimgrep = 0
+    let chooseFindstr = 0
+    let chooseGrep = 0
+    let chooseAckGrep = 0
+    let chooseAck = 0
+    let chooseAg = 0
+
     if a:0 > 0
         let grepChoiceStr = a:1
     else
