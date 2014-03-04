@@ -2534,7 +2534,7 @@ function! s:HasFilesThatMatch()
     let fileTargetList = s:GetFileTargetList(1)
     for p in fileTargetList
         let p = s:Trim(p)
-        let fileList = split(glob(p), " ")
+        let fileList = glob(p, 0, 1)
         for f in fileList
             if filereadable(f)
                 return 1
