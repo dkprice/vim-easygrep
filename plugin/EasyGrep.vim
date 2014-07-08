@@ -721,6 +721,7 @@ function! <sid>ChooseGrepProgram(...)
     let chooseAckGrep = 0
     let chooseAck = 0
     let chooseAg = 0
+    let choosePt = 0
 
     if a:0 > 0
         let grepChoiceStr = a:1
@@ -767,6 +768,14 @@ function! <sid>ChooseGrepProgram(...)
         else
             let chooseAg = -1
         endif
+        " pt
+        if executable("pt")
+            let choosePt = i
+            call extend(lst, [ i.". pt" ])
+            let i = i + 1
+        else
+            let choosePt = -1
+        endif
 
         let grepChoice = inputlist(lst)
 
@@ -784,6 +793,8 @@ function! <sid>ChooseGrepProgram(...)
             let grepChoiceStr = "ack"
         elseif grepChoice == chooseAg
             let grepChoiceStr = "ag"
+        elseif grepChoice == choosePt
+            let grepChoiceStr = "pt"
         else
             echo " "
             call s:Error("Invalid GrepCommand choice")
@@ -799,7 +810,7 @@ function! <sid>ChooseGrepProgram(...)
         endif
         call s:Echo("-- Grep configuration changed --")
         call s:EchoGrepCommand()
-    else 
+    else
         call s:Error("Unknown program '".a:1."'")
     endif
 endfunction
@@ -826,6 +837,8 @@ function! s:SetGrepCommand(grepChoice)
             set grepprg=ack\ --nogroup\ --nocolor\ --column\ --with-filename
         elseif a:grepChoice == "ag"
             set grepprg=ag\ --nogroup\ --nocolor\ --column
+        elseif a:grepChoice == "pt"
+            set grepprg=pt\ --nogroup\ --nocolor
         else
             return 0
         endif
@@ -1835,7 +1848,8 @@ function! s:ValidateGrepCommand()
     if    !s:IsCommandVimgrep() &&
         \ !s:IsCommandGrep()    &&
         \ !s:IsCommandFindstr() &&
-        \ !s:IsCommandAck()
+        \ !s:IsCommandAck() &&
+        \ !s:IsCommandPt()
         call s:Error("Cannot proceed; the configured 'grepprg' setting is not a known program")
         return 0
     endif
@@ -2290,6 +2304,11 @@ function! s:IsCommandAck()
     return !s:IsCommandVimgrep() && (s:GetGrepProgramName() == "ack" || s:GetGrepProgramName() == "ack-grep" || s:GetGrepProgramName() == "ag")
 endfunction
 "}}}
+" IsCommandPt {{{
+function! s:IsCommandPt()
+    return !s:IsCommandGrep() || (s:GetGrepCommandName() == "pt")
+endfunction
+"}}}
 " IsCommandFindstr {{{
 function! s:IsCommandFindstr()
     return !s:IsCommandVimgrep() && (s:GetGrepProgramName() == "findstr")
@@ -2307,6 +2326,7 @@ function! s:GetGrepCommandLine(pattern, add, whole, count, escapeArgs)
     let commandIsGrep = s:IsCommandGrep()
     let commandIsFindstr = s:IsCommandFindstr()
     let commandIsAck = s:IsCommandAck()
+    let commandIsPt = s:IsCommandPt()
 
     let com = s:GetGrepCommandName()
 
@@ -2346,7 +2366,7 @@ function! s:GetGrepCommandLine(pattern, add, whole, count, escapeArgs)
     if whole
         if commandIsVimgrep
             let pattern = "\\<".pattern."\\>"
-        elseif commandIsGrep || commandIsAck
+        elseif commandIsGrep || commandIsAck || commandIsPt
             let pattern = "-w ".pattern
         elseif commandIsFindstr
             let pattern = "\"\\<".pattern."\\>\""
@@ -2358,7 +2378,7 @@ function! s:GetGrepCommandLine(pattern, add, whole, count, escapeArgs)
             let opts .= "-R "
         elseif commandIsFindstr
             let opts .= "/S "
-        elseif commandIsAck
+        elseif commandIsAck || commandIsPt
             " do nothing
         endif
     endif
