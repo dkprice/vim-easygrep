@@ -232,6 +232,19 @@ function! s:IsRecursivePattern(pattern)
     return stridx(a:pattern, "\*\*\/") == 0 ? 1 : 0
 endfunction
 " }}}
+" IsBufferDirSearchAllowed {{{
+function! s:IsBufferDirSearchAllowed()
+    return !(s:IsRecursiveSearch() && s:IsCommandGrep())
+endfunction
+" }}}
+" IsRecursiveSearch {{{
+function! s:IsRecursiveSearch()
+    if g:EasyGrepRecursive
+        return !s:IsModeBuffers()
+    endif
+    return s:IsCommandAck()
+endfunction
+" }}}
 " GetSavedName {{{
 function! s:GetSavedName(var)
     let var = a:var
@@ -448,7 +461,7 @@ function! s:AddAdditionalLocationsToFileTargetList(lst)
     endif
 
     let lst = a:lst
-    if g:EasyGrepSearchCurrentBufferDir
+    if g:EasyGrepSearchCurrentBufferDir && s:IsBufferDirSearchAllowed()
         let lst = s:AddBufferDirsToFileTargetList(lst)
     endif
 
@@ -480,7 +493,7 @@ function! s:AddAdditionalLocationsToFileTargetList(lst)
 
     let newlst = []
     for item in lst
-        if g:EasyGrepRecursive && s:IsCommandVimgrep() && fnamemodify(item, ":p") != item
+        if s:IsRecursiveSearch() && s:IsCommandVimgrep() && fnamemodify(item, ":p") != item
             let str = "**/".item
         else
             let str = item
@@ -506,7 +519,7 @@ function! s:AddBufferDirsToFileTargetList(lst)
         let addToList = 1
         if dir == currDir || dir == '.'
             let addToList = 0
-        elseif g:EasyGrepRecursive
+        elseif s:IsRecursiveSearch()
             for d in accepteddirs
                 if s:IsRecursivelyReachable(d, dir)
                     let addToList = 0
@@ -584,7 +597,7 @@ endfunction
 " GetDirectorySearchList {{{
 function! s:GetDirectorySearchList()
     if g:EasyGrepSearchCurrentBufferDir
-        if g:EasyGrepRecursive
+        if s:IsRecursiveSearch()
             return s:GetRecursiveMinimalSetList()
         else
             return extend([s:GetCwdEscaped()], s:GetBufferDirsList())
@@ -613,7 +626,7 @@ function! s:CheckIfCurrentFileIsSearched()
         if !empty(fileDir) && !g:EasyGrepSearchCurrentBufferDir
             let cwd = s:GetCwdEscaped()
             let willmatch = 1
-            if g:EasyGrepRecursive
+            if s:IsRecursiveSearch()
                 if match(fileDir, cwd) != 0
                     let willmatch = 0
                 endif
@@ -863,6 +876,10 @@ function! <sid>EchoGrepCommand()
             call s:Echo(dirAnnotation.d)
             let dirAnnotation = "Additional Directory:  "
         endfor
+        let bufferDirs = s:GetBufferDirsList()
+        if (len(bufferDirs) > len(dirs))
+            call s:Echo("Note:                  Additional directories covered by recursive search")
+        endif
     else
         call s:Echo(dirAnnotation.s:GetCwdEscaped())
     endif
@@ -1002,14 +1019,6 @@ function! s:ActivateChoice(choice)
     let allBecomesActivated = 0
     if shouldBecomeActivated
         " Handle any incompatible modes
-        if choice == s:EasyGrepModeBuffers && g:EasyGrepRecursive == 1
-            "let additionalmessage = "And setting g:EasyGrepRecursive to 'Off', as only buffers are searched"
-            let g:EasyGrepRecursive = 0
-        elseif s:IsCommandAck() && !g:EasyGrepRecursive
-            let additionalmessage = "And setting g:EasyGrepRecusive to 'On', as ".s:GetGrepProgramVarAndName()." is inherently recursive"
-            let g:EasyGrepRecursive = 1
-        endif
-
         if count(choicesThatAreModes, choice) > 0
             call s:ClearActivatedItems()
             call s:UpdateAllSelections()
@@ -1865,10 +1874,6 @@ function! s:CheckGrepCommandForChanges()
                 call s:Info("==================================================================================")
                 call s:Info("The 'grepprg' has changed to '".s:GetGrepCommandName()."' since last inspected")
                 call s:Info("Switching to 'All' mode as the '".s:GetModeName(g:EasyGrepMode)."' mode is incompatible with this program")
-                if !g:EasyGrepRecursive
-                    call s:Info("And setting g:EasyGrepRecusive to 'On', as ".s:GetGrepProgramVarAndName()." is inherently recursive")
-                    let g:EasyGrepRecursive = 1
-                endif
                 call s:Info("==================================================================================")
                 call s:ForceGrepMode(s:EasyGrepModeAll)
             endif
@@ -1884,9 +1889,6 @@ function! s:CheckCommandRequirements()
     if s:IsCommandAck()
         if s:IsModeTracked()
             call s:ForceGrepMode(s:EasyGrepModeAll)
-        endif
-        if !s:IsModeBuffers() && !g:EasyGrepRecursive
-            let g:EasyGrepRecursive=1
         endif
     endif
 endfunction
@@ -2322,6 +2324,7 @@ endfunction
 " GetGrepCommandLine{{{
 function! s:GetGrepCommandLine(pattern, add, whole, count, escapeArgs)
 
+    call s:CheckCommandRequirements()
     let commandIsVimgrep = s:IsCommandVimgrep()
     let commandIsGrep = s:IsCommandGrep()
     let commandIsFindstr = s:IsCommandFindstr()
@@ -2373,7 +2376,7 @@ function! s:GetGrepCommandLine(pattern, add, whole, count, escapeArgs)
         endif
     endif
 
-    if g:EasyGrepRecursive
+    if s:IsRecursiveSearch()
         if commandIsGrep
             let opts .= "-R "
         elseif commandIsFindstr
@@ -2395,13 +2398,6 @@ function! s:GetGrepCommandLine(pattern, add, whole, count, escapeArgs)
         endif
     endif
 
-    if commandIsGrep && g:EasyGrepRecursive
-        " TODO: clean this up. This is a temporary hack to prevent buffer
-        " directories from being added to the filesToGrep string
-        call s:SaveVariable("g:EasyGrepSearchCurrentBufferDir")
-        let g:EasyGrepSearchCurrentBufferDir = 0
-    endif
-
     let fileTargetList = s:GetFileTargetList(1)
     let filesToExclude = g:EasyGrepFilesToExclude
 
@@ -2411,8 +2407,7 @@ function! s:GetGrepCommandLine(pattern, add, whole, count, escapeArgs)
         let opts .= "-s"
 
         " Specific inclusions are only set in recursive mode
-        if g:EasyGrepRecursive
-            call s:RestoreVariable("g:EasyGrepSearchCurrentBufferDir")
+        if s:IsRecursiveSearch()
             " The --include paths will contain the file patterns
             let opts .= " " . join(map(fileTargetList, '"--include=\"" .v:val."\""'), ' ')
 
@@ -2435,7 +2430,7 @@ function! s:GetGrepCommandLine(pattern, add, whole, count, escapeArgs)
         " following:
         " 1) Replace a leading star with the current directory
         " 2) Replace all trailing stars with a space
-        call map(fileTargetList, 'substitute(substitute(v:val, "^\\*$", s:GetCwdEscaped(), ""), "/\\*$", "", "")')
+        call map(fileTargetList, 'substitute(substitute(v:val, "^\\*$", s:GetCwdEscaped(), ""), "\\(.*\\)/\\*$", s:GetCwdEscaped()."/\\1", "")')
 
         " Add exclusions
         let opts .= " " . join(map(split(filesToExclude, ','), '"--ignore-dir=\"".v:val."\""'), ' ')
@@ -2458,7 +2453,7 @@ function! s:HasTargetsThatMatch(pattern)
         return 0
     endif
 
-    if g:EasyGrepExtraWarnings && !g:EasyGrepRecursive
+    if g:EasyGrepExtraWarnings && !s:IsRecursiveSearch()
         " Don't evaluate if in recursive mode, this will take too long
         if !s:HasFilesThatMatch()
             call s:WarnNoMatches(a:pattern)
@@ -2493,7 +2488,7 @@ function! s:DoGrep(pattern, add, whole, count, escapeArgs)
 
     let failed = 0
     try
-        if g:EasyGrepRecursive
+        if s:IsRecursiveSearch()
             call s:Info("Running a recursive search, this may take a while")
         endif
 
@@ -2580,7 +2575,7 @@ function! s:WarnNoMatches(pattern)
         let fpat = join(s:GetFileTargetList(0), ', ')
     endif
 
-    let r = g:EasyGrepRecursive ? " (+Recursive)" : ""
+    let r = s:IsRecursiveSearch() ? " (+Recursive)" : ""
     let h = g:EasyGrepHidden    ? " (+Hidden)"    : ""
 
     redraw
