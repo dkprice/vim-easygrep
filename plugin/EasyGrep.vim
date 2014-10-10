@@ -196,7 +196,7 @@ endfunction
 " Escape{{{
 function! s:Escape(str, lst, dlst)
     let str = a:str
-    for i in a:lst
+    for i in a:lst "needs escaping once
         let str = escape(str, i)
     endfor
     for i in a:dlst "needs escaping twice
@@ -208,8 +208,8 @@ endfunction
 "}}}
 " EscapeSpecial {{{
 function! s:EscapeSpecial(str)
-    let lst = [ '\', '^', '$' ]
-    let dlst = []
+    let lst = [ '\', '^', '$' ] "needs escaping once
+    let dlst = []               "needs escaping twice
     if s:IsCommandVimgrep()
         call extend(lst, [ '/' ])
         if &magic
@@ -234,7 +234,25 @@ endfunction
 " }}}
 " IsBufferDirSearchAllowed {{{
 function! s:IsBufferDirSearchAllowed()
-    return !(s:IsRecursiveSearch() && s:IsCommandGrep())
+    if s:IsModeBuffers()
+        return 0
+    endif
+
+    let commandParams = s:GetGrepCommandParameters()
+    if !has_key(commandParams, "bufferdirsearchallowed")
+        return 1
+    endif
+
+    let bufferdirsearchallowed = commandParams["bufferdirsearchallowed"]
+    if bufferdirsearchallowed ==# "1"
+        return 1
+    elseif bufferdirsearchallowed ==# "0"
+        return 0
+    elseif bufferdirsearchallowed ==# "!recursive"
+        return !s:IsRecursiveSearch()
+    else
+        return 1
+    endif
 endfunction
 " }}}
 " IsRecursiveSearch {{{
@@ -708,6 +726,20 @@ function! <sid>EchoFilesSearched()
     endif
 endfunction
 "}}}
+" SetFilesToInclude {{{
+function! <sid>SetFilesToInclude()
+    let filesToInclude = input("Enter patterns to include, seperated by a comma: ", g:EasyGrepFilesToInclude)
+    let g:EasyGrepFilesToInclude = s:Trim(filesToInclude)
+
+    call s:RefreshAllOptions()
+
+    if !empty(g:EasyGrepFilesToInclude)
+        call s:Echo("Set files to include to (".g:EasyGrepFilesToInclude.")")
+    else
+        call s:Echo("Clearing files to include")
+    endif
+endfunction
+"}}}
 " SetFilesToExclude {{{
 function! <sid>SetFilesToExclude()
     let filesToExclude = input("Enter patterns to exclude, seperated by a comma: ", g:EasyGrepFilesToExclude)
@@ -716,12 +748,12 @@ function! <sid>SetFilesToExclude()
     call s:RefreshAllOptions()
 
     if !empty(g:EasyGrepFilesToExclude)
-        call s:Echo("Set patterns to exclude to (".g:EasyGrepFilesToExclude.")")
+        call s:Echo("Set files to exclude to (".g:EasyGrepFilesToExclude.")")
         if !s:CommandSupportsExclusions()
             call s:Echo("But note that your command, ".s:GetGrepCommandName().", does not support them. See the docs for supported programs.")
         endif
     else
-        call s:Echo("Clearing patterns to exclude")
+        call s:Echo("Clearing files to exclude")
     endif
 endfunction
 "}}}
@@ -731,6 +763,7 @@ function! <sid>ChooseGrepProgram(...)
     let chooseVimgrep = 0
     let chooseFindstr = 0
     let chooseGrep = 0
+    let chooseGitGrep = 0
     let chooseAckGrep = 0
     let chooseAck = 0
     let chooseAg = 0
@@ -760,6 +793,14 @@ function! <sid>ChooseGrepProgram(...)
             let i = i + 1
         else
             let chooseGrep = -1
+        endif
+        " git grep
+        if executable("git")
+            let chooseGitGrep = i
+            call extend(lst, [ i.". git grep" ])
+            let i = i + 1
+        else
+            let chooseGitGrep = -1
         endif
         " awk
         if executable("ack-grep")
@@ -800,6 +841,8 @@ function! <sid>ChooseGrepProgram(...)
             let grepChoiceStr = "findstr"
         elseif grepChoice == chooseGrep
             let grepChoiceStr = "grep"
+        elseif grepChoice == chooseGitGrep
+            let grepChoiceStr = "git grep"
         elseif grepChoice == chooseAckGrep
             let grepChoiceStr = "ack-grep"
         elseif grepChoice == chooseAck
@@ -830,27 +873,29 @@ endfunction
 "}}}
 " SetGrepCommand {{{
 function! s:SetGrepCommand(grepChoice)
-    if a:grepChoice == "1"
+    if a:grepChoice ==# "1"
         let g:EasyGrepCommand = 1
-    elseif a:grepChoice == "0" || a:grepChoice == "vimgrep"
+    elseif a:grepChoice ==# "0" || a:grepChoice ==# "vimgrep"
         let g:EasyGrepCommand = 0
     else
         let g:EasyGrepCommand = 1
-        if a:grepChoice == "findstr"
+        if a:grepChoice ==# "findstr"
             set grepprg=findstr\ /n
-        elseif a:grepChoice == "grep"
+        elseif a:grepChoice ==# "grep"
             if has("win32")
                 set grepprg=grep\ -n
             else
                 set grepprg=grep\ -n\ $*\ /dev/null
             endif
-        elseif a:grepChoice == "ack-grep"
+        elseif a:grepChoice ==# "git grep"
+            set grepprg=git\ grep\ -n
+        elseif a:grepChoice ==# "ack-grep"
             set grepprg=ack-grep\ --nogroup\ --nocolor\ --column\ --with-filename
-        elseif a:grepChoice == "ack"
+        elseif a:grepChoice ==# "ack"
             set grepprg=ack\ --nogroup\ --nocolor\ --column\ --with-filename
-        elseif a:grepChoice == "ag"
+        elseif a:grepChoice ==# "ag"
             set grepprg=ag\ --nogroup\ --nocolor\ --column
-        elseif a:grepChoice == "pt"
+        elseif a:grepChoice ==# "pt"
             set grepprg=pt\ --nogroup\ --nocolor
         else
             return 0
@@ -870,7 +915,7 @@ function! <sid>EchoGrepCommand()
     let placeholder = "<pattern>"
     let dirAnnotation = "Current Directory:     "
     let grepCommand = s:GetGrepCommandLine(placeholder, "", 0, "", 1)
-    if g:EasyGrepSearchCurrentBufferDir && !s:IsModeBuffers()
+    if g:EasyGrepSearchCurrentBufferDir && s:IsBufferDirSearchAllowed()
         let dirs = s:GetDirectorySearchList()
         for d in dirs
             call s:Echo(dirAnnotation.d)
@@ -904,6 +949,7 @@ function! <sid>EchoOptionsSet()
             \ "g:EasyGrepSearchCurrentBufferDir",
             \ "g:EasyGrepIgnoreCase",
             \ "g:EasyGrepHidden",
+            \ "g:EasyGrepFilesToInclude",
             \ "g:EasyGrepFilesToExclude",
             \ "g:EasyGrepAllOptionsInExplorer",
             \ "g:EasyGrepWindow",
@@ -1423,6 +1469,7 @@ function! s:CreateOptionMappings()
     exe "nmap <silent> ".p."t  :call <sid>ActivateTracked()<cr>"
     exe "nmap <silent> ".p."u  :call <sid>ActivateUser()<cr>"
 
+    exe "nmap <silent> ".p."I  :call <sid>SetFilesToInclude()<cr>"
     exe "nmap <silent> ".p."x  :call <sid>SetFilesToExclude()<cr>"
     exe "nmap <silent> ".p."c  :call <sid>ToggleCommand()<cr>"
     exe "nmap <silent> ".p."r  :call <sid>ToggleRecursion()<cr>"
@@ -1486,8 +1533,9 @@ function! s:CreateOptionsString()
     endif
     call add(s:Options, "\"?: show ". (g:EasyGrepAllOptionsInExplorer ? "fewer" : "more")." options")
     call add(s:Options, "")
-    call add(s:Options, "\"Current Directory: ".s:GetCwdEscaped())
+    "call add(s:Options, "\"Current Directory: ".s:GetCwdEscaped())
     call add(s:Options, "\"Grep Targets: ".join(s:GetFileTargetList(0), ' '))
+    call add(s:Options, "\"Inclusions: ".(!empty(g:EasyGrepFilesToInclude) ? g:EasyGrepFilesToInclude : "none"))
     call add(s:Options, "\"Exclusions: ".(!empty(g:EasyGrepFilesToExclude) ? g:EasyGrepFilesToExclude : "none").(empty(g:EasyGrepFilesToExclude) || s:CommandSupportsExclusions() ? "" : " (only supported with grepprg of 'ack' or 'grep')"))
     call add(s:Options, "")
 
@@ -1856,6 +1904,7 @@ function! s:ValidateGrepCommand()
 
     if    !s:IsCommandVimgrep() &&
         \ !s:IsCommandGrep()    &&
+        \ !s:IsCommandGitGrep() &&
         \ !s:IsCommandFindstr() &&
         \ !s:IsCommandAck() &&
         \ !s:IsCommandPt()
@@ -2306,9 +2355,19 @@ function! s:IsCommandAck()
     return !s:IsCommandVimgrep() && (s:GetGrepProgramName() == "ack" || s:GetGrepProgramName() == "ack-grep" || s:GetGrepProgramName() == "ag")
 endfunction
 "}}}
+" IsCommandGrep {{{
+function! s:IsCommandGrep()
+    return !s:IsCommandVimgrep() && (s:GetGrepProgramName() == "grep")
+endfunction
+"}}}
+" IsCommandGitGrep {{{
+function! s:IsCommandGitGrep()
+    return !s:IsCommandVimgrep() && (s:GetGrepProgramName() == "git")
+endfunction
+"}}}
 " IsCommandPt {{{
 function! s:IsCommandPt()
-    return !s:IsCommandGrep() || (s:GetGrepCommandName() == "pt")
+    return !s:IsCommandVimgrep() && (s:GetGrepProgramName() == "pt")
 endfunction
 "}}}
 " IsCommandFindstr {{{
@@ -2316,36 +2375,113 @@ function! s:IsCommandFindstr()
     return !s:IsCommandVimgrep() && (s:GetGrepProgramName() == "findstr")
 endfunction
 "}}}
-" IsCommandGrep {{{
-function! s:IsCommandGrep()
-    return !s:IsCommandVimgrep() && (s:GetGrepProgramName() == "grep")
+" GetGrepCommandParameters {{{
+function! s:GetGrepCommandParameters()
+
+    if s:IsCommandVimgrep()
+        return {
+                \ 'recurse': '',
+                \ 'caseignore': '',
+                \ 'casematch': '',
+                \ 'patternpre': '/',
+                \ 'patternpost': '/',
+                \ 'wholewordpre': '\<',
+                \ 'wholewordpost': '\>',
+                \ 'filtertargetsnofiles': '0',
+                \ 'bufferdirsearchallowed': '1',
+                \ 'backslashdir': '0',
+                \ 'errorsuppress': '',
+                \ }
+    elseif s:IsCommandGrep()
+        return {
+                \ 'recurse': '-R',
+                \ 'caseignore': '-i',
+                \ 'casematch': '',
+                \ 'patternpre': '\"',
+                \ 'patternpost': '\"',
+                \ 'wholewordpre': '-w ',
+                \ 'wholewordpost': '',
+                \ 'filtertargetsnofiles': '1',
+                \ 'bufferdirsearchallowed': '!recursive',
+                \ 'backslashdir': '0',
+                \ 'errorsuppress': '-s',
+                \ }
+    elseif s:IsCommandGitGrep()
+        return {
+                \ 'recurse': '-R',
+                \ 'caseignore': '-i',
+                \ 'casematch': '',
+                \ 'patternpre': '"',
+                \ 'patternpost': '"',
+                \ 'wholewordpre': '-w ',
+                \ 'wholewordpost': '',
+                \ 'filtertargetsnofiles': '1',
+                \ 'bufferdirsearchallowed': '0',
+                \ 'backslashdir': '0',
+                \ 'errorsuppress': '',
+                \ }
+    elseif s:IsCommandAck()
+        return {
+                \ 'recurse': '',
+                \ 'caseignore': '-i',
+                \ 'casematch': '',
+                \ 'patternpre': '\"',
+                \ 'patternpost': '\"',
+                \ 'wholewordpre': '-w ',
+                \ 'wholewordpost': '',
+                \ 'filtertargetsnofiles': '1',
+                \ 'bufferdirsearchallowed': '1',
+                \ 'backslashdir': '0',
+                \ 'errorsuppress': '',
+                \ }
+    elseif s:IsCommandPt()
+        return {
+                \ 'recurse': '',
+                \ 'caseignore': '-i',
+                \ 'casematch': '',
+                \ 'patternpre': '',
+                \ 'patternpost': '',
+                \ 'wholewordpre': '-w ',
+                \ 'wholewordpost': '',
+                \ 'filtertargetsnofiles': '1',
+                \ 'bufferdirsearchallowed': '1',
+                \ 'backslashdir': '0',
+                \ 'errorsuppress': '',
+                \ }
+    elseif s:IsCommandFindstr()
+        return {
+                \ 'recurse': '/S',
+                \ 'caseignore': '/I',
+                \ 'casematch': '/i',
+                \ 'patternpre': '',
+                \ 'patternpost': '',
+                \ 'wholewordpre': '"\<',
+                \ 'wholewordpost': '\>"',
+                \ 'filtertargetsnofiles': '1',
+                \ 'bufferdirsearchallowed': '1',
+                \ 'backslashdir': '1',
+                \ 'errorsuppress': '',
+                \ }
+    endif
+    return {}
 endfunction
-"}}}
-" GetGrepCommandLine{{{
+" }}}
+" GetGrepCommandLine {{{
 function! s:GetGrepCommandLine(pattern, add, whole, count, escapeArgs)
 
     call s:CheckCommandRequirements()
-    let commandIsVimgrep = s:IsCommandVimgrep()
-    let commandIsGrep = s:IsCommandGrep()
-    let commandIsFindstr = s:IsCommandFindstr()
-    let commandIsAck = s:IsCommandAck()
-    let commandIsPt = s:IsCommandPt()
 
     let com = s:GetGrepCommandName()
 
     let bang = ""
-    let s1 = ""
-    let s2 = ""
-    if commandIsVimgrep
-        let s1 = "/"
-        let s2 = "/"
-
+    let patternpost = ""
+    if s:IsCommandVimgrep()
         if g:EasyGrepEveryMatch
-            let s2 .= "g"
+            let patternpost .= "g"
         endif
 
         if !g:EasyGrepJumpToMatch
-            let s2 .= "j"
+            let patternpost .= "j"
         endif
     else
         if !g:EasyGrepJumpToMatch
@@ -2353,59 +2489,57 @@ function! s:GetGrepCommandLine(pattern, add, whole, count, escapeArgs)
         endif
     endif
 
-    let opts = ""
-
     if g:EasyGrepInvertWholeWord
         let whole = !a:whole
     else
         let whole = a:whole
     endif
 
+    let commandParams = s:GetGrepCommandParameters()
+
     let pattern = a:escapeArgs ? s:EscapeSpecial(a:pattern) : a:pattern
-    if commandIsGrep || commandIsAck
-        let pattern = "\"".pattern."\""
+
+    " Enclose the pattern if needed
+    let pattern = commandParams["patternpre"].pattern.commandParams["patternpost"]
+
+    " Whole word
+    if whole
+        let pattern = commandParams["wholewordpre"].pattern.commandParams["wholewordpost"]
     endif
 
-    if whole
-        if commandIsVimgrep
-            let pattern = "\\<".pattern."\\>"
-        elseif commandIsGrep || commandIsAck || commandIsPt
-            let pattern = "-w ".pattern
-        elseif commandIsFindstr
-            let pattern = "\"\\<".pattern."\\>\""
-        endif
-    endif
+    let opts = ""
 
     if s:IsRecursiveSearch()
-        if commandIsGrep
-            let opts .= "-R "
-        elseif commandIsFindstr
-            let opts .= "/S "
-        elseif commandIsAck || commandIsPt
-            " do nothing
+        if len(commandParams["recurse"])
+            let opts .= commandParams["recurse"]." "
         endif
     endif
 
     if g:EasyGrepIgnoreCase
-        if commandIsGrep || commandIsAck
-            let opts .= "-i "
-        elseif commandIsFindstr
-            let opts .= "/I "
+        if len(commandParams["caseignore"])
+            let opts .= commandParams["caseignore"]." "
         endif
     else
-        if commandIsFindstr
-            let opts .= "/i "
+        if len(commandParams["casematch"])
+            let opts .= commandParams["casematch"]." "
         endif
+    endif
+
+    " Suppress errors
+    if len(commandParams["errorsuppress"])
+        let opts .= commandParams["errorsuppress"]." "
     endif
 
     let fileTargetList = s:GetFileTargetList(1)
     let filesToExclude = g:EasyGrepFilesToExclude
 
-    " Set extra inclusions and exclusions
-    if commandIsGrep
-        " Ignore errors
-        let opts .= "-s"
+    if commandParams["filtertargetsnofiles"] == 1
+    \ || commandParams["filtertargetsnofiles"] == '1'
+        call s:FilterTargetsWithNoFiles(fileTargetList)
+    endif
 
+    " Set extra inclusions and exclusions
+    if s:IsCommandGrep()
         " Specific inclusions are only set in recursive mode
         if s:IsRecursiveSearch()
             " The --include paths will contain the file patterns
@@ -2420,12 +2554,9 @@ function! s:GetGrepCommandLine(pattern, add, whole, count, escapeArgs)
         endif
 
         let opts .= " " . join(map(split(filesToExclude, ','), '"--exclude=\"".v:val."\""." --exclude-dir=\"".v:val."\""'), ' ')
-    elseif commandIsFindstr
-        call s:FilterPatternsWithNoFiles(fileTargetList)
+    elseif s:IsCommandFindstr()
         call map(fileTargetList, 's:ForwardToBackSlash(v:val)')
-    elseif commandIsAck
-        call s:FilterPatternsWithNoFiles(fileTargetList)
-
+    elseif s:IsCommandAck()
         " Patch up the command line in a way that ack understands; do the
         " following:
         " 1) Replace a leading star with the current directory
@@ -2439,7 +2570,7 @@ function! s:GetGrepCommandLine(pattern, add, whole, count, escapeArgs)
     let filesToGrep = join(fileTargetList, ' ')
 
     let win = g:EasyGrepWindow != 0 ? "l" : ""
-    let grepCommand = a:count.win.com.a:add.bang." ".opts." ".s1.pattern.s2." ".filesToGrep
+    let grepCommand = a:count.win.com.a:add.bang." ".opts." ".pattern.patternpost." ".filesToGrep
 
     return grepCommand
 endfunction
@@ -2560,8 +2691,8 @@ function! s:HasFilesThatMatch()
     return 0
 endfunction
 "}}}
-" FilterPatternsWithNoFiles {{{
-function! s:FilterPatternsWithNoFiles(fileTargetList)
+" FilterTargetsWithNoFiles {{{
+function! s:FilterTargetsWithNoFiles(fileTargetList)
     call filter(a:fileTargetList, 'glob(s:Trim(v:val)) != ""')
 endfunction
 "}}}
@@ -2605,7 +2736,7 @@ function! s:ReplaceString(str, whole, escapeArgs)
             return
         endif
     endif
-    if r == a:str
+    if r ==# a:str
         call s:Echo("No change in pattern")
         return
     endif
@@ -3361,6 +3492,10 @@ else
        call s:Error("Invalid position specified in g:EasyGrepWindowPosition")
        let g:EasyGrepWindowPosition=""
    endif
+endif
+
+if !exists("g:EasyGrepFilesToInclude")
+    let g:EasyGrepFilesToInclude=""
 endif
 
 if !exists("g:EasyGrepFilesToExclude")
