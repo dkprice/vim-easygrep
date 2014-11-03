@@ -208,8 +208,8 @@ endfunction
 "}}}
 " EscapeSpecial {{{
 function! s:EscapeSpecial(str)
-    let lst = [ '\', '^', '$' ] "needs escaping once
-    let dlst = []               "needs escaping twice
+    let lst = [ '\', '^', '$', '#' ] "needs escaping once
+    let dlst = []                    "needs escaping twice
     if s:IsCommandVimgrep()
         call extend(lst, [ '/' ])
         if &magic
@@ -2425,8 +2425,8 @@ function! s:GetGrepCommandParameters()
                 \ 'recurse': '',
                 \ 'caseignore': '-i',
                 \ 'casematch': '',
-                \ 'patternpre': '\"',
-                \ 'patternpost': '\"',
+                \ 'patternpre': '"',
+                \ 'patternpost': '"',
                 \ 'wholewordpre': '-w ',
                 \ 'wholewordpost': '',
                 \ 'filtertargetsnofiles': '1',
