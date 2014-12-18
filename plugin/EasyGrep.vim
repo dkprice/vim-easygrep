@@ -1536,7 +1536,7 @@ function! s:CreateOptionsString()
     "call add(s:Options, "\"Current Directory: ".s:GetCwdEscaped())
     call add(s:Options, "\"Grep Targets: ".join(s:GetFileTargetList(0), ' '))
     call add(s:Options, "\"Inclusions: ".(!empty(g:EasyGrepFilesToInclude) ? g:EasyGrepFilesToInclude : "none"))
-    call add(s:Options, "\"Exclusions: ".(!empty(g:EasyGrepFilesToExclude) ? g:EasyGrepFilesToExclude : "none").(empty(g:EasyGrepFilesToExclude) || s:CommandSupportsExclusions() ? "" : " (only supported with grepprg of 'ack' or 'grep')"))
+    call add(s:Options, "\"Exclusions: ".(!empty(g:EasyGrepFilesToExclude) ? g:EasyGrepFilesToExclude : "none").(empty(g:EasyGrepFilesToExclude) || s:CommandSupportsExclusions() ? "" : " (only supported with vimgrep or a grepprg of 'ack' or 'grep' )"))
     call add(s:Options, "")
 
 endfunction
@@ -2332,17 +2332,21 @@ function! s:SetGrepVariables(command)
     if s:IsCommandVimgrep()
         call s:SaveVariable("ignorecase")
         let &ignorecase = g:EasyGrepIgnoreCase
+
+        call s:SaveVariable("wildignore")
+        silent exe "set wildignore+=".g:EasyGrepFilesToExclude
     endif
 endfunction
 "}}}
 " RestoreGrepVariables{{{
 function! s:RestoreGrepVariables()
     call s:RestoreVariable("ignorecase")
+    call s:RestoreVariable("wildignore")
 endfunction
 "}}}
 " CommandSupportsExclusions {{{
 function! s:CommandSupportsExclusions()
-    return s:IsCommandAck() || s:IsCommandGrep()
+    return s:IsCommandAck() || s:IsCommandGrep() || s:IsCommandVimgrep()
 endfunction
 "}}}
 " IsCommandVimgrep {{{
@@ -3498,7 +3502,7 @@ if !exists("g:EasyGrepFilesToInclude")
 endif
 
 if !exists("g:EasyGrepFilesToExclude")
-    let g:EasyGrepFilesToExclude=""
+    let g:EasyGrepFilesToExclude="*.swp,*~"
 endif
 
 " EasyGrepDefaultUserPattern {{{
