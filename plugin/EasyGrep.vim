@@ -2645,15 +2645,14 @@ function! s:DoGrep(pattern, add, whole, count, escapeArgs)
         let failed = 1
     endtry
 
-    " In some cases the colors of vim's layout might be borked, so force vim to redraw:
-    redraw!
-
     call s:RestoreGrepVariables()
     if failed
         return 0
     endif
 
     if s:HasGrepResults()
+        " In some cases the colors of vim's layout might be borked, so force vim to redraw:
+        redraw!
         if g:EasyGrepOpenWindowOnMatch
             if g:EasyGrepWindow == 0
                 execute g:EasyGrepWindowPosition." copen"
