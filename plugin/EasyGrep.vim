@@ -1985,19 +1985,19 @@ endfunction
 " }}}
 " Selection Functions {{{
 " GrepSelection {{{
-function! <sid>GrepSelection(add, whole)
+function! <sid>GrepSelection(add, wholeword)
     call s:SetGatewayVariables()
     let currSelection=s:GetCurrentSelection()
     if empty(currSelection)
         call s:Warning("No current selection")
         return s:ClearGatewayVariables()
     endif
-    call s:DoGrep(currSelection, a:add, a:whole, "", 1)
+    call s:DoGrep(currSelection, a:add, a:wholeword, "", 1)
     return s:ClearGatewayVariables()
 endfunction
 " }}}
 " GrepCurrentWord {{{
-function! <sid>GrepCurrentWord(add, whole)
+function! <sid>GrepCurrentWord(add, wholeword)
     call s:SetGatewayVariables()
     let currWord=s:GetCurrentWord()
     if empty(currWord)
@@ -2006,12 +2006,12 @@ function! <sid>GrepCurrentWord(add, whole)
     endif
 
     call s:CheckIfCurrentFileIsSearched()
-    let r = s:DoGrep(currWord, a:add, a:whole, "", 1)
+    let r = s:DoGrep(currWord, a:add, a:wholeword, "", 1)
     return s:ClearGatewayVariables()
 endfunction
 " }}}
 " ReplaceSelection {{{
-function! <sid>ReplaceSelection(whole)
+function! <sid>ReplaceSelection(wholeword)
     call s:SetGatewayVariables()
     let currSelection=s:GetCurrentSelection()
     if empty(currSelection)
@@ -2019,7 +2019,7 @@ function! <sid>ReplaceSelection(whole)
         return s:ClearGatewayVariables()
     endif
 
-    call s:ReplaceString(currSelection, a:whole, 1)
+    call s:ReplaceString(currSelection, a:wholeword, 1)
     return s:ClearGatewayVariables()
 endfunction
 "}}}
@@ -2034,7 +2034,7 @@ function! s:GetCurrentSelection()
 endfunction
 " }}}
 " ReplaceCurrentWord {{{
-function! <sid>ReplaceCurrentWord(whole)
+function! <sid>ReplaceCurrentWord(wholeword)
     call s:SetGatewayVariables()
     let currWord=s:GetCurrentWord()
     if empty(currWord)
@@ -2042,7 +2042,7 @@ function! <sid>ReplaceCurrentWord(whole)
         return s:ClearGatewayVariables()
     endif
 
-    call s:ReplaceString(currWord, a:whole, 1)
+    call s:ReplaceString(currWord, a:wholeword, 1)
     return s:ClearGatewayVariables()
 endfunction
 "}}}
@@ -2158,7 +2158,7 @@ function! s:RestoreCommandLineOptions(opts)
 endfunction
 " }}}
 " Replace {{{
-function! s:Replace(whole, argv)
+function! s:Replace(wholeword, argv)
     call s:SetGatewayVariables()
 
     let l = len(a:argv)
@@ -2204,7 +2204,7 @@ function! s:Replace(whole, argv)
     let target = argv[0]
     let replacement = argv[1]
 
-    call s:DoReplace(target, replacement, a:whole, 0)
+    call s:DoReplace(target, replacement, a:wholeword, 0)
     return s:ClearGatewayVariables()
 endfunction
 "}}}
@@ -2471,7 +2471,7 @@ function! s:GetGrepCommandParameters()
 endfunction
 " }}}
 " GetGrepCommandLine {{{
-function! s:GetGrepCommandLine(pattern, add, whole, count, escapeArgs)
+function! s:GetGrepCommandLine(pattern, add, wholeword, count, escapeArgs)
 
     call s:CheckCommandRequirements()
 
@@ -2494,9 +2494,9 @@ function! s:GetGrepCommandLine(pattern, add, whole, count, escapeArgs)
     endif
 
     if g:EasyGrepInvertWholeWord
-        let whole = !a:whole
+        let wholeword = !a:wholeword
     else
-        let whole = a:whole
+        let wholeword = a:wholeword
     endif
 
     let commandParams = s:GetGrepCommandParameters()
@@ -2506,8 +2506,7 @@ function! s:GetGrepCommandLine(pattern, add, whole, count, escapeArgs)
     " Enclose the pattern if needed
     let pattern = commandParams["patternpre"].pattern.commandParams["patternpost"]
 
-    " Whole word
-    if whole
+    if wholeword
         let pattern = commandParams["wholewordpre"].pattern.commandParams["wholewordpost"]
     endif
 
@@ -2601,7 +2600,7 @@ endfunction
 
 " }}}
 " DoGrep {{{
-function! s:DoGrep(pattern, add, whole, count, escapeArgs)
+function! s:DoGrep(pattern, add, wholeword, count, escapeArgs)
     call s:CreateGrepDictionary()
 
     if s:OptionsExplorerOpen == 1
@@ -2619,7 +2618,7 @@ function! s:DoGrep(pattern, add, whole, count, escapeArgs)
     endif
 
     call s:SetGrepVariables(commandName)
-    let grepCommand = s:GetGrepCommandLine(a:pattern, a:add, a:whole, a:count, a:escapeArgs)
+    let grepCommand = s:GetGrepCommandLine(a:pattern, a:add, a:wholeword, a:count, a:escapeArgs)
 
     let failed = 0
     try
@@ -2730,7 +2729,7 @@ endfunction
 " }}}
 " Replace Implementation {{{
 " ReplaceString {{{
-function! s:ReplaceString(str, whole, escapeArgs)
+function! s:ReplaceString(str, wholeword, escapeArgs)
     call s:CheckIfCurrentFileIsSearched()
     let r = input("Replace '".a:str."' with: ", a:str)
     if empty(r)
@@ -2744,13 +2743,13 @@ function! s:ReplaceString(str, whole, escapeArgs)
         return
     endif
 
-    call s:DoReplace(a:str, r, a:whole, a:escapeArgs)
+    call s:DoReplace(a:str, r, a:wholeword, a:escapeArgs)
 endfunction
 "}}}
 " DoReplace {{{
-function! s:DoReplace(target, replacement, whole, escapeArgs)
+function! s:DoReplace(target, replacement, wholeword, escapeArgs)
 
-    if !s:DoGrep(a:target, "", a:whole, "", a:escapeArgs)
+    if !s:DoGrep(a:target, "", a:wholeword, "", a:escapeArgs)
         return
     endif
 
@@ -2794,12 +2793,12 @@ function! s:DoReplace(target, replacement, whole, escapeArgs)
     endif
 
     if g:EasyGrepInvertWholeWord
-        let whole = !a:whole
+        let wholeword = !a:wholeword
     else
-        let whole = a:whole
+        let wholeword = a:wholeword
     endif
 
-    if whole
+    if wholeword
         let target = "\\<".target."\\>"
     endif
 
