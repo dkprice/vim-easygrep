@@ -2395,6 +2395,7 @@ function! s:GetGrepCommandParameters()
                 \ 'bufferdirsearchallowed': '1',
                 \ 'backslashdir': '0',
                 \ 'errorsuppress': '',
+                \ 'directoryneedsbackslash': '0',
                 \ }
     elseif s:IsCommandGrep()
         return {
@@ -2409,6 +2410,7 @@ function! s:GetGrepCommandParameters()
                 \ 'bufferdirsearchallowed': '!recursive',
                 \ 'backslashdir': '0',
                 \ 'errorsuppress': '-s',
+                \ 'directoryneedsbackslash': '0',
                 \ }
     elseif s:IsCommandGitGrep()
         return {
@@ -2423,6 +2425,7 @@ function! s:GetGrepCommandParameters()
                 \ 'bufferdirsearchallowed': '0',
                 \ 'backslashdir': '0',
                 \ 'errorsuppress': '',
+                \ 'directoryneedsbackslash': '0',
                 \ }
     elseif s:IsCommandAck()
         return {
@@ -2437,6 +2440,7 @@ function! s:GetGrepCommandParameters()
                 \ 'bufferdirsearchallowed': '1',
                 \ 'backslashdir': '0',
                 \ 'errorsuppress': '',
+                \ 'directoryneedsbackslash': '0',
                 \ }
     elseif s:IsCommandPt()
         return {
@@ -2451,6 +2455,7 @@ function! s:GetGrepCommandParameters()
                 \ 'bufferdirsearchallowed': '1',
                 \ 'backslashdir': '0',
                 \ 'errorsuppress': '',
+                \ 'directoryneedsbackslash': '0',
                 \ }
     elseif s:IsCommandFindstr()
         return {
@@ -2465,6 +2470,7 @@ function! s:GetGrepCommandParameters()
                 \ 'bufferdirsearchallowed': '1',
                 \ 'backslashdir': '1',
                 \ 'errorsuppress': '',
+                \ 'directoryneedsbackslash': '1',
                 \ }
     endif
     return {}
@@ -2541,6 +2547,10 @@ function! s:GetGrepCommandLine(pattern, add, wholeword, count, escapeArgs)
         call s:FilterTargetsWithNoFiles(fileTargetList)
     endif
 
+    if commandParams["directoryneedsbackslash"] == 1
+        call map(fileTargetList, 's:ForwardToBackSlash(v:val)')
+    endif
+
     " Set extra inclusions and exclusions
     if s:IsCommandGrep()
         " Specific inclusions are only set in recursive mode
@@ -2557,8 +2567,6 @@ function! s:GetGrepCommandLine(pattern, add, wholeword, count, escapeArgs)
         endif
 
         let opts .= " " . join(map(split(filesToExclude, ','), '"--exclude=\"".v:val."\""." --exclude-dir=\"".v:val."\""'), ' ')
-    elseif s:IsCommandFindstr()
-        call map(fileTargetList, 's:ForwardToBackSlash(v:val)')
     elseif s:IsCommandAck()
         " Patch up the command line in a way that ack understands; do the
         " following:
