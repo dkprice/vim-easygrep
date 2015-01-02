@@ -1536,7 +1536,7 @@ function! s:CreateOptionsString()
     "call add(s:Options, "\"Current Directory: ".s:GetCwdEscaped())
     call add(s:Options, "\"Grep Targets: ".join(s:GetFileTargetList(0), ' '))
     call add(s:Options, "\"Inclusions: ".(!empty(g:EasyGrepFilesToInclude) ? g:EasyGrepFilesToInclude : "none"))
-    call add(s:Options, "\"Exclusions: ".(!empty(g:EasyGrepFilesToExclude) ? g:EasyGrepFilesToExclude : "none").(empty(g:EasyGrepFilesToExclude) || s:CommandSupportsExclusions() ? "" : " (only supported with vimgrep or a grepprg of 'ack' or 'grep' )"))
+    call add(s:Options, "\"Exclusions: ".(!empty(g:EasyGrepFilesToExclude) ? g:EasyGrepFilesToExclude : "none").(empty(g:EasyGrepFilesToExclude) || s:CommandSupportsExclusions() ? "" : " (not supported with grepprg='".s:GetGrepProgramName()."')"))
     call add(s:Options, "")
 
 endfunction
@@ -2346,7 +2346,8 @@ endfunction
 "}}}
 " CommandSupportsExclusions {{{
 function! s:CommandSupportsExclusions()
-    return s:IsCommandAck() || s:IsCommandGrep() || s:IsCommandVimgrep()
+    let commandParams = s:GetGrepCommandParameters()
+    return commandParams["supportsexclusions"] == 1
 endfunction
 "}}}
 " IsCommandVimgrep {{{
@@ -2384,6 +2385,7 @@ function! s:GetGrepCommandParameters()
 
     if s:IsCommandVimgrep()
         return {
+                \ 'supportsexclusions': '1',
                 \ 'recurse': '',
                 \ 'caseignore': '',
                 \ 'casematch': '',
@@ -2399,6 +2401,7 @@ function! s:GetGrepCommandParameters()
                 \ }
     elseif s:IsCommandGrep()
         return {
+                \ 'supportsexclusions': '1',
                 \ 'recurse': '-R',
                 \ 'caseignore': '-i',
                 \ 'casematch': '',
@@ -2414,6 +2417,7 @@ function! s:GetGrepCommandParameters()
                 \ }
     elseif s:IsCommandGitGrep()
         return {
+                \ 'supportsexclusions': '0',
                 \ 'recurse': '-R',
                 \ 'caseignore': '-i',
                 \ 'casematch': '',
@@ -2429,6 +2433,7 @@ function! s:GetGrepCommandParameters()
                 \ }
     elseif s:IsCommandAck()
         return {
+                \ 'supportsexclusions': '1',
                 \ 'recurse': '',
                 \ 'caseignore': '-i',
                 \ 'casematch': '',
@@ -2444,6 +2449,7 @@ function! s:GetGrepCommandParameters()
                 \ }
     elseif s:IsCommandPt()
         return {
+                \ 'supportsexclusions': '0',
                 \ 'recurse': '',
                 \ 'caseignore': '-i',
                 \ 'casematch': '',
@@ -2459,6 +2465,7 @@ function! s:GetGrepCommandParameters()
                 \ }
     elseif s:IsCommandFindstr()
         return {
+                \ 'supportsexclusions': '0',
                 \ 'recurse': '/S',
                 \ 'caseignore': '/I',
                 \ 'casematch': '/i',
