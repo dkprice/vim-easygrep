@@ -255,12 +255,15 @@ indicated by the 'magic' option (see ":help 'magic'").
                                                             *:ResultListFilter*
 :ResultListFilter [args]
     Removes entries from the error list according to whether or not they match
-    a set of specified patterns.  The default behaviour is to save all entries
-    that match one of the patterns and remove those that do not.
+    a set of specified patterns.
 
     The Above command can additionally accept command switches:
-    -v   Switch the criteria for matching; remove entries matching one of the
-         specified patterns instead of saving them
+    -g   [default] Save all entries that match one of the patterns and remove
+         those that do not.
+    -v   Invert the criteria for matching; remove entries matching one of the
+         specified patterns instead of saving them.
+    -t   [default] Match against the result text.
+    -f   Match against the file entry in the result list.
 
                                                              *:ResultListOpen*
 :ResultListOpen

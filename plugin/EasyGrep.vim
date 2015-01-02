@@ -3017,6 +3017,7 @@ endfunction
 " ResultListFilter {{{
 function! s:ResultListFilter(...)
     let mode = 'g'
+    let entry = 'd.text'
 
     let filterlist = []
     for s in a:000
@@ -3029,6 +3030,8 @@ function! s:ResultListFilter(...)
                     return
                 endif
                 let mode = 'g'
+            elseif s == '-f'
+                let entry = 'bufname(d.bufnr)'
             else
                 call s:Error("Invalid command line switch")
                 return
@@ -3053,7 +3056,7 @@ function! s:ResultListFilter(...)
     for d in lst
         let matched = 0
         for f in filterlist
-            let r = match(d.text, f)
+            exe "let r = match(".entry.", f)"
             if mode == 'g'
                 let matched = (r != -1)
             else
