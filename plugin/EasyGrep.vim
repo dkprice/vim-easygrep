@@ -2393,6 +2393,7 @@ function! s:GetGrepCommandParameters()
                 \ 'patternpost': '/',
                 \ 'wholewordpre': '\<',
                 \ 'wholewordpost': '\>',
+                \ 'exclusionsmap': '',
                 \ 'filtertargetsnofiles': '0',
                 \ 'bufferdirsearchallowed': '1',
                 \ 'backslashdir': '0',
@@ -2409,6 +2410,7 @@ function! s:GetGrepCommandParameters()
                 \ 'patternpost': '"',
                 \ 'wholewordpre': '-w ',
                 \ 'wholewordpost': '',
+                \ 'exclusionsmap': '"--exclude=\"".v:val."\""." --exclude-dir=\"".v:val."\""',
                 \ 'filtertargetsnofiles': '1',
                 \ 'bufferdirsearchallowed': '!recursive',
                 \ 'backslashdir': '0',
@@ -2425,6 +2427,7 @@ function! s:GetGrepCommandParameters()
                 \ 'patternpost': '"',
                 \ 'wholewordpre': '-w ',
                 \ 'wholewordpost': '',
+                \ 'exclusionsmap': '',
                 \ 'filtertargetsnofiles': '1',
                 \ 'bufferdirsearchallowed': '0',
                 \ 'backslashdir': '0',
@@ -2441,6 +2444,7 @@ function! s:GetGrepCommandParameters()
                 \ 'patternpost': '"',
                 \ 'wholewordpre': '-w ',
                 \ 'wholewordpost': '',
+                \ 'exclusionsmap': '"--ignore-dir=\"".v:val."\""',
                 \ 'filtertargetsnofiles': '1',
                 \ 'bufferdirsearchallowed': '1',
                 \ 'backslashdir': '0',
@@ -2457,6 +2461,7 @@ function! s:GetGrepCommandParameters()
                 \ 'patternpost': '',
                 \ 'wholewordpre': '-w ',
                 \ 'wholewordpost': '',
+                \ 'exclusionsmap': '',
                 \ 'filtertargetsnofiles': '1',
                 \ 'bufferdirsearchallowed': '1',
                 \ 'backslashdir': '0',
@@ -2473,6 +2478,7 @@ function! s:GetGrepCommandParameters()
                 \ 'patternpost': '',
                 \ 'wholewordpre': '"\<',
                 \ 'wholewordpost': '\>"',
+                \ 'exclusionsmap': '',
                 \ 'filtertargetsnofiles': '1',
                 \ 'bufferdirsearchallowed': '1',
                 \ 'backslashdir': '1',
@@ -2558,6 +2564,11 @@ function! s:GetGrepCommandLine(pattern, add, wholeword, count, escapeArgs)
         call map(fileTargetList, 's:ForwardToBackSlash(v:val)')
     endif
 
+    " Add exclusions
+    if len(commandParams["exclusionsmap"])
+        let opts .= " " . join(map(split(filesToExclude, ','), commandParams["exclusionsmap"]), ' ') . " "
+    endif
+
     " Set extra inclusions and exclusions
     if s:IsCommandGrep()
         " Specific inclusions are only set in recursive mode
@@ -2572,17 +2583,12 @@ function! s:GetGrepCommandLine(pattern, add, wholeword, count, escapeArgs)
                 let fileTargetList = [ s:GetCwdEscaped() ]
             endif
         endif
-
-        let opts .= " " . join(map(split(filesToExclude, ','), '"--exclude=\"".v:val."\""." --exclude-dir=\"".v:val."\""'), ' ')
     elseif s:IsCommandAck()
         " Patch up the command line in a way that ack understands; do the
         " following:
         " 1) Replace a leading star with the current directory
         " 2) Replace all trailing stars with a space
         call map(fileTargetList, 'substitute(substitute(v:val, "^\\*$", s:GetCwdEscaped(), ""), "\\(.*\\)/\\*$", s:GetCwdEscaped()."/\\1", "")')
-
-        " Add exclusions
-        let opts .= " " . join(map(split(filesToExclude, ','), '"--ignore-dir=\"".v:val."\""'), ' ')
     endif
 
     let filesToGrep = join(fileTargetList, ' ')
