@@ -260,7 +260,8 @@ function! s:IsRecursiveSearch()
     if g:EasyGrepRecursive
         return !s:IsModeBuffers()
     endif
-    return s:IsCommandAck()
+    let commandParams = s:GetGrepCommandParameters()
+    return has_key(commandParams, "isinherentlyrecursive") && (commandParams["isinherentlyrecursive"] == 1)
 endfunction
 " }}}
 " GetSavedName {{{
@@ -2399,6 +2400,7 @@ function! s:GetGrepCommandParameters()
                 \ 'backslashdir': '0',
                 \ 'errorsuppress': '',
                 \ 'directoryneedsbackslash': '0',
+                \ 'isinherentlyrecursive': '0',
                 \ }
     elseif s:IsCommandGrep()
         return {
@@ -2416,6 +2418,7 @@ function! s:GetGrepCommandParameters()
                 \ 'backslashdir': '0',
                 \ 'errorsuppress': '-s',
                 \ 'directoryneedsbackslash': '0',
+                \ 'isinherentlyrecursive': '0',
                 \ }
     elseif s:IsCommandGitGrep()
         return {
@@ -2433,6 +2436,7 @@ function! s:GetGrepCommandParameters()
                 \ 'backslashdir': '0',
                 \ 'errorsuppress': '',
                 \ 'directoryneedsbackslash': '0',
+                \ 'isinherentlyrecursive': '0',
                 \ }
     elseif s:IsCommandAck()
         return {
@@ -2450,6 +2454,7 @@ function! s:GetGrepCommandParameters()
                 \ 'backslashdir': '0',
                 \ 'errorsuppress': '',
                 \ 'directoryneedsbackslash': '0',
+                \ 'isinherentlyrecursive': '1',
                 \ }
     elseif s:IsCommandPt()
         return {
@@ -2467,6 +2472,7 @@ function! s:GetGrepCommandParameters()
                 \ 'backslashdir': '0',
                 \ 'errorsuppress': '',
                 \ 'directoryneedsbackslash': '0',
+                \ 'isinherentlyrecursive': '0',
                 \ }
     elseif s:IsCommandFindstr()
         return {
@@ -2484,6 +2490,7 @@ function! s:GetGrepCommandParameters()
                 \ 'backslashdir': '1',
                 \ 'errorsuppress': '',
                 \ 'directoryneedsbackslash': '1',
+                \ 'isinherentlyrecursive': '0',
                 \ }
     endif
     return {}
