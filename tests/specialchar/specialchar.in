@@ -1,0 +1,28 @@
+
+myvar = this
+myvar =that
+myvar=that
+
+//a.b[i][j][k] += float(blk->dt * q(i,j,k)->v[1]);
+
+"This is a \\string with lots\ of backslash"
+Don't forget to go to the mall!
+Email me at vim@danprice.fast-mail.org
+What is your phone #?
+What % of the sale is your commission?
+We don't use ~ a lot in English but in spanish it's used a lot.
+Use the ^ (caret) to switch between files.
+I like apples & bananas
+When you write like ***this*** it will be printed in bold.
+How important is this to you (it's important to me).
+What is this - that?
+a + b = c, elementary
+Group important words in {}
+Enclose things in []
+Can you find \<this\>
+int x = Froobarnium();
+This has\ some \ escapes in it.
+
+x[i][j][k] = y(i,j,k)
+
+
