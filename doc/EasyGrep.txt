@@ -247,6 +247,10 @@ e.g.
 :GrepOptions
     Open the options explorer to set options.
 
+                                                                *:GrepProgram*
+:GrepProgram
+    Configures one of several supports grep programs
+
 
 For each of the search and replace commands, searching with regular
 expressions is supported.  Note that regular expressions are handled as
