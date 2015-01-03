@@ -261,7 +261,7 @@ function! s:IsRecursiveSearch()
         return !s:IsModeBuffers()
     endif
     let commandParams = s:GetGrepCommandParameters()
-    return has_key(commandParams, "isinherentlyrecursive") && (commandParams["isinherentlyrecursive"] == 1)
+    return has_key(commandParams, "isinherentlyrecursive") && (commandParams["isinherentlyrecursive"] == '1')
 endfunction
 " }}}
 " GetSavedName {{{
@@ -1021,7 +1021,8 @@ function! s:ActivateChoice(choice)
         let selectedMode = s:EasyGrepModeMultipleChoice
     endif
 
-    if s:IsCommandAck()
+    let commandParams = s:GetGrepCommandParameters()
+    if s:CommandHas("isselffiltering")
         if selectedMode != s:EasyGrepModeAll && selectedMode != s:EasyGrepModeBuffers
             call s:Error("Cannot activate '".s:GetModeName(selectedMode)."' mode when ".s:GetGrepProgramVarAndName().", as this grepprg implements its own filtering")
             return
@@ -1919,10 +1920,10 @@ endfunction
 " CheckGrepCommandForChanges {{{
 function! s:CheckGrepCommandForChanges()
     if &grepprg != s:LastSeenGrepprg
-        if s:IsCommandAck()
+        if s:CommandHas("isselffiltering")
             if !s:IsModeAll() && !s:IsModeBuffers()
                 call s:Info("==================================================================================")
-                call s:Info("The 'grepprg' has changed to '".s:GetGrepCommandName()."' since last inspected")
+                call s:Info("The 'grepprg' has changed to '".s:GetGrepProgramName()."' since last inspected")
                 call s:Info("Switching to 'All' mode as the '".s:GetModeName(g:EasyGrepMode)."' mode is incompatible with this program")
                 call s:Info("==================================================================================")
                 call s:ForceGrepMode(s:EasyGrepModeAll)
@@ -2381,6 +2382,17 @@ function! s:IsCommandFindstr()
     return !s:IsCommandVimgrep() && (s:GetGrepProgramName() == "findstr")
 endfunction
 "}}}
+" CommandParameterMatches {{{
+function! s:CommandParameterMatches(parameter, value)
+    let commandParams = s:GetGrepCommandParameters()
+    return has_key(commandParams, a:parameter) && (commandParams[a:parameter] == a:value)
+endfunction
+"}}}
+" CommandHas {{{
+function! s:CommandHas(parameter)
+    return s:CommandParameterMatches(a:parameter, '1')
+endfunction
+"}}}
 " GetGrepCommandParameters {{{
 function! s:GetGrepCommandParameters()
 
@@ -2401,6 +2413,7 @@ function! s:GetGrepCommandParameters()
                 \ 'errorsuppress': '',
                 \ 'directoryneedsbackslash': '0',
                 \ 'isinherentlyrecursive': '0',
+                \ 'isselffiltering': '0',
                 \ }
     elseif s:IsCommandGrep()
         return {
@@ -2419,6 +2432,7 @@ function! s:GetGrepCommandParameters()
                 \ 'errorsuppress': '-s',
                 \ 'directoryneedsbackslash': '0',
                 \ 'isinherentlyrecursive': '0',
+                \ 'isselffiltering': '0',
                 \ }
     elseif s:IsCommandGitGrep()
         return {
@@ -2437,6 +2451,7 @@ function! s:GetGrepCommandParameters()
                 \ 'errorsuppress': '',
                 \ 'directoryneedsbackslash': '0',
                 \ 'isinherentlyrecursive': '0',
+                \ 'isselffiltering': '0',
                 \ }
     elseif s:IsCommandAck()
         return {
@@ -2455,6 +2470,7 @@ function! s:GetGrepCommandParameters()
                 \ 'errorsuppress': '',
                 \ 'directoryneedsbackslash': '0',
                 \ 'isinherentlyrecursive': '1',
+                \ 'isselffiltering': '1',
                 \ }
     elseif s:IsCommandPt()
         return {
@@ -2473,6 +2489,7 @@ function! s:GetGrepCommandParameters()
                 \ 'errorsuppress': '',
                 \ 'directoryneedsbackslash': '0',
                 \ 'isinherentlyrecursive': '0',
+                \ 'isselffiltering': '0',
                 \ }
     elseif s:IsCommandFindstr()
         return {
@@ -2491,6 +2508,7 @@ function! s:GetGrepCommandParameters()
                 \ 'errorsuppress': '',
                 \ 'directoryneedsbackslash': '1',
                 \ 'isinherentlyrecursive': '0',
+                \ 'isselffiltering': '0',
                 \ }
     endif
     return {}
