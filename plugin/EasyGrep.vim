@@ -2410,6 +2410,7 @@ function! s:GetGrepCommandParameters()
                 \ 'directoryneedsbackslash': '0',
                 \ 'isinherentlyrecursive': '0',
                 \ 'isselffiltering': '0',
+                \ 'replacestarwithcwd': '0',
                 \ }
     elseif s:IsCommandGrep()
         return {
@@ -2429,6 +2430,7 @@ function! s:GetGrepCommandParameters()
                 \ 'directoryneedsbackslash': '0',
                 \ 'isinherentlyrecursive': '0',
                 \ 'isselffiltering': '0',
+                \ 'replacestarwithcwd': '0',
                 \ }
     elseif s:IsCommandGitGrep()
         return {
@@ -2448,6 +2450,7 @@ function! s:GetGrepCommandParameters()
                 \ 'directoryneedsbackslash': '0',
                 \ 'isinherentlyrecursive': '0',
                 \ 'isselffiltering': '0',
+                \ 'replacestarwithcwd': '0',
                 \ }
     elseif s:IsCommandAck()
         return {
@@ -2467,6 +2470,7 @@ function! s:GetGrepCommandParameters()
                 \ 'directoryneedsbackslash': '0',
                 \ 'isinherentlyrecursive': '1',
                 \ 'isselffiltering': '1',
+                \ 'replacestarwithcwd': '1',
                 \ }
     elseif s:IsCommandPt()
         return {
@@ -2486,6 +2490,7 @@ function! s:GetGrepCommandParameters()
                 \ 'directoryneedsbackslash': '0',
                 \ 'isinherentlyrecursive': '0',
                 \ 'isselffiltering': '0',
+                \ 'replacestarwithcwd': '0',
                 \ }
     elseif s:IsCommandFindstr()
         return {
@@ -2505,6 +2510,7 @@ function! s:GetGrepCommandParameters()
                 \ 'directoryneedsbackslash': '1',
                 \ 'isinherentlyrecursive': '0',
                 \ 'isselffiltering': '0',
+                \ 'replacestarwithcwd': '0',
                 \ }
     endif
     return {}
@@ -2590,6 +2596,12 @@ function! s:GetGrepCommandLine(pattern, add, wholeword, count, escapeArgs)
         let opts .= " " . join(map(split(filesToExclude, ','), commandParams["exclusionsmap"]), ' ') . " "
     endif
 
+    if s:CommandHas("replacestarwithcwd")
+        " 1) Replace a leading star with the current directory
+        " 2) Replace all trailing stars with a space
+        call map(fileTargetList, 'substitute(v:val, "^\\*$", s:GetCwdEscaped(), "")')
+    endif
+
     " Set extra inclusions and exclusions
     if s:IsCommandGrep()
         " Specific inclusions are only set in recursive mode
@@ -2604,12 +2616,6 @@ function! s:GetGrepCommandLine(pattern, add, wholeword, count, escapeArgs)
                 let fileTargetList = [ s:GetCwdEscaped() ]
             endif
         endif
-    elseif s:IsCommandAck()
-        " Patch up the command line in a way that ack understands; do the
-        " following:
-        " 1) Replace a leading star with the current directory
-        " 2) Replace all trailing stars with a space
-        call map(fileTargetList, 'substitute(substitute(v:val, "^\\*$", s:GetCwdEscaped(), ""), "\\(.*\\)/\\*$", s:GetCwdEscaped()."/\\1", "")')
     endif
 
     let filesToGrep = join(fileTargetList, ' ')
