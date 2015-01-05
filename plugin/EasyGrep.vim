@@ -208,21 +208,18 @@ endfunction
 "}}}
 " EscapeSpecial {{{
 function! s:EscapeSpecial(str)
-    let lst = [ '\', '^', '$', '#' ] "needs escaping once
-    let dlst = []                    "needs escaping twice
     if s:IsCommandVimgrep()
+        let lst = [ '\', '^', '$', '#' ] "needs escaping once
+        let dlst = []                    "needs escaping twice
         call extend(lst, [ '/' ])
         if &magic
             let magicLst = [ '*', '.', '~', '[', ']' ]
             call extend(lst, magicLst)
         endif
-    elseif s:IsCommandFindstr()
-        call extend(lst, [ '.', '*' ])
-    elseif s:IsCommandGrep()
-        call extend(lst, [ '.', '*' ])
-    elseif s:IsCommandAck()
-        call extend(lst,  [ '.', '*', '+', '?', '(', ')', '[', ']', '{', '}' ])
-        call extend(dlst, [ '|' ])
+    else
+        let commandParams = s:GetGrepCommandParameters()
+        let lst = commandParams["req_strlst_escapespecialcharacters"]
+        let dlst = has_key(commandParams, "opt_strlst_escapespecialcharacterstwice") ? commandParams["opt_strlst_escapespecialcharacterstwice"] : []
     endif
     return s:Escape(a:str, lst, dlst)
 endfunction
@@ -239,11 +236,11 @@ function! s:IsBufferDirSearchAllowed()
     endif
 
     let commandParams = s:GetGrepCommandParameters()
-    if !has_key(commandParams, "opt_bool_bufferdirsearchallowed")
+    if !has_key(commandParams, "bufferdirsearchallowed")
         return 1
     endif
 
-    let bufferdirsearchallowed = commandParams["opt_bool_bufferdirsearchallowed"]
+    let bufferdirsearchallowed = commandParams["bufferdirsearchallowed"]
     if bufferdirsearchallowed ==# "1"
         return 1
     elseif bufferdirsearchallowed ==# "0"
@@ -260,7 +257,8 @@ function! s:IsRecursiveSearch()
     if g:EasyGrepRecursive
         return !s:IsModeBuffers()
     endif
-    return s:CommandHas("opt_bool_isinherentlyrecursive")
+    let commandParams = s:GetGrepCommandParameters()
+    return has_key(commandParams, "isinherentlyrecursive") && (commandParams["isinherentlyrecursive"] == '1')
 endfunction
 " }}}
 " GetSavedName {{{
@@ -1020,7 +1018,8 @@ function! s:ActivateChoice(choice)
         let selectedMode = s:EasyGrepModeMultipleChoice
     endif
 
-    if s:CommandHas("opt_bool_isselffiltering")
+    let commandParams = s:GetGrepCommandParameters()
+    if s:CommandHas("isselffiltering")
         if selectedMode != s:EasyGrepModeAll && selectedMode != s:EasyGrepModeBuffers
             call s:Error("Cannot activate '".s:GetModeName(selectedMode)."' mode when ".s:GetGrepProgramVarAndName().", as this grepprg implements its own filtering")
             return
@@ -1918,7 +1917,7 @@ endfunction
 " CheckGrepCommandForChanges {{{
 function! s:CheckGrepCommandForChanges()
     if &grepprg != s:LastSeenGrepprg
-        if s:CommandHas("opt_bool_isselffiltering")
+        if s:CommandHas("isselffiltering")
             if !s:IsModeAll() && !s:IsModeBuffers()
                 call s:Info("==================================================================================")
                 call s:Info("The 'grepprg' has changed to '".s:GetGrepProgramName()."' since last inspected")
@@ -2342,7 +2341,8 @@ endfunction
 "}}}
 " CommandSupportsExclusions {{{
 function! s:CommandSupportsExclusions()
-    return s:CommandHas("req_bool_supportsexclusions")
+    let commandParams = s:GetGrepCommandParameters()
+    return commandParams["supportsexclusions"] == 1
 endfunction
 "}}}
 " IsCommandVimgrep {{{
@@ -2381,24 +2381,9 @@ function! s:CommandParameterMatches(parameter, value)
     return has_key(commandParams, a:parameter) && (commandParams[a:parameter] == a:value)
 endfunction
 "}}}
-" CommandValueOr {{{
-function! s:CommandParameterOr(commandParams, parameter, value)
-    if has_key(a:commandParams, a:parameter)
-        return a:commandParams[a:parameter]
-    else
-        return a:value
-    endif
-endfunction
-"}}}
 " CommandHas {{{
 function! s:CommandHas(parameter)
     return s:CommandParameterMatches(a:parameter, '1')
-endfunction
-"}}}
-" CommandHasLen {{{
-function! s:CommandHasLen(parameter)
-    let commandParams = s:GetGrepCommandParameters()
-    return has_key(commandParams, a:parameter) && len(commandParams[a:parameter])
 endfunction
 "}}}
 " GetGrepCommandParameters {{{
@@ -2406,117 +2391,123 @@ function! s:GetGrepCommandParameters()
 
     if s:IsCommandVimgrep()
         return {
-                \ 'req_bool_supportsexclusions': '1',
-                \ 'req_str_recurse': '',
-                \ 'req_str_caseignore': '',
-                \ 'req_str_casematch': '',
-                \ 'opt_str_patternprefix': '/',
-                \ 'opt_str_patternpostfix': '/',
-                \ 'req_str_wholewordprefix': '\<',
-                \ 'req_str_wholewordpostfix': '\>',
-                \ 'opt_str_mapexclusionsexpression': '',
-                \ 'opt_bool_filtertargetswithnofiles': '0',
-                \ 'opt_bool_bufferdirsearchallowed': '1',
-                \ 'opt_str_suppresserrormessages': '',
-                \ 'opt_bool_directoryneedsbackslash': '0',
-                \ 'opt_bool_isinherentlyrecursive': '0',
-                \ 'opt_bool_isselffiltering': '0',
-                \ 'opt_bool_replacewildcardwithcwd': '0',
+                \ 'supportsexclusions': '1',
+                \ 'recurse': '',
+                \ 'caseignore': '',
+                \ 'casematch': '',
+                \ 'patternpre': '/',
+                \ 'patternpost': '/',
+                \ 'wholewordpre': '\<',
+                \ 'wholewordpost': '\>',
+                \ 'exclusionsmap': '',
+                \ 'filtertargetsnofiles': '0',
+                \ 'bufferdirsearchallowed': '1',
+                \ 'backslashdir': '0',
+                \ 'errorsuppress': '',
+                \ 'directoryneedsbackslash': '0',
+                \ 'isinherentlyrecursive': '0',
+                \ 'isselffiltering': '0',
+                \ 'replacestarwithcwd': '0',
                 \ }
     elseif s:IsCommandGrep()
         return {
-                \ 'req_bool_supportsexclusions': '1',
-                \ 'req_str_recurse': '-R',
-                \ 'req_str_caseignore': '-i',
-                \ 'req_str_casematch': '',
-                \ 'opt_str_patternprefix': '"',
-                \ 'opt_str_patternpostfix': '"',
-                \ 'req_str_wholewordprefix': '-w ',
-                \ 'req_str_wholewordpostfix': '',
-                \ 'opt_str_mapexclusionsexpression': '"--exclude=\"".v:val."\""." --exclude-dir=\"".v:val."\""',
-                \ 'opt_bool_filtertargetswithnofiles': '1',
-                \ 'opt_bool_bufferdirsearchallowed': '!recursive',
-                \ 'opt_str_suppresserrormessages': '-s',
-                \ 'opt_bool_directoryneedsbackslash': '0',
-                \ 'opt_bool_isinherentlyrecursive': '0',
-                \ 'opt_bool_isselffiltering': '0',
-                \ 'opt_bool_replacewildcardwithcwd': '0',
+                \ 'supportsexclusions': '1',
+                \ 'recurse': '-R',
+                \ 'caseignore': '-i',
+                \ 'casematch': '',
+                \ 'patternpre': '"',
+                \ 'patternpost': '"',
+                \ 'wholewordpre': '-w ',
+                \ 'wholewordpost': '',
+                \ 'exclusionsmap': '"--exclude=\"".v:val."\""." --exclude-dir=\"".v:val."\""',
+                \ 'filtertargetsnofiles': '1',
+                \ 'bufferdirsearchallowed': '!recursive',
+                \ 'backslashdir': '0',
+                \ 'errorsuppress': '-s',
+                \ 'directoryneedsbackslash': '0',
+                \ 'isinherentlyrecursive': '0',
+                \ 'isselffiltering': '0',
+                \ 'replacestarwithcwd': '0',
                 \ }
     elseif s:IsCommandGitGrep()
         return {
-                \ 'req_bool_supportsexclusions': '0',
-                \ 'req_str_recurse': '-R',
-                \ 'req_str_caseignore': '-i',
-                \ 'req_str_casematch': '',
-                \ 'opt_str_patternprefix': '"',
-                \ 'opt_str_patternpostfix': '"',
-                \ 'req_str_wholewordprefix': '-w ',
-                \ 'req_str_wholewordpostfix': '',
-                \ 'opt_str_mapexclusionsexpression': '',
-                \ 'opt_bool_filtertargetswithnofiles': '1',
-                \ 'opt_bool_bufferdirsearchallowed': '0',
-                \ 'opt_str_suppresserrormessages': '',
-                \ 'opt_bool_directoryneedsbackslash': '0',
-                \ 'opt_bool_isinherentlyrecursive': '0',
-                \ 'opt_bool_isselffiltering': '0',
-                \ 'opt_bool_replacewildcardwithcwd': '0',
+                \ 'supportsexclusions': '0',
+                \ 'recurse': '-R',
+                \ 'caseignore': '-i',
+                \ 'casematch': '',
+                \ 'patternpre': '"',
+                \ 'patternpost': '"',
+                \ 'wholewordpre': '-w ',
+                \ 'wholewordpost': '',
+                \ 'exclusionsmap': '',
+                \ 'filtertargetsnofiles': '1',
+                \ 'bufferdirsearchallowed': '0',
+                \ 'backslashdir': '0',
+                \ 'errorsuppress': '',
+                \ 'directoryneedsbackslash': '0',
+                \ 'isinherentlyrecursive': '0',
+                \ 'isselffiltering': '0',
+                \ 'replacestarwithcwd': '0',
                 \ }
     elseif s:IsCommandAck()
         return {
-                \ 'req_bool_supportsexclusions': '1',
-                \ 'req_str_recurse': '',
-                \ 'req_str_caseignore': '-i',
-                \ 'req_str_casematch': '',
-                \ 'opt_str_patternprefix': '"',
-                \ 'opt_str_patternpostfix': '"',
-                \ 'req_str_wholewordprefix': '-w ',
-                \ 'req_str_wholewordpostfix': '',
-                \ 'opt_str_mapexclusionsexpression': '"--ignore-dir=\"".v:val."\""',
-                \ 'opt_bool_filtertargetswithnofiles': '1',
-                \ 'opt_bool_bufferdirsearchallowed': '1',
-                \ 'opt_str_suppresserrormessages': '',
-                \ 'opt_bool_directoryneedsbackslash': '0',
-                \ 'opt_bool_isinherentlyrecursive': '1',
-                \ 'opt_bool_isselffiltering': '1',
-                \ 'opt_bool_replacewildcardwithcwd': '1',
+                \ 'supportsexclusions': '1',
+                \ 'recurse': '',
+                \ 'caseignore': '-i',
+                \ 'casematch': '',
+                \ 'patternpre': '"',
+                \ 'patternpost': '"',
+                \ 'wholewordpre': '-w ',
+                \ 'wholewordpost': '',
+                \ 'exclusionsmap': '"--ignore-dir=\"".v:val."\""',
+                \ 'filtertargetsnofiles': '1',
+                \ 'bufferdirsearchallowed': '1',
+                \ 'backslashdir': '0',
+                \ 'errorsuppress': '',
+                \ 'directoryneedsbackslash': '0',
+                \ 'isinherentlyrecursive': '1',
+                \ 'isselffiltering': '1',
+                \ 'replacestarwithcwd': '1',
                 \ }
     elseif s:IsCommandPt()
         return {
-                \ 'req_bool_supportsexclusions': '0',
-                \ 'req_str_recurse': '',
-                \ 'req_str_caseignore': '-i',
-                \ 'req_str_casematch': '',
-                \ 'opt_str_patternprefix': '',
-                \ 'opt_str_patternpostfix': '',
-                \ 'req_str_wholewordprefix': '-w ',
-                \ 'req_str_wholewordpostfix': '',
-                \ 'opt_str_mapexclusionsexpression': '',
-                \ 'opt_bool_filtertargetswithnofiles': '1',
-                \ 'opt_bool_bufferdirsearchallowed': '1',
-                \ 'opt_str_suppresserrormessages': '',
-                \ 'opt_bool_directoryneedsbackslash': '0',
-                \ 'opt_bool_isinherentlyrecursive': '0',
-                \ 'opt_bool_isselffiltering': '0',
-                \ 'opt_bool_replacewildcardwithcwd': '0',
+                \ 'supportsexclusions': '0',
+                \ 'recurse': '',
+                \ 'caseignore': '-i',
+                \ 'casematch': '',
+                \ 'patternpre': '',
+                \ 'patternpost': '',
+                \ 'wholewordpre': '-w ',
+                \ 'wholewordpost': '',
+                \ 'exclusionsmap': '',
+                \ 'filtertargetsnofiles': '1',
+                \ 'bufferdirsearchallowed': '1',
+                \ 'backslashdir': '0',
+                \ 'errorsuppress': '',
+                \ 'directoryneedsbackslash': '0',
+                \ 'isinherentlyrecursive': '0',
+                \ 'isselffiltering': '0',
+                \ 'replacestarwithcwd': '0',
                 \ }
     elseif s:IsCommandFindstr()
         return {
-                \ 'req_bool_supportsexclusions': '0',
-                \ 'req_str_recurse': '/S',
-                \ 'req_str_caseignore': '/I',
-                \ 'req_str_casematch': '/i',
-                \ 'opt_str_patternprefix': '',
-                \ 'opt_str_patternpostfix': '',
-                \ 'req_str_wholewordprefix': '"\<',
-                \ 'req_str_wholewordpostfix': '\>"',
-                \ 'opt_str_mapexclusionsexpression': '',
-                \ 'opt_bool_filtertargetswithnofiles': '1',
-                \ 'opt_bool_bufferdirsearchallowed': '1',
-                \ 'opt_str_suppresserrormessages': '',
-                \ 'opt_bool_directoryneedsbackslash': '1',
-                \ 'opt_bool_isinherentlyrecursive': '0',
-                \ 'opt_bool_isselffiltering': '0',
-                \ 'opt_bool_replacewildcardwithcwd': '0',
+                \ 'supportsexclusions': '0',
+                \ 'recurse': '/S',
+                \ 'caseignore': '/I',
+                \ 'casematch': '/i',
+                \ 'patternpre': '',
+                \ 'patternpost': '',
+                \ 'wholewordpre': '"\<',
+                \ 'wholewordpost': '\>"',
+                \ 'exclusionsmap': '',
+                \ 'filtertargetsnofiles': '1',
+                \ 'bufferdirsearchallowed': '1',
+                \ 'backslashdir': '1',
+                \ 'errorsuppress': '',
+                \ 'directoryneedsbackslash': '1',
+                \ 'isinherentlyrecursive': '0',
+                \ 'isselffiltering': '0',
+                \ 'replacestarwithcwd': '0',
                 \ }
     endif
     return {}
@@ -2530,14 +2521,14 @@ function! s:GetGrepCommandLine(pattern, add, wholeword, count, escapeArgs)
     let com = s:GetGrepCommandName()
 
     let bang = ""
-    let aux_pattern_postfix = ""
+    let patternpost = ""
     if s:IsCommandVimgrep()
         if g:EasyGrepEveryMatch
-            let aux_pattern_postfix .= "g"
+            let patternpost .= "g"
         endif
 
         if !g:EasyGrepJumpToMatch
-            let aux_pattern_postfix .= "j"
+            let patternpost .= "j"
         endif
     else
         if !g:EasyGrepJumpToMatch
@@ -2556,52 +2547,53 @@ function! s:GetGrepCommandLine(pattern, add, wholeword, count, escapeArgs)
     let pattern = a:escapeArgs ? s:EscapeSpecial(a:pattern) : a:pattern
 
     " Enclose the pattern if needed
-    let pattern = commandParams["opt_str_patternprefix"].pattern.commandParams["opt_str_patternpostfix"]
+    let pattern = commandParams["patternpre"].pattern.commandParams["patternpost"]
 
     if wholeword
-        let pattern = commandParams["req_str_wholewordprefix"].pattern.commandParams["req_str_wholewordpostfix"]
+        let pattern = commandParams["wholewordpre"].pattern.commandParams["wholewordpost"]
     endif
 
     let opts = ""
 
     if s:IsRecursiveSearch()
-        if s:CommandHasLen("req_str_recurse")
-            let opts .= commandParams["req_str_recurse"]." "
+        if len(commandParams["recurse"])
+            let opts .= commandParams["recurse"]." "
         endif
     endif
 
     if g:EasyGrepIgnoreCase
-        if s:CommandHasLen("req_str_caseignore")
-            let opts .= commandParams["req_str_caseignore"]." "
+        if len(commandParams["caseignore"])
+            let opts .= commandParams["caseignore"]." "
         endif
     else
-        if s:CommandHasLen("req_str_casematch")
-            let opts .= commandParams["req_str_casematch"]." "
+        if len(commandParams["casematch"])
+            let opts .= commandParams["casematch"]." "
         endif
     endif
 
     " Suppress errors
-    if s:CommandHasLen("opt_str_suppresserrormessages")
-        let opts .= commandParams["opt_str_suppresserrormessages"]." "
+    if len(commandParams["errorsuppress"])
+        let opts .= commandParams["errorsuppress"]." "
     endif
 
     let fileTargetList = s:GetFileTargetList(1)
     let filesToExclude = g:EasyGrepFilesToExclude
 
-    if s:CommandHas("opt_bool_filtertargetswithnofiles")
+    if commandParams["filtertargetsnofiles"] == 1
+    \ || commandParams["filtertargetsnofiles"] == '1'
         call s:FilterTargetsWithNoFiles(fileTargetList)
     endif
 
-    if s:CommandHas("opt_bool_directoryneedsbackslash")
+    if commandParams["directoryneedsbackslash"] == 1
         call map(fileTargetList, 's:ForwardToBackSlash(v:val)')
     endif
 
     " Add exclusions
-    if s:CommandHasLen("opt_str_mapexclusionsexpression")
-        let opts .= " " . join(map(split(filesToExclude, ','), commandParams["opt_str_mapexclusionsexpression"]), ' ') . " "
+    if len(commandParams["exclusionsmap"])
+        let opts .= " " . join(map(split(filesToExclude, ','), commandParams["exclusionsmap"]), ' ') . " "
     endif
 
-    if s:CommandHas("opt_bool_replacewildcardwithcwd")
+    if s:CommandHas("replacestarwithcwd")
         " 1) Replace a leading star with the current directory
         " 2) Replace all trailing stars with a space
         call map(fileTargetList, 'substitute(v:val, "^\\*$", s:GetCwdEscaped(), "")')
@@ -2626,7 +2618,7 @@ function! s:GetGrepCommandLine(pattern, add, wholeword, count, escapeArgs)
     let filesToGrep = join(fileTargetList, ' ')
 
     let win = g:EasyGrepWindow != 0 ? "l" : ""
-    let grepCommand = a:count.win.com.a:add.bang." ".opts.pattern.aux_pattern_postfix." ".filesToGrep
+    let grepCommand = a:count.win.com.a:add.bang." ".opts.pattern.patternpost." ".filesToGrep
 
     return grepCommand
 endfunction
