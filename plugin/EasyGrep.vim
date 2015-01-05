@@ -193,16 +193,25 @@ function! s:ShellEscapeList(lst, seperator)
     return s:DoEscapeList(a:lst, a:seperator, function("s:ShellEscape"))
 endfunction
 "}}}
-" Escape{{{
-function! s:Escape(str, lst, dlst)
+" DoEscapeSpecialCharacters {{{
+function! s:DoEscapeSpecialCharacters(str, escapeonce, escapetwice)
     let str = a:str
-    for i in a:lst "needs escaping once
-        let str = escape(str, i)
-    endfor
-    for i in a:dlst "needs escaping twice
-        let str = escape(str, i)
-        let str = escape(str, i)
-    endfor
+
+    let i = 0
+    let len = strlen(a:escapeonce)
+    while i < len
+        let str = escape(str, a:escapeonce[i])
+        let i += 1
+    endwhile
+
+    let i = 0
+    let len = strlen(a:escapetwice)
+    while i < len
+        let str = escape(str, a:escapetwice[i])
+        let str = escape(str, a:escapetwice[i])
+        let i += 1
+    endwhile
+
     return str
 endfunction
 "}}}
@@ -210,24 +219,21 @@ endfunction
 function! s:EscapeSpecialCharacters(str)
     if s:IsCommandVimgrep()
         return s:EscapeSpecialCharactersForVim(a:str)
-    else
-        let commandParams = s:GetGrepCommandParameters()
-        let lst = s:CommandParameter(commandParams, "req_strlst_escapespecialcharacters")
-        let dlst = s:CommandParameterOr(commandParams, "opt_strlst_escapespecialcharacterstwice", [])
     endif
-    return s:Escape(a:str, lst, dlst)
+
+    let commandParams = s:GetGrepCommandParameters()
+    let escapeonce = s:CommandParameter(commandParams, "req_str_escapespecialcharacters")
+    let escapetwice = s:CommandParameterOr(commandParams, "opt_str_escapespecialcharacterstwice", "")
+    return s:DoEscapeSpecialCharacters(a:str, escapeonce, escapetwice)
 endfunction
 "}}}
 " EscapeSpecialCharactersForVim {{{
 function! s:EscapeSpecialCharactersForVim(str)
-    let lst = [ '\', '^', '$', '#' ] "needs escaping once
-    let dlst = []                    "needs escaping twice
-    call extend(lst, [ '/' ])
+    let escapeonce = "\\/^$#"
     if &magic
-        let magicLst = [ '*', '.', '~', '[', ']' ]
-        call extend(lst, magicLst)
+        let escapeonce .= "*.~[]"
     endif
-    return s:Escape(a:str, lst, dlst)
+    return s:DoEscapeSpecialCharacters(a:str, escapeonce, "")
 endfunction
 "}}}
 " IsRecursivePattern {{{
@@ -2422,8 +2428,8 @@ function! s:GetGrepCommandParameters()
                 \ 'opt_str_patternpostfix': '/',
                 \ 'req_str_wholewordprefix': '\<',
                 \ 'req_str_wholewordpostfix': '\>',
-                \ 'req_strlst_escapespecialcharacters': [ '\', '^', '$', '#' ],
-                \ 'opt_strlst_escapespecialcharacterstwice': [],
+                \ 'req_str_escapespecialcharacters': "configured@runtime",
+                \ 'opt_str_escapespecialcharacterstwice': "",
                 \ 'opt_str_mapexclusionsexpression': '',
                 \ 'opt_bool_filtertargetswithnofiles': '0',
                 \ 'opt_bool_bufferdirsearchallowed': '1',
@@ -2443,8 +2449,8 @@ function! s:GetGrepCommandParameters()
                 \ 'opt_str_patternpostfix': '"',
                 \ 'req_str_wholewordprefix': '-w ',
                 \ 'req_str_wholewordpostfix': '',
-                \ 'req_strlst_escapespecialcharacters': [ '\', '^', '$', '#', '.', '*' ],
-                \ 'opt_strlst_escapespecialcharacterstwice': [],
+                \ 'req_str_escapespecialcharacters': "\^$#.*",
+                \ 'opt_str_escapespecialcharacterstwice': "",
                 \ 'opt_str_mapexclusionsexpression': '"--exclude=\"".v:val."\""." --exclude-dir=\"".v:val."\""',
                 \ 'opt_bool_filtertargetswithnofiles': '1',
                 \ 'opt_bool_bufferdirsearchallowed': '!recursive',
@@ -2464,8 +2470,8 @@ function! s:GetGrepCommandParameters()
                 \ 'opt_str_patternpostfix': '"',
                 \ 'req_str_wholewordprefix': '-w ',
                 \ 'req_str_wholewordpostfix': '',
-                \ 'req_strlst_escapespecialcharacters': [ '\', '^', '$', '#', '.', '*' ],
-                \ 'opt_strlst_escapespecialcharacterstwice': [],
+                \ 'req_str_escapespecialcharacters': "\^$#.*",
+                \ 'opt_str_escapespecialcharacterstwice': "",
                 \ 'opt_str_mapexclusionsexpression': '',
                 \ 'opt_bool_filtertargetswithnofiles': '1',
                 \ 'opt_bool_bufferdirsearchallowed': '0',
@@ -2485,8 +2491,8 @@ function! s:GetGrepCommandParameters()
                 \ 'opt_str_patternpostfix': '"',
                 \ 'req_str_wholewordprefix': '-w ',
                 \ 'req_str_wholewordpostfix': '',
-                \ 'req_strlst_escapespecialcharacters': [ '\', '^', '$', '#', '.', '*', '+', '?', '(', ')', '[', ']', '{', '}' ],
-                \ 'opt_strlst_escapespecialcharacterstwice': [ '|' ],
+                \ 'req_str_escapespecialcharacters': "\^$#.*+?()[]{}",
+                \ 'opt_str_escapespecialcharacterstwice': "|",
                 \ 'opt_str_mapexclusionsexpression': '"--ignore-dir=\"".v:val."\""',
                 \ 'opt_bool_filtertargetswithnofiles': '1',
                 \ 'opt_bool_bufferdirsearchallowed': '1',
@@ -2506,8 +2512,8 @@ function! s:GetGrepCommandParameters()
                 \ 'opt_str_patternpostfix': '',
                 \ 'req_str_wholewordprefix': '-w ',
                 \ 'req_str_wholewordpostfix': '',
-                \ 'req_strlst_escapespecialcharacters': [ '\', '^', '$', '#' ],
-                \ 'opt_strlst_escapespecialcharacterstwice': [],
+                \ 'req_str_escapespecialcharacters': "\^$#.*",
+                \ 'opt_str_escapespecialcharacterstwice': "",
                 \ 'opt_str_mapexclusionsexpression': '',
                 \ 'opt_bool_filtertargetswithnofiles': '1',
                 \ 'opt_bool_bufferdirsearchallowed': '1',
@@ -2527,8 +2533,8 @@ function! s:GetGrepCommandParameters()
                 \ 'opt_str_patternpostfix': '',
                 \ 'req_str_wholewordprefix': '"\<',
                 \ 'req_str_wholewordpostfix': '\>"',
-                \ 'req_strlst_escapespecialcharacters': [ '\', '^', '$', '#', '.', '*' ],
-                \ 'opt_strlst_escapespecialcharacterstwice': [],
+                \ 'req_str_escapespecialcharacters': "\^$#.*",
+                \ 'opt_str_escapespecialcharacterstwice': "",
                 \ 'opt_str_mapexclusionsexpression': '',
                 \ 'opt_bool_filtertargetswithnofiles': '1',
                 \ 'opt_bool_bufferdirsearchallowed': '1',
@@ -2632,7 +2638,7 @@ function! s:GetGrepCommandLine(pattern, add, wholeword, count, escapeArgs)
         " Specific inclusions are only set in recursive mode
         if s:IsRecursiveSearch()
             " The --include paths will contain the file patterns
-            let opts .= " " . join(map(fileTargetList, '"--include=\"" .v:val."\""'), ' ')
+            let opts .= " " . join(map(fileTargetList, '"--include=\"" .v:val."\""'), ' '). " "
 
             " while the files we specify will be directories
             if g:EasyGrepSearchCurrentBufferDir
