@@ -811,7 +811,7 @@ function! <sid>ChooseGrepProgram(...)
         else
             let chooseGitGrep = -1
         endif
-        " awk
+        " ack
         if executable("ack-grep")
             let chooseAckGrep = i
             call extend(lst, [ i.". ack-grep" ])
@@ -1911,12 +1911,8 @@ function! s:ValidateGrepCommand()
         return 0
     endif
 
-    if    !s:IsCommandVimgrep() &&
-        \ !s:IsCommandGrep()    &&
-        \ !s:IsCommandGitGrep() &&
-        \ !s:IsCommandFindstr() &&
-        \ !s:IsCommandAck() &&
-        \ !s:IsCommandPt()
+    let commandParams = s:GetGrepCommandParameters()
+    if empty(commandParams)
         call s:Error("Cannot proceed; the configured 'grepprg' setting is not a known program")
         return 0
     endif
@@ -2415,11 +2411,15 @@ function! s:CommandHasLen(parameter)
     return has_key(commandParams, a:parameter) && len(commandParams[a:parameter])
 endfunction
 "}}}
-" GetGrepCommandParameters {{{
-function! s:GetGrepCommandParameters()
+" ConfigureGrepCommandParameters {{{
+function! s:ConfigureGrepCommandParameters()
+    if exists("s:commandParamsDict")
+        return
+    endif
 
-    if s:IsCommandVimgrep()
-        return {
+    let s:commandParamsDict = {}
+
+    let s:commandParamsDict["vimgrep"] = {
                 \ 'req_bool_supportsexclusions': '1',
                 \ 'req_str_recurse': '',
                 \ 'req_str_caseignore': '',
@@ -2439,8 +2439,7 @@ function! s:GetGrepCommandParameters()
                 \ 'opt_bool_isselffiltering': '0',
                 \ 'opt_bool_replacewildcardwithcwd': '0',
                 \ }
-    elseif s:IsCommandGrep()
-        return {
+    let s:commandParamsDict["grep"] = {
                 \ 'req_bool_supportsexclusions': '1',
                 \ 'req_str_recurse': '-R',
                 \ 'req_str_caseignore': '-i',
@@ -2460,8 +2459,7 @@ function! s:GetGrepCommandParameters()
                 \ 'opt_bool_isselffiltering': '0',
                 \ 'opt_bool_replacewildcardwithcwd': '0',
                 \ }
-    elseif s:IsCommandGitGrep()
-        return {
+    let s:commandParamsDict["git"] = {
                 \ 'req_bool_supportsexclusions': '0',
                 \ 'req_str_recurse': '-R',
                 \ 'req_str_caseignore': '-i',
@@ -2481,8 +2479,7 @@ function! s:GetGrepCommandParameters()
                 \ 'opt_bool_isselffiltering': '0',
                 \ 'opt_bool_replacewildcardwithcwd': '0',
                 \ }
-    elseif s:IsCommandAck()
-        return {
+    let s:commandParamsDict["ack"] = {
                 \ 'req_bool_supportsexclusions': '1',
                 \ 'req_str_recurse': '',
                 \ 'req_str_caseignore': '-i',
@@ -2502,8 +2499,28 @@ function! s:GetGrepCommandParameters()
                 \ 'opt_bool_isselffiltering': '1',
                 \ 'opt_bool_replacewildcardwithcwd': '1',
                 \ }
-    elseif s:IsCommandPt()
-        return {
+    let s:commandParamsDict["ack-grep"] = s:commandParamsDict["ack"]
+    let s:commandParamsDict["ag"] = {
+                \ 'req_bool_supportsexclusions': '1',
+                \ 'req_str_recurse': '',
+                \ 'req_str_caseignore': '-i',
+                \ 'req_str_casematch': '',
+                \ 'opt_str_patternprefix': '"',
+                \ 'opt_str_patternpostfix': '"',
+                \ 'req_str_wholewordprefix': '-w ',
+                \ 'req_str_wholewordpostfix': '',
+                \ 'req_str_escapespecialcharacters': "\^$#.*+?()[]{}",
+                \ 'opt_str_escapespecialcharacterstwice': "|",
+                \ 'opt_str_mapexclusionsexpression': '"--ignore-dir=\"".v:val."\""',
+                \ 'opt_bool_filtertargetswithnofiles': '1',
+                \ 'opt_bool_bufferdirsearchallowed': '1',
+                \ 'opt_str_suppresserrormessages': '',
+                \ 'opt_bool_directoryneedsbackslash': '0',
+                \ 'opt_bool_isinherentlyrecursive': '1',
+                \ 'opt_bool_isselffiltering': '1',
+                \ 'opt_bool_replacewildcardwithcwd': '1',
+                \ }
+    let s:commandParamsDict["pt"] = {
                 \ 'req_bool_supportsexclusions': '0',
                 \ 'req_str_recurse': '',
                 \ 'req_str_caseignore': '-i',
@@ -2523,8 +2540,7 @@ function! s:GetGrepCommandParameters()
                 \ 'opt_bool_isselffiltering': '0',
                 \ 'opt_bool_replacewildcardwithcwd': '0',
                 \ }
-    elseif s:IsCommandFindstr()
-        return {
+    let s:commandParamsDict["findstr"] = {
                 \ 'req_bool_supportsexclusions': '0',
                 \ 'req_str_recurse': '/S',
                 \ 'req_str_caseignore': '/I',
@@ -2544,8 +2560,20 @@ function! s:GetGrepCommandParameters()
                 \ 'opt_bool_isselffiltering': '0',
                 \ 'opt_bool_replacewildcardwithcwd': '0',
                 \ }
+endfunction
+" }}}
+" GetGrepCommandParameters {{{
+function! s:GetGrepCommandParameters()
+    if s:IsCommandVimgrep()
+        return s:commandParamsDict["vimgrep"]
     endif
-    return {}
+
+    let programName = s:GetGrepProgramName()
+    if !has_key(s:commandParamsDict, programName)
+        return {}
+    endif
+
+    return s:commandParamsDict[programName]
 endfunction
 " }}}
 " GetGrepCommandLine {{{
@@ -3615,6 +3643,7 @@ endfunction
 
 "}}}
 " Script Finalization {{{
+call s:ConfigureGrepCommandParameters()
 call s:InitializeMode()
 call s:CreateGrepDictionary()
 call s:InitializeCommandChoice()
