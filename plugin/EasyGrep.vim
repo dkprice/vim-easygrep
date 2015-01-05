@@ -2355,31 +2355,6 @@ function! s:IsCommandVimgrep()
     return (s:GetGrepCommandName() == "vimgrep")
 endfunction
 "}}}
-" IsCommandAck {{{
-function! s:IsCommandAck()
-    return !s:IsCommandVimgrep() && (s:GetGrepProgramName() == "ack" || s:GetGrepProgramName() == "ack-grep" || s:GetGrepProgramName() == "ag")
-endfunction
-"}}}
-" IsCommandGrep {{{
-function! s:IsCommandGrep()
-    return !s:IsCommandVimgrep() && (s:GetGrepProgramName() == "grep")
-endfunction
-"}}}
-" IsCommandGitGrep {{{
-function! s:IsCommandGitGrep()
-    return !s:IsCommandVimgrep() && (s:GetGrepProgramName() == "git")
-endfunction
-"}}}
-" IsCommandPt {{{
-function! s:IsCommandPt()
-    return !s:IsCommandVimgrep() && (s:GetGrepProgramName() == "pt")
-endfunction
-"}}}
-" IsCommandFindstr {{{
-function! s:IsCommandFindstr()
-    return !s:IsCommandVimgrep() && (s:GetGrepProgramName() == "findstr")
-endfunction
-"}}}
 " CommandParameterMatches {{{
 function! s:CommandParameterMatches(parameter, value)
     let commandParams = s:GetGrepCommandParameters()
@@ -2458,6 +2433,7 @@ function! s:ConfigureGrepCommandParameters()
                 \ 'opt_bool_isinherentlyrecursive': '0',
                 \ 'opt_bool_isselffiltering': '0',
                 \ 'opt_bool_replacewildcardwithcwd': '0',
+                \ 'opt_bool_greprecursionwar': '1',
                 \ }
     let s:commandParamsDict["git"] = {
                 \ 'req_bool_supportsexclusions': '0',
@@ -2662,7 +2638,7 @@ function! s:GetGrepCommandLine(pattern, add, wholeword, count, escapeArgs)
     endif
 
     " Set extra inclusions and exclusions
-    if s:IsCommandGrep()
+    if s:CommandHas("opt_bool_greprecursionwar")
         " Specific inclusions are only set in recursive mode
         if s:IsRecursiveSearch()
             " The --include paths will contain the file patterns
