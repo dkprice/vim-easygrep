@@ -1937,11 +1937,7 @@ endfunction
 " }}}
 " CheckCommandRequirements {{{
 function! s:CheckCommandRequirements()
-    if s:IsCommandAck()
-        if s:IsModeTracked()
-            call s:ForceGrepMode(s:EasyGrepModeAll)
-        endif
-    endif
+    call s:SanitizeMode()
 endfunction
 " }}}
 " Extension Tracking {{{
