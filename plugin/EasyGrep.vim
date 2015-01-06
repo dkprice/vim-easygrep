@@ -769,102 +769,38 @@ endfunction
 " ChooseGrepProgram {{{
 function! <sid>ChooseGrepProgram(...)
 
-    let chooseVimgrep = 0
-    let chooseFindstr = 0
-    let chooseGrep = 0
-    let chooseGitGrep = 0
-    let chooseAckGrep = 0
-    let chooseAck = 0
-    let chooseAg = 0
-    let choosePt = 0
+    let programNames = sort(keys(s:commandParamsDict))
 
     if a:0 > 0
         let grepChoiceStr = a:1
     else
         let lst = [ "Select grep program: " ]
-        let i = 1
-        " vimgrep
-        let chooseVimgrep = i
-        call extend(lst, [ i.". vimgrep" ])
-        let i = i + 1
-        " findstr
-        if has("win32") && executable("findstr")
-            let chooseFindstr = i
-            call extend(lst, [ i.". findstr" ])
-            let i = i + 1
-        else
-            let chooseFindstr = -1
-        endif
-        " grep
-        if executable("grep")
-            let chooseGrep = i
-            call extend(lst, [ i.". grep" ])
-            let i = i + 1
-        else
-            let chooseGrep = -1
-        endif
-        " git grep
-        if executable("git")
-            let chooseGitGrep = i
-            call extend(lst, [ i.". git grep" ])
-            let i = i + 1
-        else
-            let chooseGitGrep = -1
-        endif
-        " ack
-        if executable("ack-grep")
-            let chooseAckGrep = i
-            call extend(lst, [ i.". ack-grep" ])
-            let i = i + 1
-        elseif executable("ack")
-            let chooseAck = i
-            call extend(lst, [ i.". ack" ])
-            let i = i + 1
-        else
-            let chooseAck = -1
-        endif
-        " ag
-        if executable("ag")
-            let chooseAg = i
-            call extend(lst, [ i.". ag" ])
-            let i = i + 1
-        else
-            let chooseAg = -1
-        endif
-        " pt
-        if executable("pt")
-            let choosePt = i
-            call extend(lst, [ i.". pt" ])
-            let i = i + 1
-        else
-            let choosePt = -1
-        endif
+        let numPrograms = len(programNames)
+        let programRemap = {}
+
+        let i = 0
+        let validProgramCounter = 0
+        while i < numPrograms
+            let program = programNames[i]
+            if executable(program)
+                let validProgramCounter += 1
+                call extend(lst, [ validProgramCounter.". ". programNames[i] ])
+                let programRemap[validProgramCounter] = i
+            endif
+            let i += 1
+        endwhile
 
         let grepChoice = inputlist(lst)
 
         if grepChoice == 0
             return
-        elseif grepChoice == chooseVimgrep
-            let grepChoiceStr = "vimgrep"
-        elseif grepChoice == chooseFindstr
-            let grepChoiceStr = "findstr"
-        elseif grepChoice == chooseGrep
-            let grepChoiceStr = "grep"
-        elseif grepChoice == chooseGitGrep
-            let grepChoiceStr = "git grep"
-        elseif grepChoice == chooseAckGrep
-            let grepChoiceStr = "ack-grep"
-        elseif grepChoice == chooseAck
-            let grepChoiceStr = "ack"
-        elseif grepChoice == chooseAg
-            let grepChoiceStr = "ag"
-        elseif grepChoice == choosePt
-            let grepChoiceStr = "pt"
-        else
+        elseif grepChoice > validProgramCounter
             echo " "
-            call s:Error("Invalid GrepCommand choice")
+            call s:Error("Invalid GrepProgram choice")
             return
         endif
+
+        let grepChoiceStr = programNames[programRemap[grepChoice]]
     endif
     let result = s:SetGrepCommand(grepChoiceStr)
 
@@ -888,27 +824,16 @@ function! s:SetGrepCommand(grepChoice)
         let g:EasyGrepCommand = 0
     else
         let g:EasyGrepCommand = 1
-        if a:grepChoice ==# "findstr"
-            set grepprg=findstr\ /n
-        elseif a:grepChoice ==# "grep"
-            if has("win32")
-                set grepprg=grep\ -n
-            else
-                set grepprg=grep\ -n\ $*\ /dev/null
-            endif
-        elseif a:grepChoice ==# "git grep"
-            set grepprg=git\ grep\ -n
-        elseif a:grepChoice ==# "ack-grep"
-            set grepprg=ack-grep\ --nogroup\ --nocolor\ --column\ --with-filename
-        elseif a:grepChoice ==# "ack"
-            set grepprg=ack\ --nogroup\ --nocolor\ --column\ --with-filename
-        elseif a:grepChoice ==# "ag"
-            set grepprg=ag\ --nogroup\ --nocolor\ --column
-        elseif a:grepChoice ==# "pt"
-            set grepprg=pt\ --nogroup\ --nocolor
-        else
+
+        if !has_key(s:commandParamsDict, a:grepChoice)
             return 0
         endif
+
+        let args = ""
+        if len(s:commandParamsDict[a:grepChoice]["req_str_programargs"])
+            let args = '\ '.escape(s:commandParamsDict[a:grepChoice]["req_str_programargs"], ' ')
+        endif
+        exe "set grepprg=".a:grepChoice.args
     endif
     let s:LastSeenGrepprg = &grepprg
 
@@ -2386,15 +2311,28 @@ function! s:CommandHasLen(parameter)
     return has_key(commandParams, a:parameter) && len(commandParams[a:parameter])
 endfunction
 "}}}
+" RegisterGrepProgram {{{
+function! s:RegisterGrepProgram(programName, programSettingsDict)
+    if !exists("s:commandParamsDict")
+        let s:commandParamsDict = {}
+    endif
+
+    if has_key(s:commandParamsDict, a:programName)
+        call s:Error("Cannot register '".a:programName."' because it is already registered")
+        return
+    endif
+
+    let s:commandParamsDict[a:programName] = a:programSettingsDict
+endfunction
+" }}}
 " ConfigureGrepCommandParameters {{{
 function! s:ConfigureGrepCommandParameters()
     if exists("s:commandParamsDict")
         return
     endif
 
-    let s:commandParamsDict = {}
-
-    let s:commandParamsDict["vimgrep"] = {
+    call s:RegisterGrepProgram("vimgrep", {
+                \ 'req_str_programargs': '',
                 \ 'req_bool_supportsexclusions': '1',
                 \ 'req_str_recurse': '',
                 \ 'req_str_caseignore': '',
@@ -2413,8 +2351,10 @@ function! s:ConfigureGrepCommandParameters()
                 \ 'opt_bool_isinherentlyrecursive': '0',
                 \ 'opt_bool_isselffiltering': '0',
                 \ 'opt_bool_replacewildcardwithcwd': '0',
-                \ }
-    let s:commandParamsDict["grep"] = {
+                \ })
+
+    call s:RegisterGrepProgram("grep", {
+                \ 'req_str_programargs': '-n',
                 \ 'req_bool_supportsexclusions': '1',
                 \ 'req_str_recurse': '-R',
                 \ 'req_str_caseignore': '-i',
@@ -2434,8 +2374,10 @@ function! s:ConfigureGrepCommandParameters()
                 \ 'opt_bool_isselffiltering': '0',
                 \ 'opt_bool_replacewildcardwithcwd': '0',
                 \ 'opt_bool_greprecursionwar': '1',
-                \ }
-    let s:commandParamsDict["git"] = {
+                \ })
+
+    call s:RegisterGrepProgram("git", {
+                \ 'req_str_programargs': 'grep -n',
                 \ 'req_bool_supportsexclusions': '0',
                 \ 'req_str_recurse': '-R',
                 \ 'req_str_caseignore': '-i',
@@ -2454,8 +2396,10 @@ function! s:ConfigureGrepCommandParameters()
                 \ 'opt_bool_isinherentlyrecursive': '0',
                 \ 'opt_bool_isselffiltering': '0',
                 \ 'opt_bool_replacewildcardwithcwd': '0',
-                \ }
-    let s:commandParamsDict["ack"] = {
+                \ })
+
+    call s:RegisterGrepProgram("ack", {
+                \ 'req_str_programargs': '--nogroup --nocolor --column --with-filename',
                 \ 'req_bool_supportsexclusions': '1',
                 \ 'req_str_recurse': '',
                 \ 'req_str_caseignore': '-i',
@@ -2474,9 +2418,12 @@ function! s:ConfigureGrepCommandParameters()
                 \ 'opt_bool_isinherentlyrecursive': '1',
                 \ 'opt_bool_isselffiltering': '1',
                 \ 'opt_bool_replacewildcardwithcwd': '1',
-                \ }
-    let s:commandParamsDict["ack-grep"] = s:commandParamsDict["ack"]
-    let s:commandParamsDict["ag"] = {
+                \ })
+
+    call s:RegisterGrepProgram("ack-grep", s:commandParamsDict["ack"])
+
+    call s:RegisterGrepProgram("ag", {
+                \ 'req_str_programargs': '--nogroup --nocolor --column',
                 \ 'req_bool_supportsexclusions': '1',
                 \ 'req_str_recurse': '',
                 \ 'req_str_caseignore': '-i',
@@ -2495,8 +2442,10 @@ function! s:ConfigureGrepCommandParameters()
                 \ 'opt_bool_isinherentlyrecursive': '1',
                 \ 'opt_bool_isselffiltering': '1',
                 \ 'opt_bool_replacewildcardwithcwd': '1',
-                \ }
-    let s:commandParamsDict["pt"] = {
+                \ })
+
+    call s:RegisterGrepProgram("pt", {
+                \ 'req_str_programargs': '--nogroup --nocolor',
                 \ 'req_bool_supportsexclusions': '0',
                 \ 'req_str_recurse': '',
                 \ 'req_str_caseignore': '-i',
@@ -2515,8 +2464,10 @@ function! s:ConfigureGrepCommandParameters()
                 \ 'opt_bool_isinherentlyrecursive': '0',
                 \ 'opt_bool_isselffiltering': '0',
                 \ 'opt_bool_replacewildcardwithcwd': '0',
-                \ }
-    let s:commandParamsDict["findstr"] = {
+                \ })
+
+    call s:RegisterGrepProgram("findstr", {
+                \ 'req_str_programargs': '/n',
                 \ 'req_bool_supportsexclusions': '0',
                 \ 'req_str_recurse': '/S',
                 \ 'req_str_caseignore': '/I',
@@ -2535,7 +2486,7 @@ function! s:ConfigureGrepCommandParameters()
                 \ 'opt_bool_isinherentlyrecursive': '0',
                 \ 'opt_bool_isselffiltering': '0',
                 \ 'opt_bool_replacewildcardwithcwd': '0',
-                \ }
+                \ })
 endfunction
 " }}}
 " GetGrepCommandParameters {{{
