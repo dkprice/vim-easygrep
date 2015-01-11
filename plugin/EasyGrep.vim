@@ -2471,7 +2471,7 @@ function! s:ConfigureGrepCommandParameters()
                 \ 'req_bool_supportsexclusions': '0',
                 \ 'req_str_recurse': '/S',
                 \ 'req_str_caseignore': '/I',
-                \ 'req_str_casematch': '/i',
+                \ 'req_str_casematch': '',
                 \ 'opt_str_patternprefix': '',
                 \ 'opt_str_patternpostfix': '',
                 \ 'req_str_wholewordprefix': '"\<',
