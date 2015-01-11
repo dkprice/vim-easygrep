@@ -1,1 +1,9 @@
-casesensitivity.vim
+
+# casesensitivity
+#casesensitivity_ack.vim
+casesensitivity_ag.vim
+casesensitivity_findstr.vim
+casesensitivity_grep.vim
+casesensitivity_pt.vim
+casesensitivity_vimgrep.vim
+

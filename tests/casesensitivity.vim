@@ -1,5 +1,7 @@
 
-let testname="casesensitivity"
+
+" TODO: ensure that the configuration is already set
+
 let g:EasyGrepDefaultUserPattern="alphabet.in"
 let g:EasyGrepMode=3
 
