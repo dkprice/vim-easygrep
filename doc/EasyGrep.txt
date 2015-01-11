@@ -273,6 +273,10 @@ indicated by the 'magic' option (see ":help 'magic'").
 :ResultListOpen
     Opens all of the entries in the current result list in a new tab.
 
+                                                             *:ResultListSave*
+:ResultListSave [file]
+    Writes the result list to the specified file
+
 
 ==============================================================================
   5. Options                                                *EasyGrep_Options*
@@ -482,13 +486,16 @@ Specifies the default pattern for 'User' mode. (see |EasyGrepMode| and
 ==============================================================================
 
 ------------------------------------------------------------------------------
-set file/directory inclusions/exclusions
-This is currently supported with grepprg=grep or grepprg=ack but not with vimgrep.
-------------------------------------------------------------------------------
 Provide recommendations on the best way to use the script
 ------------------------------------------------------------------------------
 Don't use <bang> for controlling whole word
 ------------------------------------------------------------------------------
+Provide command line options to Grep/Replace
+- Control whole word
+- Suppress escaping
+- etc.
+------------------------------------------------------------------------------
+
 
 ==============================================================================
   7. Bugs                                                      *EasyGrep_Bugs*
