@@ -1546,6 +1546,7 @@ endfunction
 " CreateGrepDictionary {{{
 function! s:CreateGrepDictionary()
     if exists("s:Dict")
+        call s:CheckDefaultUserPattern()
         return
     endif
 
@@ -1871,7 +1872,6 @@ endfunction
 " Extension Tracking {{{
 " SetCurrentExtension {{{
 function! s:SetCurrentExtension()
-    call s:CreateGrepDictionary()
     if !empty(&buftype)
         return
     endif
@@ -1889,6 +1889,7 @@ function! s:SetCurrentExtension()
         endif
     endif
 
+    call s:CreateGrepDictionary()
     let tempList = s:GetFileTargetList_Tracked()
 
     " When in tracked mode, change the tracked extension if it isn't
@@ -3541,9 +3542,8 @@ if !exists("g:EasyGrepFilesToExclude")
     let g:EasyGrepFilesToExclude="*.swp,*~"
 endif
 
-" EasyGrepDefaultUserPattern {{{
+" CheckDefaultUserPattern {{{
 function! s:CheckDefaultUserPattern()
-    call s:CreateGrepDictionary()
     let error = ""
     let userModeAndEmpty = (g:EasyGrepMode == s:EasyGrepModeUser) && empty(s:Dict[s:EasyGrepModeUser][1])
     if exists("g:EasyGrepDefaultUserPattern")
