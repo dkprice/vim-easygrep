@@ -14,8 +14,8 @@ GrepAdd C
 let g:EasyGrepIgnoreCase=1
 GrepAdd c
 GrepAdd C
-cclose
 
+cclose
 exe "ResultListSave ".testname.".out"
 quit!
 

@@ -7,3 +7,11 @@ casesensitivity_grep.vim
 casesensitivity_pt.vim
 casesensitivity_vimgrep.vim
 
+# wholeword
+wholeword_ack.vim
+wholeword_ag.vim
+wholeword_findstr.vim
+wholeword_grep.vim
+wholeword_pt.vim
+wholeword_vimgrep.vim
+
