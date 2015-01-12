@@ -2340,8 +2340,9 @@ function! s:ConfigureGrepCommandParameters()
                 \ 'req_str_casematch': '',
                 \ 'opt_str_patternprefix': '/',
                 \ 'opt_str_patternpostfix': '/',
-                \ 'req_str_wholewordprefix': '\<',
-                \ 'req_str_wholewordpostfix': '\>',
+                \ 'opt_str_wholewordprefix': '\<',
+                \ 'opt_str_wholewordpostfix': '\>',
+                \ 'opt_str_wholewordoption': '',
                 \ 'req_str_escapespecialcharacters': "configured@runtime",
                 \ 'opt_str_escapespecialcharacterstwice': "",
                 \ 'opt_str_mapexclusionsexpression': '',
@@ -2362,8 +2363,9 @@ function! s:ConfigureGrepCommandParameters()
                 \ 'req_str_casematch': '',
                 \ 'opt_str_patternprefix': '"',
                 \ 'opt_str_patternpostfix': '"',
-                \ 'req_str_wholewordprefix': '-w ',
-                \ 'req_str_wholewordpostfix': '',
+                \ 'opt_str_wholewordprefix': '',
+                \ 'opt_str_wholewordpostfix': '',
+                \ 'opt_str_wholewordoption': '-w ',
                 \ 'req_str_escapespecialcharacters': "\^$#.*",
                 \ 'opt_str_escapespecialcharacterstwice': "",
                 \ 'opt_str_mapexclusionsexpression': '"--exclude=\"".v:val."\""." --exclude-dir=\"".v:val."\""',
@@ -2385,8 +2387,9 @@ function! s:ConfigureGrepCommandParameters()
                 \ 'req_str_casematch': '',
                 \ 'opt_str_patternprefix': '"',
                 \ 'opt_str_patternpostfix': '"',
-                \ 'req_str_wholewordprefix': '-w ',
-                \ 'req_str_wholewordpostfix': '',
+                \ 'opt_str_wholewordprefix': '',
+                \ 'opt_str_wholewordpostfix': '',
+                \ 'opt_str_wholewordoption': '-w ',
                 \ 'req_str_escapespecialcharacters': "\^$#.*",
                 \ 'opt_str_escapespecialcharacterstwice': "",
                 \ 'opt_str_mapexclusionsexpression': '',
@@ -2407,8 +2410,9 @@ function! s:ConfigureGrepCommandParameters()
                 \ 'req_str_casematch': '',
                 \ 'opt_str_patternprefix': '"',
                 \ 'opt_str_patternpostfix': '"',
-                \ 'req_str_wholewordprefix': '-w ',
-                \ 'req_str_wholewordpostfix': '',
+                \ 'opt_str_wholewordprefix': '',
+                \ 'opt_str_wholewordpostfix': '',
+                \ 'opt_str_wholewordoption': '-w ',
                 \ 'req_str_escapespecialcharacters': "\^$#.*+?()[]{}",
                 \ 'opt_str_escapespecialcharacterstwice': "|",
                 \ 'opt_str_mapexclusionsexpression': '"--ignore-dir=\"".v:val."\""',
@@ -2431,8 +2435,9 @@ function! s:ConfigureGrepCommandParameters()
                 \ 'req_str_casematch': '',
                 \ 'opt_str_patternprefix': '"',
                 \ 'opt_str_patternpostfix': '"',
-                \ 'req_str_wholewordprefix': '-w ',
-                \ 'req_str_wholewordpostfix': '',
+                \ 'opt_str_wholewordprefix': '',
+                \ 'opt_str_wholewordpostfix': '',
+                \ 'opt_str_wholewordoption': '-w ',
                 \ 'req_str_escapespecialcharacters': "\^$#.*+?()[]{}",
                 \ 'opt_str_escapespecialcharacterstwice': "|",
                 \ 'opt_str_mapexclusionsexpression': '"--ignore-dir=\"".v:val."\""',
@@ -2453,8 +2458,9 @@ function! s:ConfigureGrepCommandParameters()
                 \ 'req_str_casematch': '',
                 \ 'opt_str_patternprefix': '',
                 \ 'opt_str_patternpostfix': '',
-                \ 'req_str_wholewordprefix': '-w ',
-                \ 'req_str_wholewordpostfix': '',
+                \ 'opt_str_wholewordprefix': '',
+                \ 'opt_str_wholewordpostfix': '',
+                \ 'opt_str_wholewordoption': '-w ',
                 \ 'req_str_escapespecialcharacters': "\^$#.*",
                 \ 'opt_str_escapespecialcharacterstwice': "",
                 \ 'opt_str_mapexclusionsexpression': '',
@@ -2475,8 +2481,9 @@ function! s:ConfigureGrepCommandParameters()
                 \ 'req_str_casematch': '',
                 \ 'opt_str_patternprefix': '',
                 \ 'opt_str_patternpostfix': '',
-                \ 'req_str_wholewordprefix': '"\<',
-                \ 'req_str_wholewordpostfix': '\>"',
+                \ 'opt_str_wholewordprefix': '"\<',
+                \ 'opt_str_wholewordpostfix': '\>"',
+                \ 'opt_str_wholewordoption': '',
                 \ 'req_str_escapespecialcharacters': "\^$#.*",
                 \ 'opt_str_escapespecialcharacterstwice': "",
                 \ 'opt_str_mapexclusionsexpression': '',
@@ -2537,14 +2544,16 @@ function! s:GetGrepCommandLine(pattern, add, wholeword, count, escapeArgs)
 
     let pattern = a:escapeArgs ? s:EscapeSpecialCharacters(a:pattern) : a:pattern
 
-    " Enclose the pattern if needed
+    " Enclose the pattern if needed; build from inner to outer
+    if wholeword
+        let pattern = commandParams["opt_str_wholewordprefix"].pattern.commandParams["opt_str_wholewordpostfix"]
+    endif
     let pattern = commandParams["opt_str_patternprefix"].pattern.commandParams["opt_str_patternpostfix"]
 
-    if wholeword
-        let pattern = commandParams["req_str_wholewordprefix"].pattern.commandParams["req_str_wholewordpostfix"]
-    endif
-
     let opts = ""
+    if wholeword
+        let opts .= s:CommandParameterOr(commandParams, "opt_str_wholewordoption", "")
+    endif
 
     if s:IsRecursiveSearch()
         if s:CommandHasLen("req_str_recurse")
