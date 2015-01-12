@@ -1,6 +1,6 @@
 
 # casesensitivity
-#casesensitivity_ack.vim
+casesensitivity_ack.vim
 casesensitivity_ag.vim
 casesensitivity_findstr.vim
 casesensitivity_grep.vim
