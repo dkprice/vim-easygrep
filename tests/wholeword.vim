@@ -7,13 +7,19 @@ let g:EasyGrepMode=3
 edit __wholeword.in
 
 " Search no whole word
-Grep whole
+ResultListTag GrepAdd whole
+GrepAdd whole
+ResultListTag GrepAdd word
 GrepAdd word
+ResultListTag GrepAdd wholeword
 GrepAdd wholeword
 
 " Explicit whole word
+ResultListTag GrepAdd -w whole
 GrepAdd -w whole
+ResultListTag GrepAdd -w word
 GrepAdd -w word
+ResultListTag GrepAdd -w wholeword
 GrepAdd -w wholeword
 
 cclose

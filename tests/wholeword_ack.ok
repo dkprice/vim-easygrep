@@ -1,11 +1,17 @@
+__wholeword.in|1 col 1| GrepAdd whole
 __wholeword.in|1 col 0| 1:whole
 __wholeword.in|3 col 0| 1:wholeword
 __wholeword.in|4 col 0| 5:wordwholeword
+__wholeword.in|1 col 1| GrepAdd word
 __wholeword.in|2 col 0| 1:word
 __wholeword.in|3 col 0| 6:wholeword
 __wholeword.in|4 col 0| 1:wordwholeword
+__wholeword.in|1 col 1| GrepAdd wholeword
 __wholeword.in|3 col 0| 1:wholeword
 __wholeword.in|4 col 0| 5:wordwholeword
+__wholeword.in|1 col 1| GrepAdd -w whole
 __wholeword.in|1 col 0| 1:whole
+__wholeword.in|1 col 1| GrepAdd -w word
 __wholeword.in|2 col 0| 1:word
+__wholeword.in|1 col 1| GrepAdd -w wholeword
 __wholeword.in|3 col 0| 1:wholeword
