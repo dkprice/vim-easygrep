@@ -1,12 +1,20 @@
+alphabet.in|1 col 1| GrepAdd c g:EasyGrepIgnoreCase=0
+alphabet.in|0 col 0| 3:c
+alphabet.in|1 col 1| GrepAdd C g:EasyGrepIgnoreCase=0
+alphabet.in|0 col 0| 29:C
+alphabet.in|1 col 1| GrepAdd -I c
+alphabet.in|0 col 0| 3:c
+alphabet.in|1 col 1| GrepAdd -I C
+alphabet.in|0 col 0| 29:C
+alphabet.in|1 col 1| GrepAdd c g:EasyGrepIgnoreCase=1
 alphabet.in|0 col 0| 3:c
 alphabet.in|0 col 0| 29:C
+alphabet.in|1 col 1| GrepAdd C g:EasyGrepIgnoreCase=1
 alphabet.in|0 col 0| 3:c
 alphabet.in|0 col 0| 29:C
+alphabet.in|1 col 1| GrepAdd -i c
 alphabet.in|0 col 0| 3:c
 alphabet.in|0 col 0| 29:C
-alphabet.in|0 col 0| 3:c
-alphabet.in|0 col 0| 29:C
-alphabet.in|0 col 0| 3:c
-alphabet.in|0 col 0| 29:C
+alphabet.in|1 col 1| GrepAdd -i C
 alphabet.in|0 col 0| 3:c
 alphabet.in|0 col 0| 29:C
