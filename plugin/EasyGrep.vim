@@ -3332,6 +3332,27 @@ function! s:ResultListSave(f)
     call s:Echo("Result list was saved to '".a:f."' successfully")
 endfunction
 "}}}
+" ResultListTag {{{
+function! s:ResultListTag(tag)
+    let lst = s:GetErrorList()
+
+    let entry = {
+                \ 'bufnr' : bufnr('%'),
+                \ 'lnum' : 1,
+                \ 'col' : 1,
+                \ 'vcol' : 0,
+                \ 'nr' : 0,
+                \ 'pattern' : '',
+                \ 'text' : a:tag,
+                \ 'type' : '1',
+                \ 'valid' : 0,
+                \ }
+
+    call add(lst, entry)
+
+    call s:SetErrorList(lst)
+endfunction
+"}}}
 " }}}
 " }}}
 
@@ -3348,6 +3369,7 @@ command! -nargs=0 ResultListOpen :call s:ResultListOpen()
 command! -nargs=+ ResultListFilter :call s:ResultListFilter(<f-args>)
 command! -nargs=+ ResultListDo :call s:ResultListDo(<q-args>)
 command! -nargs=1 ResultListSave :call s:ResultListSave(<q-args>)
+command! -nargs=1 ResultListTag :call s:ResultListTag(<q-args>)
 "}}}
 " Keymaps {{{
 if !hasmapto("<plug>EgMapGrepOptions")
