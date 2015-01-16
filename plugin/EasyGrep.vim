@@ -1976,15 +1976,14 @@ endfunction
 " }}}
 " Command Line Functions {{{
 " GrepCommandLine {{{
-function! s:GrepCommandLine(argv, add, bang)
+function! s:GrepCommandLine(argv, add)
     call s:SetGatewayVariables()
     let opts = s:ParseCommandLine(a:argv)
     if !empty(opts["failedparse"])
-        let errorstring="Invalid command: ".opts["failedparse"]
-        echo errorstring
+        call s:Error(opts["failedparse"])
     else
         call s:SetCommandLineOptions(opts)
-        call s:DoGrep(opts["pattern"], a:add, a:bang == "!" ? 1 : 0, opts["count"]>0 ? opts["count"] : "", 0)
+        call s:DoGrep(opts["pattern"], a:add, opts["whole-word"], opts["count"]>0 ? opts["count"] : "", opts["regex"] == "fixed" ? 1 : 0)
         call s:RestoreCommandLineOptions(opts)
     endif
     return s:ClearGatewayVariables()
@@ -1996,7 +1995,9 @@ function! s:ParseCommandLine(argv)
     let opts["recursive"] = 0
     let opts["case-insensitive"] = g:EasyGrepIgnoreCase
     let opts["case-sensitive"] = 0
+    let opts["whole-word"] = 0
     let opts["count"] = 0
+    let opts["regex"] = "regex"
     let opts["pattern"] = ""
     let opts["failedparse"] = ""
     let parseopts = 1
@@ -2033,6 +2034,12 @@ function! s:ParseCommandLine(argv)
                         let opts["case-insensitive"] = 1
                     elseif c ==# 'I'
                         let opts["case-sensitive"] = 1
+                    elseif c ==# 'w'
+                        let opts["whole-word"] = 1
+                    elseif c ==# 'E'
+                        let opts["regex"] = "regex"
+                    elseif c ==# 'F'
+                        let opts["regex"] = "fixed"
                     elseif c ==# 'm'
                         let j += 1
                         if j < numtokens
@@ -2042,7 +2049,7 @@ function! s:ParseCommandLine(argv)
                             let opts["failedparse"] = "Missing argument to -m"
                         endif
                     else
-                        let opts["failedparse"] = "Invalid option (".c.")"
+                        let opts["failedparse"] = "Invalid option (-".c.")"
                     endif
                     let i += 1
                 endwhile
@@ -2085,7 +2092,7 @@ function! s:RestoreCommandLineOptions(opts)
 endfunction
 " }}}
 " Replace {{{
-function! s:Replace(wholeword, argv)
+function! s:Replace(bang, argv)
     call s:SetGatewayVariables()
 
     let l = len(a:argv)
@@ -2131,12 +2138,12 @@ function! s:Replace(wholeword, argv)
     let target = argv[0]
     let replacement = argv[1]
 
-    call s:DoReplace(target, replacement, a:wholeword, 0)
+    call s:DoReplace(target, replacement, a:bang == "!" ? 1 : 0, 0)
     return s:ClearGatewayVariables()
 endfunction
 "}}}
 " ReplaceUndo {{{
-function! s:ReplaceUndo(bang)
+function! s:ReplaceUndo()
     call s:SetGatewayVariables()
     if !exists("s:actionList")
         call s:Error("No saved actions to undo")
@@ -3329,13 +3336,13 @@ endfunction
 " }}}
 
 " Commands {{{
-command! -bang -nargs=+ Grep :call s:GrepCommandLine( <q-args> , "", "<bang>")
-command! -bang -nargs=+ GrepAdd :call s:GrepCommandLine( <q-args>, "add", "<bang>")
+command! -nargs=+ Grep :call s:GrepCommandLine( <q-args> , "")
+command! -nargs=+ GrepAdd :call s:GrepCommandLine( <q-args>, "add")
 command! GrepOptions :call <sid>GrepOptions()
 command! -nargs=? GrepProgram :call <sid>ChooseGrepProgram(<f-args>)
 
 command! -bang -nargs=+ Replace :call s:Replace("<bang>", <q-args>)
-command! -bang ReplaceUndo :call s:ReplaceUndo("<bang>")
+command! ReplaceUndo :call s:ReplaceUndo()
 
 command! -nargs=0 ResultListOpen :call s:ResultListOpen()
 command! -nargs=+ ResultListFilter :call s:ResultListFilter(<f-args>)

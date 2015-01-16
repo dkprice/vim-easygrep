@@ -211,22 +211,29 @@ e.g.
 ==============================================================================
 
                                                                        *:Grep*
-:Grep [arg]
+:Grep [OPTION]... PATTERN
     Search for the specified arg, like <Leader>vv.  When an ! is added,
-    search like <Leader>vV
+    search like <Leader>vV.
 
-                                                                    *:GrepAdd*
-:GrepAdd [arg]
-    Search for the specified arg, add to existing file list, as in
-    <Leader>va.  When an ! is added, search like <Leader>vA
-
-    The Above commands can additionally accept command switches that override
+    This command can additionally accept command switches that override
     the configured settings:
     -r   Perform a recursive search
     -R   Perform a recursive search
     -i   Perform a case-insensitive search
     -I   Perform a case-sensitive search
+    -w   Perform a whole-word search
     -m   Specify the number of matches to get
+    -E   Do not escape special characters in PATTERN [default]
+         This allows for searches with regular expressions.
+    -F   Perform a "fixed" search. EasyGrep will escape the PATTERN string
+         before passing it to the configured grep program.
+
+                                                                    *:GrepAdd*
+:GrepAdd [OPTION]... PATTERN
+    Search for the specified arg, add to existing file list, as in
+    <Leader>va.  When an ! is added, search like <Leader>vA
+
+    This command behaves like :Grep but adds to the existing result list.
 
                                                                     *:Replace*
 :Replace [target] [replacement]
@@ -248,8 +255,9 @@ e.g.
     Open the options explorer to set options.
 
                                                                 *:GrepProgram*
-:GrepProgram
-    Configures one of several supports grep programs
+:GrepProgram [PROGRAM]
+    Configures one of several supports grep programs. When no explicit program
+    is specified, a dialog will allow you to choose a grep program.
 
 
 For each of the search and replace commands, searching with regular
@@ -487,13 +495,6 @@ Specifies the default pattern for 'User' mode. (see |EasyGrepMode| and
 
 ------------------------------------------------------------------------------
 Provide recommendations on the best way to use the script
-------------------------------------------------------------------------------
-Don't use <bang> for controlling whole word
-------------------------------------------------------------------------------
-Provide command line options to Grep/Replace
-- Control whole word
-- Suppress escaping
-- etc.
 ------------------------------------------------------------------------------
 
 
