@@ -15,3 +15,11 @@ wholeword_grep.vim
 wholeword_pt.vim
 wholeword_vimgrep.vim
 
+# wholeword
+exclusions_ack.vim
+exclusions_ag.vim
+# exclusions_findstr.vim # not yet supported
+exclusions_grep.vim
+# exclusions_pt.vim      # not yet supported
+exclusions_vimgrep.vim
+

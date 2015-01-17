@@ -1,0 +1,12 @@
+allext\alphabet.a|1 col 1| GrepAdd a (exclude b c)
+allext\alphabet.a|1 col 1| a
+allext\alphabet.a|1 col 1| GrepAdd A (exclude b c)
+allext\alphabet.a|27 col 1| A
+allext\alphabet.a|1 col 1| GrepAdd b (exclude a c)
+allext\alphabet.b|2 col 1| b
+allext\alphabet.a|1 col 1| GrepAdd B (exclude a c)
+allext\alphabet.b|28 col 1| B
+allext\alphabet.a|1 col 1| GrepAdd c (exclude a b)
+allext\alphabet.c|3 col 1| c
+allext\alphabet.a|1 col 1| GrepAdd C (exclude a b)
+allext\alphabet.c|29 col 1| C
