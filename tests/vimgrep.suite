@@ -26,7 +26,7 @@ exclusions_vimgrep.vim
 # simpleregex
 simpleregex_ack.vim
 simpleregex_ag.vim
-simpleregex_findstr.vim
+# simpleregex_findstr.vim # findstr is broken; it does not search character classes correctly
 simpleregex_grep.vim
 simpleregex_pt.vim
 simpleregex_vimgrep.vim

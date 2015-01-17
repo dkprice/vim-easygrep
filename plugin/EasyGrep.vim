@@ -2396,7 +2396,7 @@ function! s:ConfigureGrepCommandParameters()
                 \ 'opt_str_wholewordprefix': '',
                 \ 'opt_str_wholewordpostfix': '',
                 \ 'opt_str_wholewordoption': '-w ',
-                \ 'req_str_escapespecialcharacters': "\^$#.*",
+                \ 'req_str_escapespecialcharacters': "\^$#.*[]",
                 \ 'opt_str_escapespecialcharacterstwice': "",
                 \ 'opt_str_mapexclusionsexpression': '"--exclude=\"".v:val."\""." --exclude-dir=\"".v:val."\""',
                 \ 'opt_bool_filtertargetswithnofiles': '1',
@@ -2481,7 +2481,7 @@ function! s:ConfigureGrepCommandParameters()
                 \ })
 
     call s:RegisterGrepProgram("pt", {
-                \ 'req_str_programargs': '--nogroup --nocolor',
+                \ 'req_str_programargs': '-e --nogroup --nocolor',
                 \ 'req_bool_supportsexclusions': '0',
                 \ 'req_str_recurse': '',
                 \ 'req_str_caseignore': '-i',
@@ -2491,7 +2491,7 @@ function! s:ConfigureGrepCommandParameters()
                 \ 'opt_str_wholewordprefix': '',
                 \ 'opt_str_wholewordpostfix': '',
                 \ 'opt_str_wholewordoption': '-w ',
-                \ 'req_str_escapespecialcharacters': "\^$#.*",
+                \ 'req_str_escapespecialcharacters': "\^$#.*[]",
                 \ 'opt_str_escapespecialcharacterstwice': "",
                 \ 'opt_str_mapexclusionsexpression': '',
                 \ 'opt_bool_filtertargetswithnofiles': '1',
