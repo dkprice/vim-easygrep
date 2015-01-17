@@ -2422,7 +2422,7 @@ function! s:ConfigureGrepCommandParameters()
                 \ 'opt_str_wholewordoption': '-w ',
                 \ 'req_str_escapespecialcharacters': "\^$#.*+?()[]{}",
                 \ 'opt_str_escapespecialcharacterstwice': "|",
-                \ 'opt_str_mapexclusionsexpression': '"--ignore-dir=\"".v:val."\""',
+                \ 'opt_str_mapexclusionsexpression': '"--ignore-dir=\"".v:val."\" --ignore-file=ext:\"".substitute(v:val, "\\*\\.", "", "")."\""',
                 \ 'opt_bool_filtertargetswithnofiles': '1',
                 \ 'opt_bool_bufferdirsearchallowed': '1',
                 \ 'opt_str_suppresserrormessages': '',
