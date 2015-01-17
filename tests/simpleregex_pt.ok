@@ -1,0 +1,14 @@
+|1 col 1| GrepAdd -E [a-c]
+__simpleregex.in|1 col 0| a
+__simpleregex.in|2 col 0| b
+__simpleregex.in|3 col 0| c
+__simpleregex.in|53 col 0| [a-c]
+|1 col 1| GrepAdd -E [A-C]
+__simpleregex.in|27 col 0| A
+__simpleregex.in|28 col 0| B
+__simpleregex.in|29 col 0| C
+__simpleregex.in|54 col 0| [A-C]
+|1 col 1| GrepAdd -F [a-c]
+__simpleregex.in|53 col 0| [a-c]
+|1 col 1| GrepAdd -F [A-C]
+__simpleregex.in|54 col 0| [A-C]

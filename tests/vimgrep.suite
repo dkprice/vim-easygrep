@@ -15,7 +15,7 @@ wholeword_grep.vim
 wholeword_pt.vim
 wholeword_vimgrep.vim
 
-# wholeword
+# exclusions
 exclusions_ack.vim
 exclusions_ag.vim
 # exclusions_findstr.vim # not yet supported
@@ -23,3 +23,10 @@ exclusions_grep.vim
 # exclusions_pt.vim      # not yet supported
 exclusions_vimgrep.vim
 
+# simpleregex
+simpleregex_ack.vim
+simpleregex_ag.vim
+simpleregex_findstr.vim
+simpleregex_grep.vim
+simpleregex_pt.vim
+simpleregex_vimgrep.vim
