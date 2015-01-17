@@ -76,9 +76,10 @@ function! s:ForwardToBackSlash(arg)
 endfunction
 "}}}
 " GetBuffersOutput {{{
-function! s:GetBuffersOutput()
+function! s:GetBuffersOutput(all)
+    let optbang = a:all ? "!" : ""
     redir => bufoutput
-    silent! buffers
+    exe "silent! buffers".optbang
     " This echo clears a bug in printing that shows up when it is not present
     silent! echo ""
     redir END
@@ -88,7 +89,7 @@ endfunction
 " }}}
 " GetBufferIdList {{{
 function! s:GetBufferIdList()
-    let bufoutput = s:GetBuffersOutput()
+    let bufoutput = s:GetBuffersOutput(0)
 
     let bufids = []
     for i in split(bufoutput, "\n")
@@ -108,7 +109,7 @@ endfunction
 " }}}
 " GetBufferNamesList {{{
 function! s:GetBufferNamesList()
-    let bufoutput = s:GetBuffersOutput()
+    let bufoutput = s:GetBuffersOutput(0)
 
     let bufNames = []
     for i in split(bufoutput, "\n")
@@ -159,6 +160,23 @@ function! s:GetVisibleBuffers()
     endfor
     let tablist = s:unique(tablist)
     return tablist
+endfunction
+" }}}
+" IsListOpen {{{
+function! s:IsListOpen(name)
+    let bufoutput = s:GetBuffersOutput(1)
+    return match(bufoutput, "\\[".a:name." List\\]", 0, 0) != -1
+endfunction
+" }}}
+" IsQuickfixListOpen {{{
+function! s:IsQuickfixListOpen()
+    let a = s:IsListOpen("Quickfix")
+    return s:IsListOpen("Quickfix")
+endfunction
+" }}}
+" IsLocationListOpen {{{
+function! s:IsLocationListOpen()
+    return s:IsListOpen("Location")
 endfunction
 " }}}
 " EscapeDirIfSpace {{{
@@ -2708,10 +2726,14 @@ function! s:DoGrep(pattern, add, wholeword, count, escapeArgs)
         " In some cases the colors of vim's layout might be borked, so force vim to redraw:
         redraw!
         if g:EasyGrepOpenWindowOnMatch
-            if g:EasyGrepWindow == 0
-                execute g:EasyGrepWindowPosition." copen"
+            if g:EasyGrepWindow == 0 
+                if !s:IsQuickfixListOpen()
+                    execute g:EasyGrepWindowPosition." copen"
+                endif
             else
-                execute g:EasyGrepWindowPosition." lopen"
+                if !s:IsLocationListOpen()
+                    execute g:EasyGrepWindowPosition." lopen"
+                endif
             endif
             setlocal nofoldenable
         endif
