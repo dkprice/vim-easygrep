@@ -453,6 +453,11 @@ function! <sid>Echo(message)
     echo str
 endfunction
 "}}}
+" EchoNewline {{{
+function! <sid>EchoNewline()
+    echo " "
+endfunction
+"}}}
 " GetFileTargetList_Tracked {{{
 function! s:GetFileTargetList_Tracked()
     let lst = [s:TrackedExt]
@@ -2812,7 +2817,8 @@ function! s:ReplaceString(str, wholeword, escapeArgs)
         endif
     endif
     if r ==# a:str
-        call s:Echo("No change in pattern")
+        call s:EchoNewline()
+        call s:Warning("No change in pattern, ignoring")
         return
     endif
 
