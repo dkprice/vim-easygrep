@@ -168,7 +168,7 @@ endfunction
 "}}}
 " GetCwdEscaped {{{
 function! s:GetCwdEscaped()
-    return s:EscapeDirIfSpace(getcwd())
+    return s:FileEscape(getcwd())
 endfunction
 "}}}
 " EscapeList/ShellEscapeList {{{
@@ -614,7 +614,7 @@ function! s:GetRecursiveMinimalSetList()
             endfor
         endif
         if addToList
-            call add(bufferSetList, s:EscapeDirIfSpace(dir))
+            call add(bufferSetList, s:FileEscape(dir))
         endif
     endfor
 
