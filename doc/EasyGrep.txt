@@ -264,6 +264,10 @@ For each of the search and replace commands, searching with regular
 expressions is supported.  Note that regular expressions are handled as
 indicated by the 'magic' option (see ":help 'magic'").
 
+                                                                    *:GrepRoot*
+
+Sets |g:EasyGrepRoot| with error-checking. Clears any cached grep root.
+
                                                             *:ResultListFilter*
 :ResultListFilter [args]
     Removes entries from the error list according to whether or not they match
@@ -362,6 +366,38 @@ For example, in this configuration, whenever the active file has the .c
 extension, files with the .h extension will also be search.  A special feature
 of this syntax is the ability to link groups together.  For example, the C++
 group links to all files that are in the C group.
+
+*EasyGrepRoot*  [default=cwd]
+Specifies the location at which the grep command will be invoked.
+
+    cwd
+        Invokes grep at the current directory. This is the default behavior.
+
+    search:[key1],[key2]...
+        Searches for a file or directory with the specified key and sets the
+        location at which grep is invoked to that directory (or the directory
+        containing the specified file).  This is useful for configuring
+        EasyGrep to grep from a project root.
+
+        e.g. let g:EasyGrepRoot = "search:.git,.svn"
+        e.g. let g:EasyGrepRoot = "search:myprojectroot"
+
+        A failed search will act as is this option were set to "cwd".  Note
+        that this result is cached for performance; to reset this result use
+        the |GrepRoot| command. 
+
+    repo
+        This is shorthand for setting a builtin set of source code
+        repositories to search for.
+
+        e.g. let g:EasyGrepRoot = "repo"
+             *** is internally translated to ***
+             let g:EasyGrepRoot = "search:.git,.hg,.svn"
+    
+    [A directory]
+        This sets the grep root to a user-specified directory. If this
+        directory does not exist, an error will be reported and EasyGrep will
+        act as if this option were set to "cwd"
 
 *EasyGrepMode*  [default=0]
 Specifies the mode in which to start.

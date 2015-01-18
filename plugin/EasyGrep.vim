@@ -458,6 +458,83 @@ function! <sid>EchoNewline()
     echo " "
 endfunction
 "}}}
+" SetGrepRoot {{{
+function! s:SetGrepRoot(arg)
+    if exists("s:GrepRootCache")
+        unlet s:GrepRootCache
+    endif
+    let oldRoot = g:EasyGrepRoot
+    let g:EasyGrepRoot = a:arg
+    let [newRoot, success] = s:GetGrepRootEx()
+    if !success
+        let g:EasyGrepRoot = oldRoot
+        call s:Error("Setting GrepRoot failed; root remains as '".g:EasyGrepRoot."'")
+    endif
+endfunction
+" }}}
+" GetGrepRootEx {{{
+function! s:GetGrepRootEx()
+    let errorstring = ""
+
+    if g:EasyGrepRoot == "repository"
+        let g:EasyGrepRoot="search:.git,.hg,.svn"
+    endif
+
+    let pathtoreturn = s:GetCwdEscaped()
+    if !exists("g:EasyGrepRoot")
+        " this is ok; act as if we are specified as "cwd"
+    elseif g:EasyGrepRoot == "cwd"
+        " also ok; return the current directory
+    elseif match(g:EasyGrepRoot, "search:") != -1
+        " search for a directory matching the specified pattern
+        let searchlst = split(g:EasyGrepRoot, "search:")
+        if empty(searchlst)
+            let errorstring = "Bad pattern"
+        else
+            if exists("s:GrepRootCache") && isdirectory(s:GrepRootCache)
+                let pathtoreturn = s:GrepRootCache
+            else
+                let foundit = 0
+                let searchlst = split(searchlst[0], ",")
+                for searchkey in searchlst
+                    let dirIterator = getcwd()
+                    let foundit = 1
+                    while !isdirectory(dirIterator."/".searchkey) && !filereadable(dirIterator."/".searchkey)
+                        let oldIterator = dirIterator
+                        let dirIterator = fnamemodify(dirIterator, ":h")
+                        if dirIterator == oldIterator
+                            let foundit = 0
+                            break
+                        endif
+                    endwhile
+                    if foundit
+                        break
+                    endif
+                endfor
+                if foundit
+                    let pathtoreturn = substitute(dirIterator, escape(searchkey, "."), "", "")
+                    let s:GrepRootCache = pathtoreturn
+                endif
+            endif
+        endif
+    elseif isdirectory(g:EasyGrepRoot)
+        let pathtoreturn = g:EasyGrepRoot
+    else
+        let errorstring = "Unknown option or bad path"
+    endif
+
+    if !empty(errorstring)
+        call s:Error(errorstring." for g:EasyGrepRoot '".g:EasyGrepRoot."'; acking as if cwd")
+    endif
+    return [pathtoreturn, empty(errorstring)]
+
+endfunction
+" }}}
+" GetGrepRoot {{{
+function! s:GetGrepRoot()
+    return s:GetGrepRootEx()[0]
+endfunction
+" }}}
 " GetFileTargetList_Tracked {{{
 function! s:GetFileTargetList_Tracked()
     let lst = [s:TrackedExt]
@@ -564,7 +641,7 @@ function! s:AddBufferDirsToFileTargetList(lst)
     let newlst = copy(lst)
 
     let currDir = s:GetCwdEscaped()
-    let accepteddirs = [ currDir ]
+    let accepteddirs = [ s:GetGrepRoot() ]
     for dir in dirs
         let addToList = 1
         if dir == currDir || dir == '.'
@@ -622,7 +699,7 @@ function! s:GetRecursiveMinimalSetList()
 
     let currDir = s:GetCwdEscaped()
     let bufferdirs = sort(s:GetBufferDirsList())
-    let bufferSetList = [ currDir ]
+    let bufferSetList = [ s:GetGrepRoot() ]
 
     for dir in bufferdirs
         let addToList = 1
@@ -650,10 +727,10 @@ function! s:GetDirectorySearchList()
         if s:IsRecursiveSearch()
             return s:GetRecursiveMinimalSetList()
         else
-            return extend([s:GetCwdEscaped()], s:GetBufferDirsList())
+            return extend([s:GetGrepRoot()], s:GetBufferDirsList())
         endif
     else
-        return [ s:GetCwdEscaped() ]
+        return [ s:GetGrepRoot() ]
     endif
 endfunction
 " }}}
@@ -674,10 +751,10 @@ function! s:CheckIfCurrentFileIsSearched()
         endif
         let fileDir = fnamemodify(currFile, ":p:h")
         if !empty(fileDir) && !g:EasyGrepSearchCurrentBufferDir
-            let cwd = s:GetCwdEscaped()
+            let root = s:GetGrepRoot()
             let willmatch = 1
             if s:IsRecursiveSearch()
-                if match(fileDir, cwd) != 0
+                if match(fileDir, root) != 0
                     let willmatch = 0
                 endif
             else
@@ -870,7 +947,7 @@ function! <sid>EchoGrepCommand()
     endif
 
     let placeholder = "<pattern>"
-    let dirAnnotation = "Current Directory:     "
+    let dirAnnotation = "Grep Root:             "
     let grepCommand = s:GetGrepCommandLine(placeholder, "", 0, "", 1)
     if g:EasyGrepSearchCurrentBufferDir && s:IsBufferDirSearchAllowed()
         let dirs = s:GetDirectorySearchList()
@@ -883,7 +960,7 @@ function! <sid>EchoGrepCommand()
             call s:Echo("Note:                  Additional directories covered by recursive search")
         endif
     else
-        call s:Echo(dirAnnotation.s:GetCwdEscaped())
+        call s:Echo(dirAnnotation.s:GetGrepRoot())
     endif
     call s:Echo("VIM command:           ".grepCommand)
     if s:GetGrepCommandName() == "grep"
@@ -1490,7 +1567,6 @@ function! s:CreateOptionsString()
     endif
     call add(s:Options, "\"?: show ". (g:EasyGrepAllOptionsInExplorer ? "fewer" : "more")." options")
     call add(s:Options, "")
-    "call add(s:Options, "\"Current Directory: ".s:GetCwdEscaped())
     call add(s:Options, "\"Grep Targets: ".join(s:GetFileTargetList(0), ' '))
     call add(s:Options, "\"Inclusions: ".(!empty(g:EasyGrepFilesToInclude) ? g:EasyGrepFilesToInclude : "none"))
     call add(s:Options, "\"Exclusions: ".(!empty(g:EasyGrepFilesToExclude) ? g:EasyGrepFilesToExclude : "none").(empty(g:EasyGrepFilesToExclude) || s:CommandSupportsExclusions() ? "" : " (not supported with grepprg='".s:GetGrepProgramName()."')"))
@@ -2625,7 +2701,7 @@ function! s:GetGrepCommandLine(pattern, add, wholeword, count, escapeArgs)
     if s:CommandHas("opt_bool_replacewildcardwithcwd")
         " 1) Replace a leading star with the current directory
         " 2) Replace all trailing stars with a space
-        call map(fileTargetList, 'substitute(v:val, "^\\*$", s:GetCwdEscaped(), "")')
+        call map(fileTargetList, 'substitute(v:val, "^\\*$", s:GetGrepRoot(), "")')
     endif
 
     " Set extra inclusions and exclusions
@@ -2639,7 +2715,7 @@ function! s:GetGrepCommandLine(pattern, add, wholeword, count, escapeArgs)
             if g:EasyGrepSearchCurrentBufferDir
                 let fileTargetList = s:GetRecursiveMinimalSetList()
             else
-                let fileTargetList = [ s:GetCwdEscaped() ]
+                let fileTargetList = [ s:GetGrepRoot() ]
             endif
         endif
     endif
@@ -2694,6 +2770,9 @@ function! s:DoGrep(pattern, add, wholeword, count, escapeArgs)
     call s:SetGrepVariables(commandName)
     let grepCommand = s:GetGrepCommandLine(a:pattern, a:add, a:wholeword, a:count, a:escapeArgs)
 
+    " change directory to the grep root before executing
+    exe "lcd ".s:GetGrepRoot()
+
     let failed = 0
     try
         if s:IsRecursiveSearch()
@@ -2721,6 +2800,9 @@ function! s:DoGrep(pattern, add, wholeword, count, escapeArgs)
         endif
         let failed = 1
     endtry
+
+    " Return to the previous directory
+    lcd -
 
     call s:RestoreGrepVariables()
     if failed
@@ -3389,6 +3471,7 @@ command! -nargs=+ Grep :call s:GrepCommandLine( <q-args> , "")
 command! -nargs=+ GrepAdd :call s:GrepCommandLine( <q-args>, "add")
 command! GrepOptions :call <sid>GrepOptions()
 command! -nargs=? GrepProgram :call <sid>ChooseGrepProgram(<f-args>)
+command! -nargs=1 -complete=dir GrepRoot :call <sid>SetGrepRoot(<q-args>)
 
 command! -bang -nargs=+ Replace :call s:Replace("<bang>", <q-args>)
 command! ReplaceUndo :call s:ReplaceUndo()
@@ -3477,6 +3560,10 @@ function! s:InitializeMode()
     endif
     let s:SanitizeModeLock = 0
 endfunction
+
+if !exists("g:EasyGrepRoot")
+    let g:EasyGrepRoot="cwd"
+endif
 
 if !exists("g:EasyGrepCommand")
     let g:EasyGrepCommand=0
