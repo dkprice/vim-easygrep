@@ -32,6 +32,10 @@
 65|1 col 0| +
 |1 col 1| GrepAdd -F ,
 66|1 col 0| ,
+|1 col 1| GrepAdd -F -
+53|3 col 0| [a-c]
+54|3 col 0| [A-C]
+67|1 col 0| -
 |1 col 1| GrepAdd -F .
 68|1 col 0| .
 |1 col 1| GrepAdd -F /

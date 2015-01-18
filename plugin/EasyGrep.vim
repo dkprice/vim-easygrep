@@ -2040,7 +2040,7 @@ function! s:ParseCommandLine(argv)
             let j += 1
             continue
         endif
-        if tok[0] == '-' && parseopts
+        if tok != "-" && tok[0] == '-' && parseopts
             let tok = s:Trim(tok)
             if tok =~ '-[0-9]\+'
                 let opts["count"] = tok[1:]

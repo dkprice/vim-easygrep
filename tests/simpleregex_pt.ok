@@ -32,6 +32,10 @@ __simpleregex.in|64 col 0| *
 __simpleregex.in|65 col 0| +
 |1 col 1| GrepAdd -F ,
 __simpleregex.in|66 col 0| ,
+|1 col 1| GrepAdd -F -
+__simpleregex.in|53 col 0| [a-c]
+__simpleregex.in|54 col 0| [A-C]
+__simpleregex.in|67 col 0| -
 |1 col 1| GrepAdd -F .
 __simpleregex.in|68 col 0| .
 |1 col 1| GrepAdd -F /

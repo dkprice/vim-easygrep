@@ -51,8 +51,8 @@ GrepAdd -F +
 ResultListTag GrepAdd -F ,
 GrepAdd -F ,
 
-"ResultListTag GrepAdd -F -
-"GrepAdd -F -
+ResultListTag GrepAdd -F -
+GrepAdd -F -
 
 ResultListTag GrepAdd -F .
 GrepAdd -F .
