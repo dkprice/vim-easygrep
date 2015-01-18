@@ -12,3 +12,69 @@ __simpleregex.in|54 col 2| [A-C]
 __simpleregex.in|53 col 1| [a-c]
 |1 col 1| GrepAdd -F [A-C]
 __simpleregex.in|54 col 1| [A-C]
+|1 col 1| GrepAdd -F !
+__simpleregex.in|55 col 1| !
+|1 col 1| GrepAdd -F #
+__simpleregex.in|57 col 1| #
+|1 col 1| GrepAdd -F $
+__simpleregex.in|58 col 1| $
+|1 col 1| GrepAdd -F &
+__simpleregex.in|60 col 1| &
+|1 col 1| GrepAdd -F (
+__simpleregex.in|62 col 1| (
+__simpleregex.in|88 col 1| ()
+|1 col 1| GrepAdd -F )
+__simpleregex.in|63 col 1| )
+__simpleregex.in|88 col 2| ()
+|1 col 1| GrepAdd -F *
+__simpleregex.in|64 col 1| *
+|1 col 1| GrepAdd -F +
+__simpleregex.in|65 col 1| +
+|1 col 1| GrepAdd -F ,
+__simpleregex.in|66 col 1| ,
+|1 col 1| GrepAdd -F .
+__simpleregex.in|68 col 1| .
+|1 col 1| GrepAdd -F /
+__simpleregex.in|69 col 1| /
+|1 col 1| GrepAdd -F :
+__simpleregex.in|70 col 1| :
+|1 col 1| GrepAdd -F ;
+__simpleregex.in|71 col 1| ;
+|1 col 1| GrepAdd -F <
+__simpleregex.in|72 col 1| <
+__simpleregex.in|90 col 2| \<
+__simpleregex.in|92 col 2| \<\>
+|1 col 1| GrepAdd -F =
+__simpleregex.in|73 col 1| =
+|1 col 1| GrepAdd -F >
+__simpleregex.in|74 col 1| >
+__simpleregex.in|91 col 2| \>
+__simpleregex.in|92 col 4| \<\>
+|1 col 1| GrepAdd -F ?
+__simpleregex.in|75 col 1| ?
+|1 col 1| GrepAdd -F @
+__simpleregex.in|76 col 1| @
+|1 col 1| GrepAdd -F [
+__simpleregex.in|53 col 1| [a-c]
+__simpleregex.in|54 col 1| [A-C]
+__simpleregex.in|77 col 1| [
+__simpleregex.in|87 col 1| []
+|1 col 1| GrepAdd -F ]
+__simpleregex.in|53 col 5| [a-c]
+__simpleregex.in|54 col 5| [A-C]
+__simpleregex.in|79 col 1| ]
+__simpleregex.in|87 col 2| []
+|1 col 1| GrepAdd -F ^
+__simpleregex.in|80 col 1| ^
+|1 col 1| GrepAdd -F _
+__simpleregex.in|81 col 1| _
+|1 col 1| GrepAdd -F `
+__simpleregex.in|82 col 1| `
+|1 col 1| GrepAdd -F {
+__simpleregex.in|83 col 1| {
+__simpleregex.in|89 col 1| {}
+|1 col 1| GrepAdd -F }
+__simpleregex.in|85 col 1| }
+__simpleregex.in|89 col 2| {}
+|1 col 1| GrepAdd -F ~
+__simpleregex.in|86 col 1| ~

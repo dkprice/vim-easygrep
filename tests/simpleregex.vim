@@ -15,6 +15,101 @@ GrepAdd -F [a-c]
 ResultListTag GrepAdd -F [A-C]
 GrepAdd -F [A-C]
 
+ResultListTag GrepAdd -F !
+GrepAdd -F !
+
+"ResultListTag GrepAdd -F "
+"GrepAdd -F "
+
+ResultListTag GrepAdd -F #
+GrepAdd -F #
+
+ResultListTag GrepAdd -F $
+GrepAdd -F $
+
+"ResultListTag GrepAdd -F %
+"GrepAdd -F %
+
+ResultListTag GrepAdd -F &
+GrepAdd -F &
+
+"ResultListTag GrepAdd -F '
+"GrepAdd -F '
+
+ResultListTag GrepAdd -F (
+GrepAdd -F (
+
+ResultListTag GrepAdd -F )
+GrepAdd -F )
+
+ResultListTag GrepAdd -F *
+GrepAdd -F *
+
+ResultListTag GrepAdd -F +
+GrepAdd -F +
+
+ResultListTag GrepAdd -F ,
+GrepAdd -F ,
+
+"ResultListTag GrepAdd -F -
+"GrepAdd -F -
+
+ResultListTag GrepAdd -F .
+GrepAdd -F .
+
+ResultListTag GrepAdd -F /
+GrepAdd -F /
+
+ResultListTag GrepAdd -F :
+GrepAdd -F :
+
+ResultListTag GrepAdd -F ;
+GrepAdd -F ;
+
+ResultListTag GrepAdd -F <
+GrepAdd -F <
+
+ResultListTag GrepAdd -F =
+GrepAdd -F =
+
+ResultListTag GrepAdd -F >
+GrepAdd -F >
+
+ResultListTag GrepAdd -F ?
+GrepAdd -F ?
+
+ResultListTag GrepAdd -F @
+GrepAdd -F @
+
+ResultListTag GrepAdd -F [
+GrepAdd -F [
+
+"ResultListTag GrepAdd -F \
+"GrepAdd -F \
+
+ResultListTag GrepAdd -F ]
+GrepAdd -F ]
+
+ResultListTag GrepAdd -F ^
+GrepAdd -F ^
+
+ResultListTag GrepAdd -F _
+GrepAdd -F _
+
+ResultListTag GrepAdd -F `
+GrepAdd -F `
+
+ResultListTag GrepAdd -F {
+GrepAdd -F {
+
+"ResultListTag GrepAdd -F |
+"GrepAdd -F |
+
+ResultListTag GrepAdd -F }
+GrepAdd -F }
+
+ResultListTag GrepAdd -F ~
+GrepAdd -F ~
 
 cclose
 exe "ResultListSave ".testname.".out"
