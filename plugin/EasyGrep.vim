@@ -2433,7 +2433,7 @@ function! s:ConfigureGrepCommandParameters()
                 \ })
 
     call s:RegisterGrepProgram("ack", {
-                \ 'req_str_programargs': '--nogroup --nocolor --column --with-filename',
+                \ 'req_str_programargs': '-s --nogroup --nocolor --column --with-filename',
                 \ 'req_bool_supportsexclusions': '1',
                 \ 'req_str_recurse': '',
                 \ 'req_str_caseignore': '-i',
@@ -2446,7 +2446,7 @@ function! s:ConfigureGrepCommandParameters()
                 \ 'req_str_escapespecialcharacters': "\^$#.*+?()[]{}",
                 \ 'opt_str_escapespecialcharacterstwice': "|",
                 \ 'opt_str_mapexclusionsexpression': '"--ignore-dir=\"".v:val."\" --ignore-file=ext:\"".substitute(v:val, "\\*\\.", "", "")."\""',
-                \ 'opt_bool_filtertargetswithnofiles': '1',
+                \ 'opt_bool_filtertargetswithnofiles': '0',
                 \ 'opt_bool_bufferdirsearchallowed': '1',
                 \ 'opt_str_suppresserrormessages': '',
                 \ 'opt_bool_directoryneedsbackslash': '0',
