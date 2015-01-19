@@ -602,6 +602,20 @@ function! s:GetGrepRoot()
     return s:GetGrepRootEx()[0]
 endfunction
 " }}}
+" ChangeDirectoryToGrepRoot {{{
+function! s:ChangeDirectoryToGrepRoot()
+    if g:EasyGrepRoot != "cwd"
+        exe "lcd ".s:GetGrepRoot()
+    endif
+endfunction
+" }}}
+" ChangeDirectoryToPrevious {{{
+function! s:ChangeDirectoryToPrevious()
+    if g:EasyGrepRoot != "cwd"
+        lcd -
+    endif
+endfunction
+" }}}
 " GetFileTargetList_Tracked {{{
 function! s:GetFileTargetList_Tracked()
     let lst = [s:TrackedExt]
@@ -885,7 +899,7 @@ endfunction
 function! <sid>EchoFilesSearched()
     let str = ""
     let fileTargetList = s:GetFileTargetList(1)
-    exe "lcd ".s:GetGrepRoot()
+    call s:ChangeDirectoryToGrepRoot()
     for f in fileTargetList
         if s:IsModeBuffers()
             let str .= "    ".f."\n"
@@ -898,7 +912,7 @@ function! <sid>EchoFilesSearched()
             endfor
         endif
     endfor
-    lcd -
+    call s:ChangeDirectoryToPrevious()
 
     if !empty(str)
         call s:Echo("Files that will be searched:")
@@ -2844,7 +2858,7 @@ function! s:DoGrep(pattern, add, wholeword, count, escapeArgs)
     let grepCommand = s:GetGrepCommandLine(a:pattern, a:add, a:wholeword, a:count, a:escapeArgs)
 
     " change directory to the grep root before executing
-    exe "lcd ".s:GetGrepRoot()
+    call s:ChangeDirectoryToGrepRoot()
 
     let failed = 0
     try
@@ -2875,7 +2889,7 @@ function! s:DoGrep(pattern, add, wholeword, count, escapeArgs)
     endtry
 
     " Return to the previous directory
-    lcd -
+    call s:ChangeDirectoryToPrevious()
 
     call s:RestoreGrepVariables()
     if failed
