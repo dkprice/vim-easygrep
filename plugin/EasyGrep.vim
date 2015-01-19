@@ -136,16 +136,14 @@ endfunction
 function! s:GetBufferDirsList()
     let dirs = {}
     let bufs = s:GetBufferNamesList()
+    let currDir = s:GetCwdEscaped()
     for buf in bufs
         let d = fnamemodify(expand(buf), ":.:h")
-        if d == ""
-            let d = s:GetCwdEscaped()
+        if empty(d)
+            let d = currDir
         elseif has("win32") && d[0] == "/"
             " Add the drive prefix and remove the trailing slash
             let d = fnamemodify(d, ":p:s-/$--")
-        endif
-        if empty(d)
-            continue
         endif
         let dirs[d]=1
     endfor
@@ -585,6 +583,7 @@ function! s:GetGrepRootEx()
             endif
         endif
     elseif isdirectory(g:EasyGrepRoot)
+        let g:EasyGrepRoot = substitute(g:EasyGrepRoot, "/*$", "", "")
         let pathtoreturn = g:EasyGrepRoot
         let type = "directory"
     else
@@ -708,11 +707,15 @@ function! s:AddBufferDirsToFileTargetList(lst)
 
     let newlst = copy(lst)
 
+    let root = s:GetGrepRoot()
     let currDir = s:GetCwdEscaped()
-    let accepteddirs = [ s:GetGrepRoot() ]
+    let accepteddirs = [ root ]
     for dir in dirs
         let addToList = 1
-        if dir == currDir || dir == '.'
+        if dir == '.'
+            let dir = currDir
+        endif
+        if dir == root
             let addToList = 0
         elseif s:IsRecursiveSearch()
             for d in accepteddirs
@@ -882,6 +885,7 @@ endfunction
 function! <sid>EchoFilesSearched()
     let str = ""
     let fileTargetList = s:GetFileTargetList(1)
+    exe "lcd ".s:GetGrepRoot()
     for f in fileTargetList
         if s:IsModeBuffers()
             let str .= "    ".f."\n"
@@ -894,6 +898,7 @@ function! <sid>EchoFilesSearched()
             endfor
         endif
     endfor
+    lcd -
 
     if !empty(str)
         call s:Echo("Files that will be searched:")
