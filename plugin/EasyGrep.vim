@@ -394,6 +394,7 @@ let s:EasyGrepModeBuffers=1
 let s:EasyGrepModeTracked=2
 let s:EasyGrepModeUser=3
 let s:EasyGrepNumModes=4
+let s:EasyGrepRepositoryList="search:.git,.hg,.svn"
 
 " This is a special mode
 let s:EasyGrepModeMultipleChoice=4
@@ -459,16 +460,81 @@ function! <sid>EchoNewline()
 endfunction
 "}}}
 " SetGrepRoot {{{
-function! s:SetGrepRoot(arg)
+function! s:SetGrepRoot(...)
+    if a:0 > 0
+        let grepRootChoice = a:1
+    else
+        let lst = [ "Select grep root: " ]
+        call extend(lst, [ "1. 'cwd' (search from the current directory)" ])
+        call extend(lst, [ "2. 'repository' (alias for '".s:EasyGrepRepositoryList."')" ])
+        call extend(lst, [ "3. A specific directory" ])
+
+        let numFixedItems = 3
+        let upperLimit = 4
+        if exists("s:EasyGrepRootHistory")
+            let numAdditional = len(s:EasyGrepRootHistory)
+            for dir in s:EasyGrepRootHistory
+                call extend(lst, [ upperLimit.". Recent: ".dir ])
+                let upperLimit += 1
+            endfor
+        endif
+
+        let grepRootNumChoice = inputlist(lst)
+
+        if grepRootNumChoice == 0
+            return
+        elseif grepRootNumChoice == 1
+            let grepRootChoice = "cwd"
+        elseif grepRootNumChoice == 2
+            let grepRootChoice = "repository"
+        elseif grepRootNumChoice == 3
+            let grepRootChoice = input("Enter a directory to set the root to: ", "", "dir")
+            if empty(grepRootChoice)
+                return
+            endif
+        elseif grepRootNumChoice < upperLimit
+            let grepRootChoice = s:EasyGrepRootHistory[grepRootNumChoice - (numFixedItems + 1)]
+        else
+            echo " "
+            call s:Error("Invalid GrepRoot choice")
+            return
+        endif
+    endif
+
     if exists("s:GrepRootCache")
         unlet s:GrepRootCache
     endif
     let oldRoot = g:EasyGrepRoot
-    let g:EasyGrepRoot = a:arg
-    let [newRoot, success] = s:GetGrepRootEx()
+    let g:EasyGrepRoot = grepRootChoice
+    let [newRoot, success, type] = s:GetGrepRootEx()
     if !success
         let g:EasyGrepRoot = oldRoot
         call s:Error("Setting GrepRoot failed; root remains as '".g:EasyGrepRoot."'")
+    else
+        if type == "directory"
+            if !exists("s:EasyGrepRootHistory")
+                let s:EasyGrepRootHistory = []
+            else
+                let existingIndex = -1
+                let i = 0
+                for entry in s:EasyGrepRootHistory
+                    if entry == g:EasyGrepRoot
+                        let existingIndex = i
+                        break
+                    endif
+                    let i += 1
+                endfor
+                if existingIndex != -1
+                    call remove(s:EasyGrepRootHistory, existingIndex)
+                endif
+            endif
+            call insert(s:EasyGrepRootHistory, g:EasyGrepRoot, 0)
+        endif
+
+        if a:0 == 0
+            call s:EchoNewline()
+        endif
+        call s:Info("Set GrepRoot to '".g:EasyGrepRoot."'")
     endif
 endfunction
 " }}}
@@ -477,9 +543,10 @@ function! s:GetGrepRootEx()
     let errorstring = ""
 
     if g:EasyGrepRoot == "repository"
-        let g:EasyGrepRoot="search:.git,.hg,.svn"
+        let g:EasyGrepRoot=s:EasyGrepRepositoryList
     endif
 
+    let type = "builtin"
     let pathtoreturn = s:GetCwdEscaped()
     if !exists("g:EasyGrepRoot")
         " this is ok; act as if we are specified as "cwd"
@@ -519,6 +586,7 @@ function! s:GetGrepRootEx()
         endif
     elseif isdirectory(g:EasyGrepRoot)
         let pathtoreturn = g:EasyGrepRoot
+        let type = "directory"
     else
         let errorstring = "Unknown option or bad path"
     endif
@@ -526,7 +594,7 @@ function! s:GetGrepRootEx()
     if !empty(errorstring)
         call s:Error(errorstring." for g:EasyGrepRoot '".g:EasyGrepRoot."'; acking as if cwd")
     endif
-    return [pathtoreturn, empty(errorstring)]
+    return [pathtoreturn, empty(errorstring), type]
 
 endfunction
 " }}}
@@ -3471,7 +3539,7 @@ command! -nargs=+ Grep :call s:GrepCommandLine( <q-args> , "")
 command! -nargs=+ GrepAdd :call s:GrepCommandLine( <q-args>, "add")
 command! GrepOptions :call <sid>GrepOptions()
 command! -nargs=? GrepProgram :call <sid>ChooseGrepProgram(<f-args>)
-command! -nargs=1 -complete=dir GrepRoot :call <sid>SetGrepRoot(<q-args>)
+command! -nargs=? -complete=dir GrepRoot :call <sid>SetGrepRoot(<f-args>)
 
 command! -bang -nargs=+ Replace :call s:Replace("<bang>", <q-args>)
 command! ReplaceUndo :call s:ReplaceUndo()
