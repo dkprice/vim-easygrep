@@ -818,7 +818,9 @@ function! s:GetDirectorySearchList()
         if s:IsRecursiveSearch()
             return s:GetRecursiveMinimalSetList()
         else
-            return extend([s:GetGrepRoot()], s:GetBufferDirsList())
+            let lst = [s:GetGrepRoot()]
+            call s:AddBufferDirsToFileTargetList(lst)
+            return lst
         endif
     else
         return [ s:GetGrepRoot() ]
@@ -2805,11 +2807,7 @@ function! s:GetGrepCommandLine(pattern, add, wholeword, count, escapeArgs)
             let opts .= " " . join(map(fileTargetList, '"--include=\"" .v:val."\""'), ' '). " "
 
             " while the files we specify will be directories
-            if g:EasyGrepSearchCurrentBufferDir
-                let fileTargetList = s:GetRecursiveMinimalSetList()
-            else
-                let fileTargetList = [ s:GetGrepRoot() ]
-            endif
+            let fileTargetList = s:GetDirectorySearchList()
         endif
     endif
 
