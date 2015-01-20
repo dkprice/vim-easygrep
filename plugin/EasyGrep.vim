@@ -369,7 +369,12 @@ function! s:ClearNewline(s)
     return a:s
 endfunction
 "}}}
-" Warning/Error {{{
+" Info/Warning/Error {{{
+function! s:Log(message)
+    if exists("g:EasyGrepEnableLogging")
+        echohl Title | echomsg "[EasyGrep] Log: ".a:message | echohl None
+    endif
+endfunction
 function! s:Info(message)
     echohl Normal | echomsg "[EasyGrep] Info: ".a:message | echohl None
 endfunction
@@ -593,6 +598,7 @@ function! s:GetGrepRootEx()
     if !empty(errorstring)
         call s:Error(errorstring." for g:EasyGrepRoot '".g:EasyGrepRoot."'; acking as if cwd")
     endif
+    call s:Log("GetGrepRootEx returned ".pathtoreturn)
     return [pathtoreturn, empty(errorstring), type]
 
 endfunction
