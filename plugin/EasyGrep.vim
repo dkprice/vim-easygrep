@@ -142,8 +142,8 @@ function! s:GetBufferDirsList()
         if empty(d)
             let d = currDir
         elseif has("win32") && d[0] == "/"
-            " Add the drive prefix and remove the trailing slash
-            let d = fnamemodify(d, ":p:s-/$--")
+            " Remove the trailing slash
+            let d = fnamemodify(d, ":s-/$--")
         endif
         let dirs[d]=1
     endfor
@@ -551,7 +551,7 @@ function! s:GetGrepRootEx()
     endif
 
     let type = "builtin"
-    let pathtoreturn = s:GetCwdEscaped()
+    let pathtoreturn = "."
     if !exists("g:EasyGrepRoot")
         " this is ok; act as if we are specified as "cwd"
     elseif g:EasyGrepRoot == "cwd"
@@ -725,34 +725,14 @@ function! s:ApplySearchDirectoriesToFileTargetList(fileTargets)
     let fileTargets = a:fileTargets
 
     " Build a list of the directories in buffers
-    let dirs = s:GetBufferDirsList()
+    let dirs = s:GetDirectorySearchList()
 
-    let newlst = copy(fileTargets)
-
-    let root = s:GetGrepRoot()
-    let currDir = s:GetCwdEscaped()
-    let accepteddirs = [ root ]
+    let newlst = []
     for dir in dirs
-        let addToList = 1
-        if dir == '.'
-            let dir = currDir
-        endif
-        if dir == root
-            let addToList = 0
-        elseif s:IsRecursiveSearch()
-            for d in accepteddirs
-                if s:IsRecursivelyReachable(d, dir)
-                    let addToList = 0
-                    break
-                endif
-            endfor
-        endif
-        if addToList
-            call add(accepteddirs, dir)
-            for p in fileTargets
-                call add(newlst, dir."/".p)
-            endfor
-        endif
+        for target in fileTargets
+            let newTarget = dir == "." ? target : dir."/".target
+            call add(newlst, newTarget)
+        endfor
     endfor
 
     return newlst
@@ -819,7 +799,8 @@ function! s:GetDirectorySearchList()
             endfor
         endif
         if addToList
-            call add(bufferSetList, s:FileEscape(dir))
+            let escapedDir = s:FileEscape(dir)
+            call add(bufferSetList, escapedDir)
         endif
         let i += 1
     endwhile
@@ -1060,6 +1041,7 @@ function! <sid>EchoGrepCommand()
         let dirs = s:GetDirectorySearchList()
         let dirAnnotation = "Search Directory:      "
         for d in dirs
+            let d = (d == ".") ? d." --> ".s:GetCwdEscaped()."" : d
             call s:Echo(dirAnnotation.d)
             let dirAnnotation = "Additional Directory:  "
         endfor
