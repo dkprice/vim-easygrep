@@ -147,7 +147,8 @@ function! s:GetBufferDirsList()
         endif
         let dirs[d]=1
     endfor
-    return keys(dirs)
+    " Note that this returns a unique set of directories
+    return sort(keys(dirs))
 endfunction
 " }}}
 " GetVisibleBuffers {{{
@@ -670,13 +671,13 @@ endfunction
 " }}}
 " AddAdditionalLocationsToFileTargetList {{{
 function! s:AddAdditionalLocationsToFileTargetList(lst)
-    if empty(a:lst) || s:IsModeBuffers()
-        return a:lst
+    let lst = a:lst
+    if empty(lst) || s:IsModeBuffers()
+        return lst
     endif
 
-    let lst = a:lst
     if g:EasyGrepSearchCurrentBufferDir && s:IsBufferDirSearchAllowed()
-        let lst = s:AddBufferDirsToFileTargetList(lst)
+        let lst = s:ApplySearchDirectoriesToFileTargetList(lst)
     endif
 
     if g:EasyGrepHidden
@@ -718,14 +719,14 @@ function! s:AddAdditionalLocationsToFileTargetList(lst)
     return newlst
 endfunction
 "}}}
-" AddBufferDirsToFileTargetList {{{
-function! s:AddBufferDirsToFileTargetList(lst)
-    let lst = a:lst
+" ApplySearchDirectoriesToFileTargetList {{{
+function! s:ApplySearchDirectoriesToFileTargetList(fileTargets)
+    let fileTargets = a:fileTargets
 
     " Build a list of the directories in buffers
-    let dirs = sort(s:GetBufferDirsList())
+    let dirs = s:GetBufferDirsList()
 
-    let newlst = copy(lst)
+    let newlst = copy(fileTargets)
 
     let root = s:GetGrepRoot()
     let currDir = s:GetCwdEscaped()
@@ -747,7 +748,7 @@ function! s:AddBufferDirsToFileTargetList(lst)
         endif
         if addToList
             call add(accepteddirs, dir)
-            for p in lst
+            for p in fileTargets
                 call add(newlst, dir."/".p)
             endfor
         endif
@@ -785,18 +786,29 @@ function! s:IsRecursivelyReachable(fromthisdir, target)
     return 1
 endfunction
 " }}}
-" GetRecursiveMinimalSetList {{{
-function! s:GetRecursiveMinimalSetList()
+" GetDirectorySearchList {{{
+function! s:GetDirectorySearchList()
+    if !g:EasyGrepSearchCurrentBufferDir
+        return [ s:GetGrepRoot() ]
+    endif
 
+    let root = s:GetGrepRoot()
     let currDir = s:GetCwdEscaped()
-    let bufferdirs = sort(s:GetBufferDirsList())
-    let bufferSetList = [ s:GetGrepRoot() ]
+    let bufferDirs = s:GetBufferDirsList()
 
-    for dir in bufferdirs
+    call add(bufferDirs, root)
+    let bufferDirsWithRoot = sort(bufferDirs)
+
+    let bufferSetList = []
+
+    let i = 0
+    let end = len(bufferDirsWithRoot)
+    while i < end
+        let dir = bufferDirsWithRoot[i]
         let addToList = 1
-        if dir == currDir || dir == '.'
+        if (i > 0) && (dir == bufferDirsWithRoot[i-1])
             let addToList = 0
-        else
+        elseif s:IsRecursiveSearch()
             for d in bufferSetList
                 if s:IsRecursivelyReachable(d, dir)
                     let addToList = 0
@@ -807,24 +819,22 @@ function! s:GetRecursiveMinimalSetList()
         if addToList
             call add(bufferSetList, s:FileEscape(dir))
         endif
-    endfor
+        let i += 1
+    endwhile
+
+    " Place the root as the first item if possible
+    let i = 0
+    let end = len(bufferSetList)
+    while i < end
+        if bufferSetList[i] == root
+            call remove(bufferSetList, i)
+            call insert(bufferSetList, root, 0)
+            break
+        endif
+        let i += 1
+    endwhile
 
     return bufferSetList
-endfunction
-" }}}
-" GetDirectorySearchList {{{
-function! s:GetDirectorySearchList()
-    if g:EasyGrepSearchCurrentBufferDir
-        if s:IsRecursiveSearch()
-            return s:GetRecursiveMinimalSetList()
-        else
-            let lst = [s:GetGrepRoot()]
-            call s:AddBufferDirsToFileTargetList(lst)
-            return lst
-        endif
-    else
-        return [ s:GetGrepRoot() ]
-    endif
 endfunction
 " }}}
 " CheckIfCurrentFileIsSearched {{{
@@ -1041,27 +1051,30 @@ function! <sid>EchoGrepCommand()
         return 0
     endif
 
-    let placeholder = "<pattern>"
-    let dirAnnotation = "Grep Root:             "
-    let grepCommand = s:GetGrepCommandLine(placeholder, "", 0, "", 1)
+    let recursiveTag = s:IsRecursiveSearch() ? " (Recursive)" : ""
+    call s:Echo("Search Mode:           ".s:GetModeName(g:EasyGrepMode).recursiveTag)
+
     if g:EasyGrepSearchCurrentBufferDir && s:IsBufferDirSearchAllowed()
         let dirs = s:GetDirectorySearchList()
+        let dirAnnotation = "Search Directory:      "
         for d in dirs
             call s:Echo(dirAnnotation.d)
             let dirAnnotation = "Additional Directory:  "
         endfor
-        let bufferDirs = s:GetBufferDirsList()
-        if (len(bufferDirs) > len(dirs))
-            call s:Echo("Note:                  Additional directories covered by recursive search")
-        endif
     else
+        let dirAnnotation = "Search Directory:      "
         call s:Echo(dirAnnotation.s:GetGrepRoot())
     endif
+
+    let placeholder = "<pattern>"
+    let grepCommand = s:GetGrepCommandLine(placeholder, "", 0, "", 1)
     call s:Echo("VIM command:           ".grepCommand)
+
     if s:GetGrepCommandName() == "grep"
         let shellCommand = substitute(grepCommand, "grep", &grepprg, "")
         call s:Echo("Shell command:         ".shellCommand)
     endif
+
     if s:GetGrepCommandChoice(0) != s:GetGrepCommandChoice(1)
         call s:Echo("Note:                  "."Overriding '".substitute(s:GetGrepCommandName(0), "grep", &grepprg, "")."' with '".s:GetGrepCommandName(1)."' due to 'Buffers' mode")
     endif
@@ -2669,8 +2682,8 @@ function! s:ConfigureGrepCommandParameters()
                 \ 'opt_bool_bufferdirsearchallowed': '1',
                 \ 'opt_str_suppresserrormessages': '',
                 \ 'opt_bool_directoryneedsbackslash': '0',
-                \ 'opt_bool_isinherentlyrecursive': '0',
-                \ 'opt_bool_isselffiltering': '0',
+                \ 'opt_bool_isinherentlyrecursive': '1',
+                \ 'opt_bool_isselffiltering': '1',
                 \ 'opt_bool_replacewildcardwithcwd': '0',
                 \ })
 
