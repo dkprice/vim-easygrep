@@ -708,8 +708,9 @@ function! s:AddAdditionalLocationsToFileTargetList(lst)
 
     let newlst = []
     for item in lst
-        if s:IsRecursiveSearch() && s:IsCommandVimgrep() && fnamemodify(item, ":p") != item
-            let str = "**/".item
+        if s:IsRecursiveSearch() && s:IsCommandVimgrep()
+            " Insert a recursive specifier into the command
+            let str = substitute(item, '/\([^/]\+\)$', '/**/\1', "")
         else
             let str = item
         endif
@@ -753,6 +754,7 @@ function! s:ApplySearchDirectoriesToFileTargetList(fileTargets)
             endfor
         endif
     endfor
+
     return newlst
 endfunction
 "}}}
