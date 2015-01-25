@@ -23,6 +23,14 @@ exclusions_grep.vim
 # exclusions_pt.vim      # not yet supported
 exclusions_vimgrep.vim
 
+# recursion
+recursion_ack.vim
+recursion_ag.vim
+recursion_findstr.vim
+recursion_grep.vim
+recursion_pt.vim
+recursion_vimgrep.vim
+
 # simpleregex
 simpleregex_ack.vim
 simpleregex_ag.vim

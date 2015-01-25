@@ -1,0 +1,8 @@
+|1 col 1| GrepAdd -I c
+recursion\a\alphabet.in|3 col 0| 1:c
+recursion\b\alphabet.in|3 col 0| 1:c
+recursion\c\alphabet.in|3 col 0| 1:c
+|1 col 1| GrepAdd -I C
+recursion\a\alphabet.in|29 col 0| 1:C
+recursion\b\alphabet.in|29 col 0| 1:C
+recursion\c\alphabet.in|29 col 0| 1:C
