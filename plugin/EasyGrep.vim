@@ -548,6 +548,8 @@ function! s:GetGrepRootEx()
 
     if g:EasyGrepRoot == "repository"
         let g:EasyGrepRoot=s:EasyGrepRepositoryList
+    elseif g:EasyGrepRoot == "."
+        let g:EasyGrepRoot=s:GetCwdEscaped()
     endif
 
     let type = "builtin"
@@ -589,7 +591,14 @@ function! s:GetGrepRootEx()
             endif
         endif
     elseif isdirectory(g:EasyGrepRoot)
-        let g:EasyGrepRoot = substitute(g:EasyGrepRoot, "/*$", "", "")
+        " Trim a trailing slash
+        let g:EasyGrepRoot = substitute(g:EasyGrepRoot, "/$", "", "")
+        let fullRootPath = fnamemodify(g:EasyGrepRoot, ":p")
+        if g:EasyGrepRoot[0] == '/' && g:EasyGrepRoot != fullRootPath
+            let g:EasyGrepRoot = fullRootPath
+        elseif match(g:EasyGrepRoot, "\\./", 0) != 0 && g:EasyGrepRoot != fullRootPath
+            let g:EasyGrepRoot = "./".g:EasyGrepRoot
+        endif
         let pathtoreturn = g:EasyGrepRoot
         let type = "directory"
     else
@@ -711,6 +720,8 @@ function! s:AddAdditionalLocationsToFileTargetList(fileTargetList)
         if s:IsRecursiveSearch() && s:IsCommandVimgrep()
             " Insert a recursive specifier into the command
             let item = substitute(item, '/\([^/]\+\)$', '/**/\1', "")
+            let item = substitute(item, '/\*\*/\*$', '/**', "")
+            let item = substitute(item, '^\*$', '**', "")
         endif
         call add(newlst, item)
     endfor
@@ -2799,6 +2810,13 @@ function! s:GetGrepCommandLine(pattern, add, wholeword, count, escapeArgs, filte
         let fileTargetList = s:GetDirectorySearchList()
     endif
 
+    " Finally, ensure that the paths we pass to the external grep command are
+    " absolute paths. This command may be invoked from any location.
+    if !s:IsCommandVimgrep()
+        call map(fileTargetList, 'substitute(v:val, "^\\.\\/", s:GetCwdEscaped()."/", "")')
+        call map(fileTargetList, 'substitute(v:val, "^\\.$", s:GetCwdEscaped(), "")')
+    endif
+
     let filesToGrep = join(fileTargetList, ' ')
 
     let win = g:EasyGrepWindow != 0 ? "l" : ""
@@ -2858,6 +2876,7 @@ function! s:DoGrep(pattern, add, wholeword, count, escapeArgs)
             call s:Info("Running a recursive search, this may take a while")
         endif
 
+        call s:Log(grepCommand)
         silent execute grepCommand
     catch /.*E303.*/
         " This error reports that a swap file could not be opened; this is not a critical error
