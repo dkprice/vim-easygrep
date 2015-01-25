@@ -142,8 +142,8 @@ function! s:GetBufferDirsList()
         if empty(d)
             let d = currDir
         elseif has("win32") && d[0] == "/"
-            " Remove the trailing slash
-            let d = fnamemodify(d, ":s-/$--")
+            " Add the drive prefix but remove the trailing slash
+            let d = fnamemodify(d, ":p:s-/$--")
         endif
         let dirs[d]=1
     endfor
@@ -637,12 +637,12 @@ endfunction
 " GetFileTargetList {{{
 function! s:GetFileTargetList(addAdditionalLocations)
     let addAdditionalLocations = a:addAdditionalLocations
-    let lst = []
+    let fileTargetList = []
     if s:IsModeBuffers()
-        let lst = s:EscapeList(s:GetBufferNamesList(), " ")
+        let fileTargetList = s:EscapeList(s:GetBufferNamesList(), " ")
         let addAdditionalLocations = 0
     elseif s:IsModeTracked()
-        let lst = s:GetFileTargetList_Tracked()
+        let fileTargetList = s:GetFileTargetList_Tracked()
     else
         let i = 0
         let numItems = len(s:Dict)
@@ -655,36 +655,36 @@ function! s:GetFileTargetList(addAdditionalLocations)
         endwhile
 
         if !empty(keyList)
-            let lst = s:CollectEnabledFileTargets(keyList)
+            let fileTargetList = s:CollectEnabledFileTargets(keyList)
         else
             call s:InternalFailure("Keylist should not be empty")
-            let lst = [ "*" ]
+            let fileTargetList = [ "*" ]
         endif
     endif
 
     if addAdditionalLocations
-        let lst = s:AddAdditionalLocationsToFileTargetList(lst)
+        let fileTargetList = s:AddAdditionalLocationsToFileTargetList(fileTargetList)
     endif
 
-    return lst
+    return fileTargetList
 endfunction
 " }}}
 " AddAdditionalLocationsToFileTargetList {{{
-function! s:AddAdditionalLocationsToFileTargetList(lst)
-    let lst = a:lst
-    if empty(lst) || s:IsModeBuffers()
-        return lst
+function! s:AddAdditionalLocationsToFileTargetList(fileTargetList)
+    let fileTargetList = a:fileTargetList
+    if empty(fileTargetList) || s:IsModeBuffers()
+        return fileTargetList
     endif
 
     if g:EasyGrepSearchCurrentBufferDir && s:IsBufferDirSearchAllowed()
-        let lst = s:ApplySearchDirectoriesToFileTargetList(lst)
+        let fileTargetList = s:ApplySearchDirectoriesToFileTargetList(fileTargetList)
     endif
 
     if g:EasyGrepHidden
         let i = 0
-        let size = len(lst)
+        let size = len(fileTargetList)
         while i < size
-            let item = lst[i]
+            let item = fileTargetList[i]
             let lastpiece = strridx(item, '/')
             if lastpiece == -1 && item[0] == '.'
                 " skip this item, it's already hidden
@@ -700,21 +700,19 @@ function! s:AddAdditionalLocationsToFileTargetList(lst)
                 endif
                 let i += 1
                 let size += 1
-                call insert(lst, newItem, i)
+                call insert(fileTargetList, newItem, i)
             endif
             let i += 1
         endwhile
     endif
 
     let newlst = []
-    for item in lst
+    for item in fileTargetList
         if s:IsRecursiveSearch() && s:IsCommandVimgrep()
             " Insert a recursive specifier into the command
-            let str = substitute(item, '/\([^/]\+\)$', '/**/\1', "")
-        else
-            let str = item
+            let item = substitute(item, '/\([^/]\+\)$', '/**/\1', "")
         endif
-        call add(newlst, str)
+        call add(newlst, item)
     endfor
 
     return newlst
@@ -760,8 +758,9 @@ endfunction
 " IsRecursivelyReachable {{{
 function! s:IsRecursivelyReachable(fromthisdir, target)
     let directoryTarget = fnamemodify(a:target, ":p:h")
+    let fromthisdir = a:fromthisdir == "." ? s:GetCwdEscaped() : a:fromthisdir
 
-    if match(directoryTarget, a:fromthisdir) != 0
+    if match(directoryTarget, fromthisdir) != 0
         return 0
     endif
 
@@ -1047,11 +1046,13 @@ function! <sid>EchoGrepCommand()
         endfor
     else
         let dirAnnotation = "Search Directory:      "
-        call s:Echo(dirAnnotation.s:GetGrepRoot())
+        let d = s:GetGrepRoot()
+        let d = (d == ".") ? d." --> ".s:GetCwdEscaped()."" : d
+        call s:Echo(dirAnnotation.d)
     endif
 
     let placeholder = "<pattern>"
-    let grepCommand = s:GetGrepCommandLine(placeholder, "", 0, "", 1)
+    let grepCommand = s:GetGrepCommandLine(placeholder, "", 0, "", 1, 0)
     call s:Echo("VIM command:           ".grepCommand)
 
     if s:GetGrepCommandName() == "grep"
@@ -2550,7 +2551,6 @@ function! s:ConfigureGrepCommandParameters()
                 \ 'opt_bool_directoryneedsbackslash': '0',
                 \ 'opt_bool_isinherentlyrecursive': '0',
                 \ 'opt_bool_isselffiltering': '0',
-                \ 'opt_bool_replacewildcardwithcwd': '0',
                 \ })
 
     call s:RegisterGrepProgram("grep", {
@@ -2573,8 +2573,7 @@ function! s:ConfigureGrepCommandParameters()
                 \ 'opt_bool_directoryneedsbackslash': '0',
                 \ 'opt_bool_isinherentlyrecursive': '0',
                 \ 'opt_bool_isselffiltering': '0',
-                \ 'opt_bool_replacewildcardwithcwd': '0',
-                \ 'opt_bool_greprecursionwar': '1',
+                \ 'opt_str_recursiveinclusionexpression': '"--include=\"" .v:val."\""',
                 \ })
 
     call s:RegisterGrepProgram("git", {
@@ -2597,7 +2596,6 @@ function! s:ConfigureGrepCommandParameters()
                 \ 'opt_bool_directoryneedsbackslash': '0',
                 \ 'opt_bool_isinherentlyrecursive': '0',
                 \ 'opt_bool_isselffiltering': '0',
-                \ 'opt_bool_replacewildcardwithcwd': '0',
                 \ })
 
     call s:RegisterGrepProgram("ack", {
@@ -2620,7 +2618,6 @@ function! s:ConfigureGrepCommandParameters()
                 \ 'opt_bool_directoryneedsbackslash': '0',
                 \ 'opt_bool_isinherentlyrecursive': '1',
                 \ 'opt_bool_isselffiltering': '1',
-                \ 'opt_bool_replacewildcardwithcwd': '1',
                 \ })
 
     call s:RegisterGrepProgram("ack-grep", s:commandParamsDict["ack"])
@@ -2645,7 +2642,6 @@ function! s:ConfigureGrepCommandParameters()
                 \ 'opt_bool_directoryneedsbackslash': '0',
                 \ 'opt_bool_isinherentlyrecursive': '1',
                 \ 'opt_bool_isselffiltering': '1',
-                \ 'opt_bool_replacewildcardwithcwd': '1',
                 \ })
 
     call s:RegisterGrepProgram("pt", {
@@ -2668,7 +2664,6 @@ function! s:ConfigureGrepCommandParameters()
                 \ 'opt_bool_directoryneedsbackslash': '0',
                 \ 'opt_bool_isinherentlyrecursive': '1',
                 \ 'opt_bool_isselffiltering': '1',
-                \ 'opt_bool_replacewildcardwithcwd': '0',
                 \ })
 
     call s:RegisterGrepProgram("findstr", {
@@ -2691,7 +2686,6 @@ function! s:ConfigureGrepCommandParameters()
                 \ 'opt_bool_directoryneedsbackslash': '1',
                 \ 'opt_bool_isinherentlyrecursive': '0',
                 \ 'opt_bool_isselffiltering': '0',
-                \ 'opt_bool_replacewildcardwithcwd': '0',
                 \ })
 endfunction
 " }}}
@@ -2710,7 +2704,7 @@ function! s:GetGrepCommandParameters()
 endfunction
 " }}}
 " GetGrepCommandLine {{{
-function! s:GetGrepCommandLine(pattern, add, wholeword, count, escapeArgs)
+function! s:GetGrepCommandLine(pattern, add, wholeword, count, escapeArgs, filterTargetsWithNoFiles)
 
     call s:CheckCommandRequirements()
 
@@ -2777,7 +2771,7 @@ function! s:GetGrepCommandLine(pattern, add, wholeword, count, escapeArgs)
     let fileTargetList = s:GetFileTargetList(1)
     let filesToExclude = g:EasyGrepFilesToExclude
 
-    if s:CommandHas("opt_bool_filtertargetswithnofiles")
+    if a:filterTargetsWithNoFiles && s:CommandHas("opt_bool_filtertargetswithnofiles")
         call s:FilterTargetsWithNoFiles(fileTargetList)
     endif
 
@@ -2790,22 +2784,19 @@ function! s:GetGrepCommandLine(pattern, add, wholeword, count, escapeArgs)
         let opts .= " " . join(map(split(filesToExclude, ','), commandParams["opt_str_mapexclusionsexpression"]), ' ') . " "
     endif
 
-    if s:CommandHas("opt_bool_replacewildcardwithcwd")
-        " 1) Replace a leading star with the current directory
-        " 2) Replace all trailing stars with a space
+    if s:CommandHas("opt_bool_isinherentlyrecursive")
+        " Eliminate a trailing star
+        call map(fileTargetList, 'substitute(v:val, "/\\*$", "/", "")')
+        "" Replace an individual star with a dot
         call map(fileTargetList, 'substitute(v:val, "^\\*$", s:GetGrepRoot(), "")')
     endif
 
     " Set extra inclusions and exclusions
-    if s:CommandHas("opt_bool_greprecursionwar")
-        " Specific inclusions are only set in recursive mode
-        if s:IsRecursiveSearch()
-            " The --include paths will contain the file patterns
-            let opts .= " " . join(map(fileTargetList, '"--include=\"" .v:val."\""'), ' '). " "
-
-            " while the files we specify will be directories
-            let fileTargetList = s:GetDirectorySearchList()
-        endif
+    if s:CommandHasLen("opt_str_recursiveinclusionexpression") && s:IsRecursiveSearch()
+        " Explicitly specify the file types as arguments according to the configured expression
+        let opts .= " " . join(map(fileTargetList, commandParams["opt_str_recursiveinclusionexpression"]), ' '). " "
+        " while the files we specify will be directories
+        let fileTargetList = s:GetDirectorySearchList()
     endif
 
     let filesToGrep = join(fileTargetList, ' ')
@@ -2856,7 +2847,7 @@ function! s:DoGrep(pattern, add, wholeword, count, escapeArgs)
     endif
 
     call s:SetGrepVariables(commandName)
-    let grepCommand = s:GetGrepCommandLine(a:pattern, a:add, a:wholeword, a:count, a:escapeArgs)
+    let grepCommand = s:GetGrepCommandLine(a:pattern, a:add, a:wholeword, a:count, a:escapeArgs, 1)
 
     " change directory to the grep root before executing
     call s:ChangeDirectoryToGrepRoot()
