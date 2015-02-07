@@ -28,7 +28,7 @@ recursion_ack.vim
 recursion_ag.vim
 recursion_findstr.vim
 recursion_grep.vim
-recursion_pt.vim
+# recursion_pt.vim # disabled; output is non-deterministic
 recursion_vimgrep.vim
 
 # simpleregex
