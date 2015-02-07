@@ -470,11 +470,12 @@ function! s:SetGrepRoot(...)
     else
         let lst = [ "Select grep root: " ]
         call extend(lst, [ "1. 'cwd' (search from the current directory)" ])
-        call extend(lst, [ "2. 'repository' (alias for '".s:EasyGrepRepositoryList."')" ])
-        call extend(lst, [ "3. A specific directory" ])
+        call extend(lst, [ "2. 'search' (search from a dynamic root)" ])
+        call extend(lst, [ "3. 'repository' (alias for '".s:EasyGrepRepositoryList."')" ])
+        call extend(lst, [ "4. 'directory' (search from a specific directory)" ])
 
-        let numFixedItems = 3
-        let upperLimit = 4
+        let numFixedItems = 4
+        let upperLimit = numFixedItems + 1
         if exists("s:EasyGrepRootHistory")
             let numAdditional = len(s:EasyGrepRootHistory)
             for dir in s:EasyGrepRootHistory
@@ -490,8 +491,14 @@ function! s:SetGrepRoot(...)
         elseif grepRootNumChoice == 1
             let grepRootChoice = "cwd"
         elseif grepRootNumChoice == 2
-            let grepRootChoice = "repository"
+            let grepRootChoice = input("Enter a pattern for the dynamic root (comma separated): ", "")
+            if empty(grepRootChoice)
+                return
+            endif
+            let grepRootChoice = "search:".grepRootChoice
         elseif grepRootNumChoice == 3
+            let grepRootChoice = "repository"
+        elseif grepRootNumChoice == 4
             let grepRootChoice = input("Enter a directory to set the root to: ", "", "dir")
             if empty(grepRootChoice)
                 return
@@ -593,7 +600,7 @@ function! s:GetGrepRootEx()
     elseif isdirectory(g:EasyGrepRoot)
         " Trim a trailing slash
         let g:EasyGrepRoot = substitute(g:EasyGrepRoot, "/$", "", "")
-        let fullRootPath = fnamemodify(g:EasyGrepRoot, ":p")
+        let fullRootPath = substitute(fnamemodify(g:EasyGrepRoot, ":p"), "/$", "", "")
         if g:EasyGrepRoot[0] == '/' && g:EasyGrepRoot != fullRootPath
             let g:EasyGrepRoot = fullRootPath
         elseif match(g:EasyGrepRoot, "\\./", 0) != 0 && g:EasyGrepRoot != fullRootPath
@@ -606,7 +613,7 @@ function! s:GetGrepRootEx()
     endif
 
     if !empty(errorstring)
-        call s:Error(errorstring." for g:EasyGrepRoot '".g:EasyGrepRoot."'; acking as if cwd")
+        call s:Error(errorstring." for g:EasyGrepRoot '".g:EasyGrepRoot."'; acting as if cwd")
     endif
     call s:Log("GetGrepRootEx returned ".pathtoreturn)
     return [pathtoreturn, empty(errorstring), type]
