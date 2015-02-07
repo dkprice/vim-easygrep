@@ -2077,6 +2077,10 @@ endfunction
 " CheckCommandRequirements {{{
 function! s:CheckCommandRequirements()
     call s:SanitizeMode()
+    if s:CommandHasLen("opt_str_warnonuse")
+        let commandParams = s:GetGrepCommandParameters()
+        call s:Warning(commandParams["opt_str_warnonuse"])
+    endif
 endfunction
 " }}}
 " Extension Tracking {{{
@@ -2687,6 +2691,7 @@ function! s:ConfigureGrepCommandParameters()
                 \ 'req_str_recurse': '/S',
                 \ 'req_str_caseignore': '/I',
                 \ 'req_str_casematch': '',
+                \ 'opt_str_warnonuse': 'The findstr program is buggy and not-recommended for use',
                 \ 'opt_str_patternprefix': '',
                 \ 'opt_str_patternpostfix': '',
                 \ 'opt_str_wholewordprefix': '"\<',
