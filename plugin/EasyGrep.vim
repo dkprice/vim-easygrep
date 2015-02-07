@@ -620,14 +620,14 @@ endfunction
 " }}}
 " ChangeDirectoryToGrepRoot {{{
 function! s:ChangeDirectoryToGrepRoot()
-    if g:EasyGrepRoot != "cwd"
+    if g:EasyGrepRoot != "cwd" && !s:IsCommandVimgrep()
         exe "lcd ".s:GetGrepRoot()
     endif
 endfunction
 " }}}
 " ChangeDirectoryToPrevious {{{
 function! s:ChangeDirectoryToPrevious()
-    if g:EasyGrepRoot != "cwd"
+    if g:EasyGrepRoot != "cwd" && !s:IsCommandVimgrep()
         lcd -
     endif
 endfunction
@@ -2415,9 +2415,6 @@ function! s:ReplaceUndo()
                 else
                     execute "ll ".(cc+1)
                 endif
-
-                " TODO: increase the granularity of the undo to be per-atom
-                " TODO: check that replacement is at off
 
                 let thisLine = getline(".")
                 let linebeg = strpart(thisLine, 0, off)
