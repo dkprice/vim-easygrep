@@ -42,5 +42,24 @@ Commands:
         work well when edits are made between a call to Replace and a call to 
         ReplaceUndo. 
 
-    :GrepOptions [arg] 
+    :GrepOptions
         Open a window to set grep options.
+
+    :GrepProgram [+arg] 
+        Select a grep program from a list of programs found on your system. An
+        optional argument may be provided to switch to the program without user
+        interaction.
+
+    :GrepRoot [+arg] 
+        Configure the location that EasyGrep searches from. An optional argument
+        may be provided to switch to the program without user interaction.
+        Roots:
+          1. The current directory. As the current directory changes, the search
+             location changes automatically.
+          2. A dynamic directory that easygrep searches for. This is useful for
+             finding the root of a project with a marker like ".git".
+          3. A user specified directory. The search location is fixed and does 
+             not change.
+        
+        
+
