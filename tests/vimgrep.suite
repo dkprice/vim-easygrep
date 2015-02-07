@@ -2,7 +2,6 @@
 # casesensitivity
 casesensitivity_ack.vim
 casesensitivity_ag.vim
-casesensitivity_findstr.vim
 casesensitivity_grep.vim
 casesensitivity_pt.vim
 casesensitivity_vimgrep.vim
@@ -10,7 +9,6 @@ casesensitivity_vimgrep.vim
 # wholeword
 wholeword_ack.vim
 wholeword_ag.vim
-wholeword_findstr.vim
 wholeword_grep.vim
 wholeword_pt.vim
 wholeword_vimgrep.vim
@@ -18,7 +16,6 @@ wholeword_vimgrep.vim
 # exclusions
 exclusions_ack.vim
 exclusions_ag.vim
-# exclusions_findstr.vim # not yet supported
 exclusions_grep.vim
 # exclusions_pt.vim      # not yet supported
 exclusions_vimgrep.vim
@@ -26,7 +23,6 @@ exclusions_vimgrep.vim
 # recursion
 recursion_ack.vim
 recursion_ag.vim
-recursion_findstr.vim
 recursion_grep.vim
 # recursion_pt.vim # disabled; output is non-deterministic
 recursion_vimgrep.vim
@@ -34,7 +30,6 @@ recursion_vimgrep.vim
 # simpleregex
 simpleregex_ack.vim
 simpleregex_ag.vim
-# simpleregex_findstr.vim # findstr is broken; it does not search character classes correctly
 simpleregex_grep.vim
 simpleregex_pt.vim
 simpleregex_vimgrep.vim
