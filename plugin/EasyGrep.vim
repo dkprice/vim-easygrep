@@ -3775,7 +3775,7 @@ if !exists("g:EasyGrepReplaceAllPerFile")
 endif
 
 if !exists("g:EasyGrepExtraWarnings")
-    let g:EasyGrepExtraWarnings=1
+    let g:EasyGrepExtraWarnings=0
 endif
 
 if !exists("g:EasyGrepWindowPosition")
