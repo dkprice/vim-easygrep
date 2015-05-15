@@ -1393,7 +1393,7 @@ function! <sid>ToggleWindow()
     let g:EasyGrepWindow = !g:EasyGrepWindow
     call s:RefreshAllOptions()
 
-    call s:Echo("Set window to (".s:GetErrorListName().")")
+    call s:Echo("Set window to (".EasyGrep#GetErrorListName().")")
 endfunction
 "}}}
 " ToggleOpenWindow {{{
@@ -1657,7 +1657,7 @@ function! s:CreateOptionsString()
     if g:EasyGrepAllOptionsInExplorer
         call add(s:Options, "\"x: set files to exclude")
         call add(s:Options, "\"c: change grep command (".s:GetGrepCommandNameWithOptions().")")
-        call add(s:Options, "\"w: window to use (".s:GetErrorListName().")")
+        call add(s:Options, "\"w: window to use (".EasyGrep#GetErrorListName().")")
         call add(s:Options, "\"m: replace window mode (".s:GetReplaceWindowModeString(g:EasyGrepReplaceWindowMode).")")
         call add(s:Options, "\"o: open window on match (".s:OnOrOff(g:EasyGrepOpenWindowOnMatch).")")
         call add(s:Options, "\"g: separate multiple matches (".s:OnOrOff(g:EasyGrepEveryMatch).")")
@@ -2383,7 +2383,7 @@ function! s:ReplaceUndo()
         endif
     endif
 
-    call s:SetErrorList(s:LastErrorList)
+    call EasyGrep#SetErrorList(s:LastErrorList)
     call s:GotoStartErrorList()
 
     let bufList = s:GetVisibleBuffers()
@@ -2942,7 +2942,7 @@ endfunction
 " }}}
 " HasGrepResults{{{
 function! s:HasGrepResults()
-    return !empty(s:GetErrorList())
+    return !empty(EasyGrep#GetErrorList())
 endfunction
 "}}}
 " HasFilesThatMatch{{{
@@ -3025,7 +3025,7 @@ function! s:DoReplace(target, replacement, wholeword, escapeArgs)
     let target = a:escapeArgs ? s:EscapeSpecialCharacters(a:target) : a:target
     let replacement = a:replacement
 
-    let s:LastErrorList = deepcopy(s:GetErrorList())
+    let s:LastErrorList = deepcopy(EasyGrep#GetErrorList())
     let numMatches = len(s:LastErrorList)
 
     let s:actionList = []
@@ -3246,42 +3246,6 @@ endfunction
 "}}}
 " }}}
 " ResultList Functions {{{
-" GetErrorList {{{
-function! s:GetErrorList()
-    if g:EasyGrepWindow == 0
-        return getqflist()
-    else
-        return getloclist(0)
-    endif
-endfunction
-"}}}
-" GetErrorListName {{{
-function! s:GetErrorListName()
-    if g:EasyGrepWindow == 0
-        return 'quickfix'
-    else
-        return 'location list'
-    endif
-endfunction
-"}}}
-" SetErrorList {{{
-function! s:SetErrorList(lst)
-    if g:EasyGrepWindow == 0
-        call setqflist(a:lst)
-    else
-        call setloclist(0,a:lst)
-    endif
-endfunction
-"}}}
-" GotoStartErrorList {{{
-function! s:GotoStartErrorList()
-    if g:EasyGrepWindow == 0
-        cfirst
-    else
-        lfirst
-    endif
-endfunction
-"}}}
 " ResultListFilter {{{
 function! s:ResultListFilter(...)
     let mode = 'g'
@@ -3314,7 +3278,7 @@ function! s:ResultListFilter(...)
         return
     endif
 
-    let lst = s:GetErrorList()
+    let lst = EasyGrep#GetErrorList()
     if empty(lst)
         call s:Error("Error list is empty")
         return
@@ -3337,12 +3301,12 @@ function! s:ResultListFilter(...)
         endfor
     endfor
 
-    call s:SetErrorList(newlst)
+    call EasyGrep#SetErrorList(newlst)
 endfunction
 "}}}
 " ResultListOpen {{{
 function! s:ResultListOpen(...)
-    let lst = s:GetErrorList()
+    let lst = EasyGrep#GetErrorList()
 
     if empty(lst)
         call s:Error("Error list is empty")
@@ -3360,7 +3324,7 @@ endfunction
 "}}}
 " ResultListDo {{{
 function! s:ResultListDo(command)
-    let lst = s:GetErrorList()
+    let lst = EasyGrep#GetErrorList()
     if empty(lst)
         call s:Error("Error list is empty")
         return
@@ -3527,7 +3491,7 @@ function! s:ResultListSave(f)
         call s:Echo("Proceeding to overwrite '".a:f."'")
     endif
 
-    let lst = s:GetErrorList()
+    let lst = EasyGrep#GetErrorList()
 
     if empty(lst)
         call s:Error("No result list to save")
@@ -3552,7 +3516,7 @@ endfunction
 "}}}
 " ResultListTag {{{
 function! s:ResultListTag(tag)
-    let lst = s:GetErrorList()
+    let lst = EasyGrep#GetErrorList()
 
     let entry = {
                 \ 'bufnr' : bufnr('%'),
@@ -3568,7 +3532,7 @@ function! s:ResultListTag(tag)
 
     call add(lst, entry)
 
-    call s:SetErrorList(lst)
+    call EasyGrep#SetErrorList(lst)
 endfunction
 "}}}
 " }}}
