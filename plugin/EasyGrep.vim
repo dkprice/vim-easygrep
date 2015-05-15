@@ -1054,19 +1054,21 @@ function! <sid>EchoGrepCommand()
     let recursiveTag = s:IsRecursiveSearch() ? " (Recursive)" : ""
     call s:Echo("Search Mode:           ".s:GetModeName(g:EasyGrepMode).recursiveTag)
 
-    if g:EasyGrepSearchCurrentBufferDir && s:IsBufferDirSearchAllowed()
-        let dirs = s:GetDirectorySearchList()
-        let dirAnnotation = "Search Directory:      "
-        for d in dirs
+    if !s:CommandHas("opt_bool_nofiletargets")
+        if g:EasyGrepSearchCurrentBufferDir && s:IsBufferDirSearchAllowed()
+            let dirs = s:GetDirectorySearchList()
+            let dirAnnotation = "Search Directory:      "
+            for d in dirs
+                let d = (d == ".") ? d." --> ".s:GetCwdEscaped()."" : d
+                call s:Echo(dirAnnotation.d)
+                let dirAnnotation = "Additional Directory:  "
+            endfor
+        else
+            let dirAnnotation = "Search Directory:      "
+            let d = s:GetGrepRoot()
             let d = (d == ".") ? d." --> ".s:GetCwdEscaped()."" : d
             call s:Echo(dirAnnotation.d)
-            let dirAnnotation = "Additional Directory:  "
-        endfor
-    else
-        let dirAnnotation = "Search Directory:      "
-        let d = s:GetGrepRoot()
-        let d = (d == ".") ? d." --> ".s:GetCwdEscaped()."" : d
-        call s:Echo(dirAnnotation.d)
+        endif
     endif
 
     let placeholder = "<pattern>"
@@ -2571,6 +2573,7 @@ function! s:ConfigureGrepCommandParameters()
                 \ 'opt_bool_directoryneedsbackslash': '0',
                 \ 'opt_bool_isinherentlyrecursive': '0',
                 \ 'opt_bool_isselffiltering': '0',
+                \ 'opt_bool_nofiletargets': '0',
                 \ })
 
     call s:RegisterGrepProgram("grep", {
@@ -2593,6 +2596,7 @@ function! s:ConfigureGrepCommandParameters()
                 \ 'opt_bool_directoryneedsbackslash': '0',
                 \ 'opt_bool_isinherentlyrecursive': '0',
                 \ 'opt_bool_isselffiltering': '0',
+                \ 'opt_bool_nofiletargets': '0',
                 \ 'opt_str_recursiveinclusionexpression': '"--include=\"" .v:val."\""',
                 \ })
 
@@ -2616,6 +2620,7 @@ function! s:ConfigureGrepCommandParameters()
                 \ 'opt_bool_directoryneedsbackslash': '0',
                 \ 'opt_bool_isinherentlyrecursive': '0',
                 \ 'opt_bool_isselffiltering': '0',
+                \ 'opt_bool_nofiletargets': '0',
                 \ })
 
     call s:RegisterGrepProgram("ack", {
@@ -2638,6 +2643,7 @@ function! s:ConfigureGrepCommandParameters()
                 \ 'opt_bool_directoryneedsbackslash': '0',
                 \ 'opt_bool_isinherentlyrecursive': '1',
                 \ 'opt_bool_isselffiltering': '1',
+                \ 'opt_bool_nofiletargets': '0',
                 \ })
 
     call s:RegisterGrepProgram("ack-grep", s:commandParamsDict["ack"])
@@ -2662,6 +2668,7 @@ function! s:ConfigureGrepCommandParameters()
                 \ 'opt_bool_directoryneedsbackslash': '0',
                 \ 'opt_bool_isinherentlyrecursive': '1',
                 \ 'opt_bool_isselffiltering': '1',
+                \ 'opt_bool_nofiletargets': '0',
                 \ })
 
     call s:RegisterGrepProgram("pt", {
@@ -2684,6 +2691,30 @@ function! s:ConfigureGrepCommandParameters()
                 \ 'opt_bool_directoryneedsbackslash': '0',
                 \ 'opt_bool_isinherentlyrecursive': '1',
                 \ 'opt_bool_isselffiltering': '1',
+                \ 'opt_bool_nofiletargets': '0',
+                \ })
+
+    call s:RegisterGrepProgram("csearch", {
+                \ 'req_str_programargs': '-n',
+                \ 'req_bool_supportsexclusions': '0',
+                \ 'req_str_recurse': '',
+                \ 'req_str_caseignore': '-i',
+                \ 'req_str_casematch': '',
+                \ 'opt_str_patternprefix': '"',
+                \ 'opt_str_patternpostfix': '"',
+                \ 'opt_str_wholewordprefix': '',
+                \ 'opt_str_wholewordpostfix': '',
+                \ 'opt_str_wholewordoption': '',
+                \ 'req_str_escapespecialcharacters': "\^$#.*+?()[]{}",
+                \ 'opt_str_escapespecialcharacterstwice': "",
+                \ 'opt_str_mapexclusionsexpression': '',
+                \ 'opt_bool_filtertargetswithnofiles': '0',
+                \ 'opt_bool_bufferdirsearchallowed': '0',
+                \ 'opt_str_suppresserrormessages': '',
+                \ 'opt_bool_directoryneedsbackslash': '0',
+                \ 'opt_bool_isinherentlyrecursive': '1',
+                \ 'opt_bool_isselffiltering': '1',
+                \ 'opt_bool_nofiletargets': '1',
                 \ })
 
     "call s:RegisterGrepProgram("findstr", {
@@ -2789,7 +2820,7 @@ function! s:GetGrepCommandLine(pattern, add, wholeword, count, escapeArgs, filte
         let opts .= commandParams["opt_str_suppresserrormessages"]." "
     endif
 
-    let fileTargetList = s:GetFileTargetList(1)
+    let fileTargetList = s:CommandHas("opt_bool_nofiletargets") ? [] : s:GetFileTargetList(1)
     let filesToExclude = g:EasyGrepFilesToExclude
 
     if a:filterTargetsWithNoFiles && s:CommandHas("opt_bool_filtertargetswithnofiles")
