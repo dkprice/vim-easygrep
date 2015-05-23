@@ -2386,7 +2386,7 @@ function! s:ReplaceUndo()
     endif
 
     call EasyGrep#SetErrorList(s:LastErrorList)
-    call s:GotoStartErrorList()
+    call EasyGrep#GotoStartErrorList()
 
     let bufList = s:GetVisibleBuffers()
 
@@ -3076,7 +3076,7 @@ function! s:DoReplace(target, replacement, wholeword, escapeArgs)
 
     let bufList = s:GetVisibleBuffers()
 
-    call s:GotoStartErrorList()
+    call EasyGrep#GotoStartErrorList()
 
     call s:SaveVariable("ignorecase")
     let &ignorecase = g:EasyGrepIgnoreCase
@@ -3378,7 +3378,7 @@ function! s:ResultListDo(command)
 
     let bufList = s:GetVisibleBuffers()
 
-    call s:GotoStartErrorList()
+    call EasyGrep#GotoStartErrorList()
 
     call s:SaveVariable("cursorline")
     set cursorline
