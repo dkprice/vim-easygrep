@@ -2587,7 +2587,7 @@ function! s:ConfigureGrepCommandParameters()
                 \ 'opt_str_wholewordprefix': '',
                 \ 'opt_str_wholewordpostfix': '',
                 \ 'opt_str_wholewordoption': '-w ',
-                \ 'req_str_escapespecialcharacters': "\^$#.*[]",
+                \ 'req_str_escapespecialcharacters': "-\^$#.*[]",
                 \ 'opt_str_escapespecialcharacterstwice': "",
                 \ 'opt_str_mapexclusionsexpression': '"--exclude=\"".v:val."\""." --exclude-dir=\"".v:val."\""',
                 \ 'opt_bool_filtertargetswithnofiles': '1',
@@ -2611,7 +2611,7 @@ function! s:ConfigureGrepCommandParameters()
                 \ 'opt_str_wholewordprefix': '',
                 \ 'opt_str_wholewordpostfix': '',
                 \ 'opt_str_wholewordoption': '-w ',
-                \ 'req_str_escapespecialcharacters': "\^$#.*",
+                \ 'req_str_escapespecialcharacters': "-\^$#.*",
                 \ 'opt_str_escapespecialcharacterstwice': "",
                 \ 'opt_str_mapexclusionsexpression': '',
                 \ 'opt_bool_filtertargetswithnofiles': '1',
@@ -2634,7 +2634,7 @@ function! s:ConfigureGrepCommandParameters()
                 \ 'opt_str_wholewordprefix': '',
                 \ 'opt_str_wholewordpostfix': '',
                 \ 'opt_str_wholewordoption': '-w ',
-                \ 'req_str_escapespecialcharacters': "\^$#.*+?()[]{}",
+                \ 'req_str_escapespecialcharacters': "-\^$#.*+?()[]{}",
                 \ 'opt_str_escapespecialcharacterstwice': "|",
                 \ 'opt_str_mapexclusionsexpression': '"--ignore-dir=\"".v:val."\" --ignore-file=ext:\"".substitute(v:val, "\\*\\.", "", "")."\""',
                 \ 'opt_bool_filtertargetswithnofiles': '0',
@@ -2659,7 +2659,7 @@ function! s:ConfigureGrepCommandParameters()
                 \ 'opt_str_wholewordprefix': '',
                 \ 'opt_str_wholewordpostfix': '',
                 \ 'opt_str_wholewordoption': '-w ',
-                \ 'req_str_escapespecialcharacters': "\^$#.*+?()[]{}",
+                \ 'req_str_escapespecialcharacters': "-\^$#.*+?()[]{}",
                 \ 'opt_str_escapespecialcharacterstwice': "|",
                 \ 'opt_str_mapexclusionsexpression': '"--ignore-dir=\"".v:val."\""',
                 \ 'opt_bool_filtertargetswithnofiles': '1',
@@ -2682,7 +2682,7 @@ function! s:ConfigureGrepCommandParameters()
                 \ 'opt_str_wholewordprefix': '',
                 \ 'opt_str_wholewordpostfix': '',
                 \ 'opt_str_wholewordoption': '-w ',
-                \ 'req_str_escapespecialcharacters': "\^$#.*+?()[]{}",
+                \ 'req_str_escapespecialcharacters': "-\^$#.*+?()[]{}",
                 \ 'opt_str_escapespecialcharacterstwice': "",
                 \ 'opt_str_mapexclusionsexpression': '',
                 \ 'opt_bool_filtertargetswithnofiles': '1',
@@ -2952,7 +2952,7 @@ function! s:DoGrep(pattern, add, wholeword, count, escapeArgs)
         " In some cases the colors of vim's layout might be borked, so force vim to redraw:
         redraw!
         if g:EasyGrepOpenWindowOnMatch
-            if g:EasyGrepWindow == 0 
+            if g:EasyGrepWindow == 0
                 if !s:IsQuickfixListOpen()
                     execute g:EasyGrepWindowPosition." copen"
                 endif
