@@ -635,7 +635,7 @@ function! s:OpenOptionsExplorer()
     syn match Selection    /^\ \w.*/
     highlight def link Selection String
 
-    call s:MapOptionsKeys()
+    call s:MapOptionsExplorerKeys()
 
     call s:FillWindow()
 endfunction
@@ -1415,8 +1415,8 @@ function! s:CreateOptionsString()
 
 endfunction
 "}}}
-" MapOptionsKeys {{{
-function! s:MapOptionsKeys()
+" MapOptionsExplorerKeys {{{
+function! s:MapOptionsExplorerKeys()
 
     nnoremap <buffer> <silent> <cr> :call <sid>SelectOptionExplorerLine()<cr>
     nnoremap <buffer> <silent> :    :call <sid>Echo("Type q to quit")<cr>
