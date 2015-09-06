@@ -702,7 +702,7 @@ endfunction
 " ChooseGrepProgram {{{
 function! <sid>ChooseGrepProgram(...)
 
-    let programNames = sort(keys(s:commandParamsDict))
+    let programNames = sort(keys(g:EasyGrep_commandParamsDict))
 
     if a:0 > 0
         let grepChoiceStr = a:1
@@ -758,13 +758,13 @@ function! s:SetGrepCommand(grepChoice)
     else
         let g:EasyGrepCommand = 1
 
-        if !has_key(s:commandParamsDict, a:grepChoice)
+        if !has_key(g:EasyGrep_commandParamsDict, a:grepChoice)
             return 0
         endif
 
         let args = ""
-        if len(s:commandParamsDict[a:grepChoice]["req_str_programargs"])
-            let args = '\ '.escape(s:commandParamsDict[a:grepChoice]["req_str_programargs"], ' ')
+        if len(g:EasyGrep_commandParamsDict[a:grepChoice]["req_str_programargs"])
+            let args = '\ '.escape(g:EasyGrep_commandParamsDict[a:grepChoice]["req_str_programargs"], ' ')
         endif
         exe "set grepprg=".a:grepChoice.args
     endif
@@ -2253,21 +2253,21 @@ endfunction
 "}}}
 " RegisterGrepProgram {{{
 function! s:RegisterGrepProgram(programName, programSettingsDict)
-    if !exists("s:commandParamsDict")
-        let s:commandParamsDict = {}
+    if !exists("g:EasyGrep_commandParamsDict")
+        let g:EasyGrep_commandParamsDict = {}
     endif
 
-    if has_key(s:commandParamsDict, a:programName)
+    if has_key(g:EasyGrep_commandParamsDict, a:programName)
         call EasyGrep#Error("Cannot register '".a:programName."' because it is already registered")
         return
     endif
 
-    let s:commandParamsDict[a:programName] = a:programSettingsDict
+    let g:EasyGrep_commandParamsDict[a:programName] = a:programSettingsDict
 endfunction
 " }}}
 " ConfigureGrepCommandParameters {{{
 function! s:ConfigureGrepCommandParameters()
-    if exists("s:commandParamsDict")
+    if exists("g:EasyGrep_commandParamsDict")
         return
     endif
 
@@ -2364,7 +2364,7 @@ function! s:ConfigureGrepCommandParameters()
                 \ 'opt_bool_nofiletargets': '0',
                 \ })
 
-    call s:RegisterGrepProgram("ack-grep", s:commandParamsDict["ack"])
+    call s:RegisterGrepProgram("ack-grep", g:EasyGrep_commandParamsDict["ack"])
 
     call s:RegisterGrepProgram("ag", {
                 \ 'req_str_programargs': '--nogroup --nocolor --column',
@@ -2462,15 +2462,15 @@ endfunction
 " GetGrepCommandParameters {{{
 function! s:GetGrepCommandParameters()
     if s:IsCommandVimgrep()
-        return s:commandParamsDict["vimgrep"]
+        return g:EasyGrep_commandParamsDict["vimgrep"]
     endif
 
     let programName = s:GetGrepProgramName()
-    if !has_key(s:commandParamsDict, programName)
+    if !has_key(g:EasyGrep_commandParamsDict, programName)
         return {}
     endif
 
-    return s:commandParamsDict[programName]
+    return g:EasyGrep_commandParamsDict[programName]
 endfunction
 " }}}
 " GetGrepCommandLine {{{
