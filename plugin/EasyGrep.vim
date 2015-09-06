@@ -25,288 +25,6 @@ endif
 " }}}
 
 " Internals {{{
-" Helper Functions {{{
-" countstr {{{
-function! s:countstr(str, ele)
-    let end = len(a:str)
-    let c = 0
-    let i = 0
-    while i < end
-        if a:str[i] == a:ele
-            let c += 1
-        endif
-        let i += 1
-    endwhile
-
-    return c
-endfunction
-"}}}
-" unique {{{
-function! s:unique(lst)
-    if empty(a:lst)
-        return a:lst
-    endif
-
-    let lst = a:lst
-    call sort(lst)
-
-    let end = len(lst)
-    let i = 1
-    let lastSeen = lst[0]
-    while i < end
-        if lst[i] == lastSeen
-            call remove(lst, i)
-            let end -= 1
-        else
-            let i += 1
-        endif
-    endwhile
-
-    return lst
-endfunction
-"}}}
-" BackToForwardSlash {{{
-function! s:BackToForwardSlash(arg)
-    return substitute(a:arg, '\\', '/', 'g')
-endfunction
-"}}}
-" ForwardToBackSlash {{{
-function! s:ForwardToBackSlash(arg)
-    return substitute(a:arg, '/', '\\', 'g')
-endfunction
-"}}}
-" GetBuffersOutput {{{
-function! s:GetBuffersOutput(all)
-    let optbang = a:all ? "!" : ""
-    redir => bufoutput
-    exe "silent! buffers".optbang
-    " This echo clears a bug in printing that shows up when it is not present
-    silent! echo ""
-    redir END
-
-    return bufoutput
-endfunction
-" }}}
-" GetBufferIdList {{{
-function! s:GetBufferIdList()
-    let bufoutput = s:GetBuffersOutput(0)
-
-    let bufids = []
-    for i in split(bufoutput, "\n")
-        let s1 = 0
-        while i[s1] == ' '
-            let s1 += 1
-        endwhile
-
-        let s2 = stridx(i, ' ', s1) - 1
-        let id = str2nr(i[s1 : s2])
-
-        call add(bufids, id)
-    endfor
-
-    return bufids
-endfunction
-" }}}
-" GetBufferNamesList {{{
-function! s:GetBufferNamesList()
-    let bufoutput = s:GetBuffersOutput(0)
-
-    let bufNames = []
-    for i in split(bufoutput, "\n")
-        let s1 = stridx(i, '"') + 1
-        let s2 = stridx(i, '"', s1) - 1
-        let str = i[s1 : s2]
-
-        if str[0] == '[' && str[len(str)-1] == ']'
-            continue
-        endif
-
-        if str != "" && has("win32") && str[0] == "/"
-            " Add the drive prefix
-            let str = fnamemodify(str, ":p")
-        endif
-
-        call add(bufNames, str)
-    endfor
-
-    return bufNames
-endfunction
-" }}}
-" GetBufferDirsList {{{
-function! s:GetBufferDirsList()
-    let dirs = {}
-    let bufs = s:GetBufferNamesList()
-    let currDir = s:GetCwdEscaped()
-    for buf in bufs
-        let d = fnamemodify(expand(buf), ":.:h")
-        if empty(d)
-            let d = currDir
-        elseif has("win32") && d[0] == "/"
-            " Add the drive prefix but remove the trailing slash
-            let d = fnamemodify(d, ":p:s-/$--")
-        endif
-        let dirs[d]=1
-    endfor
-    " Note that this returns a unique set of directories
-    return sort(keys(dirs))
-endfunction
-" }}}
-" GetVisibleBuffers {{{
-function! s:GetVisibleBuffers()
-    let tablist = []
-    for i in range(tabpagenr('$'))
-       call extend(tablist, tabpagebuflist(i + 1))
-    endfor
-    let tablist = s:unique(tablist)
-    return tablist
-endfunction
-" }}}
-" IsListOpen {{{
-function! s:IsListOpen(name)
-    let bufoutput = s:GetBuffersOutput(1)
-    return match(bufoutput, "\\[".a:name." List\\]", 0, 0) != -1
-endfunction
-" }}}
-" IsQuickfixListOpen {{{
-function! s:IsQuickfixListOpen()
-    let a = s:IsListOpen("Quickfix")
-    return s:IsListOpen("Quickfix")
-endfunction
-" }}}
-" IsLocationListOpen {{{
-function! s:IsLocationListOpen()
-    return s:IsListOpen("Location")
-endfunction
-" }}}
-" GetCwdEscaped {{{
-function! s:GetCwdEscaped()
-    return s:FileEscape(getcwd())
-endfunction
-"}}}
-" EscapeList/ShellEscapeList {{{
-function! s:FileEscape(item)
-    return escape(a:item, ' \')
-endfunction
-function! s:ShellEscape(item)
-    return shellescape(a:item, 1)
-endfunction
-function! s:DoEscapeList(lst, seperator, func)
-    let escapedList = []
-    for item in a:lst
-        let e = a:func(item).a:seperator
-        call add(escapedList, e)
-    endfor
-    return escapedList
-endfunction
-function! s:EscapeList(lst, seperator)
-    return s:DoEscapeList(a:lst, a:seperator, function("s:FileEscape"))
-endfunction
-function! s:ShellEscapeList(lst, seperator)
-    return s:DoEscapeList(a:lst, a:seperator, function("s:ShellEscape"))
-endfunction
-"}}}
-" GetSavedVariableName {{{
-function! s:GetSavedVariableName(var)
-    let var = a:var
-    if match(var, "g:") == 0
-        let var = substitute(var, "g:", "g_", "")
-    endif
-    return "s:saved_".var
-endfunction
-" }}}
-" SaveVariable {{{
-function! s:SaveVariable(var)
-    if empty(a:var)
-        return
-    endif
-    let savedName = s:GetSavedVariableName(a:var)
-    if match(a:var, "g:") == 0
-        execute "let ".savedName." = ".a:var
-    else
-        execute "let ".savedName." = &".a:var
-    endif
-endfunction
-" }}}
-" RestoreVariable {{{
-" if a second variable is present, indicate no unlet
-function! s:RestoreVariable(var, ...)
-    let doUnlet = a:0 == 1
-    let savedName = s:GetSavedVariableName(a:var)
-    if exists(savedName)
-        if match(a:var, "g:") == 0
-            execute "let ".a:var." = ".savedName
-        else
-            execute "let &".a:var." = ".savedName
-        endif
-        if doUnlet
-            unlet savedName
-        endif
-    endif
-endfunction
-" }}}
-" OnOrOff {{{
-function! s:OnOrOff(num)
-    return a:num == 0 ? 'off' : 'on'
-endfunction
-"}}}
-" Trim {{{
-function! s:Trim(s)
-    let len = strlen(a:s)
-
-    let beg = 0
-    while beg < len
-        if a:s[beg] != " " && a:s[beg] != "\t"
-            break
-        endif
-        let beg += 1
-    endwhile
-
-    let end = len - 1
-    while end > beg
-        if a:s[end] != " " && a:s[end] != "\t"
-            break
-        endif
-        let end -= 1
-    endwhile
-
-    return strpart(a:s, beg, end-beg+1)
-endfunction
-"}}}
-" ClearNewline {{{
-function! s:ClearNewline(s)
-    if empty(a:s)
-        return a:s
-    endif
-
-    let lastchar = strlen(a:s)-1
-    if char2nr(a:s[lastchar]) == 10
-        return strpart(a:s, 0, lastchar)
-    endif
-
-    return a:s
-endfunction
-"}}}
-" Info/Warning/Error {{{
-function! s:Log(message)
-    if exists("g:EasyGrepEnableLogging")
-        echohl Title | echomsg "[EasyGrep] Log: ".a:message | echohl None
-    endif
-endfunction
-function! s:Info(message)
-    echohl Normal | echomsg "[EasyGrep] Info: ".a:message | echohl None
-endfunction
-function! s:Warning(message)
-    echohl WarningMsg | echomsg "[EasyGrep] Warning: ".a:message | echohl None
-endfunction
-function! s:Error(message)
-    echohl ErrorMsg | echomsg "[EasyGrep] Error: ".a:message | echohl None
-endfunction
-function! s:InternalFailure(message)
-    echoerr a:message
-    call s:Info("Please record the error message above and contact EasyGrep's author for help in resolving this issue")
-endfunction
-"}}}
-" }}}
 " Script Variables {{{
 let s:EasyGrepSourceFile=expand("<sfile>")
 let s:EasyGrepModeAll=0
@@ -342,7 +60,7 @@ let s:LastSeenGrepprg = &grepprg
 function! s:InitializeCommandChoice()
     let result = s:SetGrepCommand(g:EasyGrepCommand)
     if !result
-        call s:Error("Invalid option to g:EasyGrepCommand")
+        call EasyGrep#Error("Invalid option to g:EasyGrepCommand")
     endif
 endfunction
 let s:CurrentFileCurrentDirChecked = 0
@@ -351,14 +69,14 @@ let s:SanitizeModeLock = 0
 " SetGatewayVariables {{{
 function! s:SetGatewayVariables()
     echo
-    call s:SaveVariable("lazyredraw")
+    call EasyGrep#SaveVariable("lazyredraw")
     set lazyredraw
 endfunction
 " }}}
 " ClearGatewayVariables {{{
 function! s:ClearGatewayVariables()
     let s:CurrentFileCurrentDirChecked = 0
-    call s:RestoreVariable("lazyredraw")
+    call EasyGrep#RestoreVariable("lazyredraw")
 endfunction
 " }}}
 
@@ -381,7 +99,7 @@ endfunction
 "}}}
 " EscapeDirIfSpace {{{
 function! s:EscapeDirIfSpace(dir)
-    return match(a:dir, ' ') == -1 ? a:dir : s:ShellEscape(a:dir)
+    return match(a:dir, ' ') == -1 ? a:dir : EasyGrep#ShellEscape(a:dir)
 endfunction
 "}}}
 " DoEscapeSpecialCharacters {{{
@@ -471,7 +189,7 @@ function! s:SetGrepRoot(...)
             let grepRootChoice = s:EasyGrepRootHistory[grepRootNumChoice - (numFixedItems + 1)]
         else
             echo " "
-            call s:Error("Invalid GrepRoot choice")
+            call EasyGrep#Error("Invalid GrepRoot choice")
             return
         endif
     endif
@@ -484,7 +202,7 @@ function! s:SetGrepRoot(...)
     let [newRoot, success, type] = s:GetGrepRootEx()
     if !success
         let g:EasyGrepRoot = oldRoot
-        call s:Error("Setting GrepRoot failed; root remains as '".g:EasyGrepRoot."'")
+        call EasyGrep#Error("Setting GrepRoot failed; root remains as '".g:EasyGrepRoot."'")
     else
         if type == "directory"
             if !exists("s:EasyGrepRootHistory")
@@ -509,7 +227,7 @@ function! s:SetGrepRoot(...)
         if a:0 == 0
             call s:EchoNewline()
         endif
-        call s:Info("Set GrepRoot to '".g:EasyGrepRoot."'")
+        call EasyGrep#Info("Set GrepRoot to '".g:EasyGrepRoot."'")
     endif
 endfunction
 " }}}
@@ -520,7 +238,7 @@ function! s:GetGrepRootEx()
     if g:EasyGrepRoot == "repository"
         let g:EasyGrepRoot=s:EasyGrepRepositoryList
     elseif g:EasyGrepRoot == "."
-        let g:EasyGrepRoot=s:GetCwdEscaped()
+        let g:EasyGrepRoot=EasyGrep#GetCwdEscaped()
     endif
 
     let type = "builtin"
@@ -577,9 +295,9 @@ function! s:GetGrepRootEx()
     endif
 
     if !empty(errorstring)
-        call s:Error(errorstring." for g:EasyGrepRoot '".g:EasyGrepRoot."'; acting as if cwd")
+        call EasyGrep#Error(errorstring." for g:EasyGrepRoot '".g:EasyGrepRoot."'; acting as if cwd")
     endif
-    call s:Log("GetGrepRootEx returned ".pathtoreturn)
+    call EasyGrep#Log("GetGrepRootEx returned ".pathtoreturn)
     return [pathtoreturn, empty(errorstring), type]
 
 endfunction
@@ -596,7 +314,7 @@ endfunction
 " }}}
 " GetCurrentSelection {{{
 function! s:GetCurrentSelection()
-    return s:ClearNewline(@")
+    return EasyGrep#ClearNewline(@")
 endfunction
 " }}}
 " IsBufferDirSearchAllowed {{{
@@ -665,7 +383,7 @@ function! s:GetFileTargetList(addAdditionalLocations)
     let addAdditionalLocations = a:addAdditionalLocations
     let fileTargetList = []
     if s:IsModeBuffers()
-        let fileTargetList = s:EscapeList(s:GetBufferNamesList(), " ")
+        let fileTargetList = EasyGrep#EscapeList(EasyGrep#GetBufferNamesList(), " ")
         let addAdditionalLocations = 0
     elseif s:IsModeTracked()
         let fileTargetList = s:GetFileTargetList_Tracked()
@@ -683,7 +401,7 @@ function! s:GetFileTargetList(addAdditionalLocations)
         if !empty(keyList)
             let fileTargetList = s:CollectEnabledFileTargets(keyList)
         else
-            call s:InternalFailure("Keylist should not be empty")
+            call EasyGrep#InternalFailure("Keylist should not be empty")
             let fileTargetList = [ "*" ]
         endif
     endif
@@ -786,7 +504,7 @@ endfunction
 " IsRecursivelyReachable {{{
 function! s:IsRecursivelyReachable(fromthisdir, target)
     let directoryTarget = fnamemodify(a:target, ":p:h")
-    let fromthisdir = a:fromthisdir == "." ? s:GetCwdEscaped() : a:fromthisdir
+    let fromthisdir = a:fromthisdir == "." ? EasyGrep#GetCwdEscaped() : a:fromthisdir
 
     if match(directoryTarget, fromthisdir) != 0
         return 0
@@ -802,8 +520,8 @@ function! s:GetDirectorySearchList()
     endif
 
     let root = s:GetGrepRoot()
-    let currDir = s:GetCwdEscaped()
-    let bufferDirs = s:GetBufferDirsList()
+    let currDir = EasyGrep#GetCwdEscaped()
+    let bufferDirs = EasyGrep#GetBufferDirsList()
 
     call add(bufferDirs, root)
     let bufferDirsWithRoot = sort(bufferDirs)
@@ -826,7 +544,7 @@ function! s:GetDirectorySearchList()
             endfor
         endif
         if addToList
-            let escapedDir = s:FileEscape(dir)
+            let escapedDir = EasyGrep#FileEscape(dir)
             call add(bufferSetList, escapedDir)
         endif
         let i += 1
@@ -859,7 +577,7 @@ function! s:CheckIfCurrentFileIsSearched()
     if !s:IsModeBuffers()
         let currFile = bufname("%")
         if empty(currFile) && &modified
-            call s:Warning("cannot search the current buffer because it is unnamed")
+            call EasyGrep#Warning("cannot search the current buffer because it is unnamed")
             return 0
         endif
         let fileDir = fnamemodify(currFile, ":p:h")
@@ -876,7 +594,7 @@ function! s:CheckIfCurrentFileIsSearched()
                 endif
             endif
             if !willmatch
-                call s:Warning("current file not searched, its directory [".fileDir."] doesn't match the working directory [".cwd."]")
+                call EasyGrep#Warning("current file not searched, its directory [".fileDir."] doesn't match the working directory [".cwd."]")
                 return 0
             endif
         endif
@@ -953,7 +671,7 @@ endfunction
 " SetFilesToInclude {{{
 function! <sid>SetFilesToInclude()
     let filesToInclude = input("Enter patterns to include, seperated by a comma: ", g:EasyGrepFilesToInclude)
-    let g:EasyGrepFilesToInclude = s:Trim(filesToInclude)
+    let g:EasyGrepFilesToInclude = EasyGrep#Trim(filesToInclude)
 
     call s:RefreshAllOptions()
 
@@ -967,7 +685,7 @@ endfunction
 " SetFilesToExclude {{{
 function! <sid>SetFilesToExclude()
     let filesToExclude = input("Enter patterns to exclude, seperated by a comma: ", g:EasyGrepFilesToExclude)
-    let g:EasyGrepFilesToExclude = s:Trim(filesToExclude)
+    let g:EasyGrepFilesToExclude = EasyGrep#Trim(filesToExclude)
 
     call s:RefreshAllOptions()
 
@@ -1011,7 +729,7 @@ function! <sid>ChooseGrepProgram(...)
             return
         elseif grepChoice > validProgramCounter
             echo " "
-            call s:Error("Invalid GrepProgram choice")
+            call EasyGrep#Error("Invalid GrepProgram choice")
             return
         endif
 
@@ -1027,7 +745,7 @@ function! <sid>ChooseGrepProgram(...)
         call s:Echo("-- Grep configuration changed --")
         call s:EchoGrepCommand()
     else
-        call s:Error("Unknown program '".a:1."'")
+        call EasyGrep#Error("Unknown program '".a:1."'")
     endif
 endfunction
 "}}}
@@ -1069,14 +787,14 @@ function! <sid>EchoGrepCommand()
             let dirs = s:GetDirectorySearchList()
             let dirAnnotation = "Search Directory:      "
             for d in dirs
-                let d = (d == ".") ? d." --> ".s:GetCwdEscaped()."" : d
+                let d = (d == ".") ? d." --> ".EasyGrep#GetCwdEscaped()."" : d
                 call s:Echo(dirAnnotation.d)
                 let dirAnnotation = "Additional Directory:  "
             endfor
         else
             let dirAnnotation = "Search Directory:      "
             let d = s:GetGrepRoot()
-            let d = (d == ".") ? d." --> ".s:GetCwdEscaped()."" : d
+            let d = (d == ".") ? d." --> ".EasyGrep#GetCwdEscaped()."" : d
             call s:Echo(dirAnnotation.d)
         endif
     endif
@@ -1127,7 +845,7 @@ function! <sid>EchoOptionsSet()
         let str .= "let ".item."=".q.eval(item).q."\n"
     endfor
 
-    call s:Warning("The following options will be saved in the e register; type \"ep to paste into your .vimrc")
+    call EasyGrep#Warning("The following options will be saved in the e register; type \"ep to paste into your .vimrc")
     redir @e
     echo str
     redir END
@@ -1179,7 +897,7 @@ function! s:ActivateChoice(choice)
 
     if s:CommandHas("opt_bool_isselffiltering")
         if selectedMode != s:EasyGrepModeAll && selectedMode != s:EasyGrepModeBuffers
-            call s:Error("Cannot activate '".s:GetModeName(selectedMode)."' mode when ".s:GetGrepProgramVarAndName().", as this grepprg implements its own filtering")
+            call EasyGrep#Error("Cannot activate '".s:GetModeName(selectedMode)."' mode when ".s:GetGrepProgramVarAndName().", as this grepprg implements its own filtering")
             return
         endif
     endif
@@ -1364,7 +1082,7 @@ endfunction
 " ToggleRecursion {{{
 function! <sid>ToggleRecursion()
     if s:IsModeBuffers()
-        call s:Warning("Recursive mode cant' be set when *Buffers* is activated")
+        call EasyGrep#Warning("Recursive mode cant' be set when *Buffers* is activated")
         return
     endif
 
@@ -1372,14 +1090,14 @@ function! <sid>ToggleRecursion()
 
     call s:RefreshAllOptions()
 
-    call s:Echo("Set recursive mode to (".s:OnOrOff(g:EasyGrepRecursive).")")
+    call s:Echo("Set recursive mode to (".EasyGrep#OnOrOff(g:EasyGrepRecursive).")")
 endfunction
 " }}}
 " ToggleIgnoreCase {{{
 function! <sid>ToggleIgnoreCase()
     let g:EasyGrepIgnoreCase = !g:EasyGrepIgnoreCase
     call s:RefreshAllOptions()
-    call s:Echo("Set ignore case to (".s:OnOrOff(g:EasyGrepIgnoreCase).")")
+    call s:Echo("Set ignore case to (".EasyGrep#OnOrOff(g:EasyGrepIgnoreCase).")")
 endfunction
 " }}}
 " ToggleHidden {{{
@@ -1388,7 +1106,7 @@ function! <sid>ToggleHidden()
 
     call s:RefreshAllOptions()
 
-    call s:Echo("Set hidden files included to (".s:OnOrOff(g:EasyGrepHidden).")")
+    call s:Echo("Set hidden files included to (".EasyGrep#OnOrOff(g:EasyGrepHidden).")")
 endfunction
 " }}}
 " ToggleBufferDirectories {{{
@@ -1397,7 +1115,7 @@ function! <sid>ToggleBufferDirectories()
 
     call s:RefreshAllOptions()
 
-    call s:Echo("Set 'include all buffer directories' to (".s:OnOrOff(g:EasyGrepSearchCurrentBufferDir).")")
+    call s:Echo("Set 'include all buffer directories' to (".EasyGrep#OnOrOff(g:EasyGrepSearchCurrentBufferDir).")")
 endfunction
 " }}}
 " ToggleWindow {{{
@@ -1413,7 +1131,7 @@ function! <sid>ToggleOpenWindow()
     let g:EasyGrepOpenWindowOnMatch = !g:EasyGrepOpenWindowOnMatch
     call s:RefreshAllOptions()
 
-    call s:Echo("Set open window on match to (".s:OnOrOff(g:EasyGrepOpenWindowOnMatch).")")
+    call s:Echo("Set open window on match to (".EasyGrep#OnOrOff(g:EasyGrepOpenWindowOnMatch).")")
 endfunction
 "}}}
 " ToggleEveryMatch {{{
@@ -1421,7 +1139,7 @@ function! <sid>ToggleEveryMatch()
     let g:EasyGrepEveryMatch = !g:EasyGrepEveryMatch
     call s:RefreshAllOptions()
 
-    call s:Echo("Set separate multiple matches to (".s:OnOrOff(g:EasyGrepEveryMatch).")")
+    call s:Echo("Set separate multiple matches to (".EasyGrep#OnOrOff(g:EasyGrepEveryMatch).")")
 endfunction
 "}}}
 " ToggleJumpToMatch {{{
@@ -1429,7 +1147,7 @@ function! <sid>ToggleJumpToMatch()
     let g:EasyGrepJumpToMatch = !g:EasyGrepJumpToMatch
     call s:RefreshAllOptions()
 
-    call s:Echo("Set jump to match to (".s:OnOrOff(g:EasyGrepJumpToMatch).")")
+    call s:Echo("Set jump to match to (".EasyGrep#OnOrOff(g:EasyGrepJumpToMatch).")")
 endfunction
 "}}}
 " ToggleWholeWord {{{
@@ -1437,7 +1155,7 @@ function! <sid>ToggleWholeWord()
     let g:EasyGrepInvertWholeWord = !g:EasyGrepInvertWholeWord
     call s:RefreshAllOptions()
 
-    call s:Echo("Set invert the meaning of whole word to (".s:OnOrOff(g:EasyGrepInvertWholeWord).")")
+    call s:Echo("Set invert the meaning of whole word to (".EasyGrep#OnOrOff(g:EasyGrepInvertWholeWord).")")
 endfunction
 "}}}
 " ToggleReplaceWindowMode {{{
@@ -1488,7 +1206,7 @@ function! <sid>ToggleFileAssociationsInExplorer()
     endif
     normal zb
 
-    call s:Echo("Set file associations in explorer to (".s:OnOrOff(g:EasyGrepFileAssociationsInExplorer).")")
+    call s:Echo("Set file associations in explorer to (".EasyGrep#OnOrOff(g:EasyGrepFileAssociationsInExplorer).")")
 endfunction
 "}}}
 " Quit {{{
@@ -1661,21 +1379,21 @@ function! s:CreateOptionsString()
     let s:Options = []
 
     call add(s:Options, "\"q: quit")
-    call add(s:Options, "\"r: recursive mode (".s:OnOrOff(g:EasyGrepRecursive).")")
-    call add(s:Options, "\"d: include all buffer directories (".s:OnOrOff(g:EasyGrepSearchCurrentBufferDir).")")
-    call add(s:Options, "\"i: ignore case (".s:OnOrOff(g:EasyGrepIgnoreCase).")")
-    call add(s:Options, "\"h: hidden files included (".s:OnOrOff(g:EasyGrepHidden).")")
+    call add(s:Options, "\"r: recursive mode (".EasyGrep#OnOrOff(g:EasyGrepRecursive).")")
+    call add(s:Options, "\"d: include all buffer directories (".EasyGrep#OnOrOff(g:EasyGrepSearchCurrentBufferDir).")")
+    call add(s:Options, "\"i: ignore case (".EasyGrep#OnOrOff(g:EasyGrepIgnoreCase).")")
+    call add(s:Options, "\"h: hidden files included (".EasyGrep#OnOrOff(g:EasyGrepHidden).")")
     call add(s:Options, "\"e: echo files that would be searched")
     if g:EasyGrepAllOptionsInExplorer
         call add(s:Options, "\"x: set files to exclude")
         call add(s:Options, "\"c: change grep command (".s:GetGrepCommandNameWithOptions().")")
         call add(s:Options, "\"w: window to use (".EasyGrep#GetErrorListName().")")
         call add(s:Options, "\"m: replace window mode (".s:GetReplaceWindowModeString(g:EasyGrepReplaceWindowMode).")")
-        call add(s:Options, "\"o: open window on match (".s:OnOrOff(g:EasyGrepOpenWindowOnMatch).")")
-        call add(s:Options, "\"g: separate multiple matches (".s:OnOrOff(g:EasyGrepEveryMatch).")")
-        call add(s:Options, "\"p: jump to match (".s:OnOrOff(g:EasyGrepJumpToMatch).")")
-        call add(s:Options, "\"!: invert the meaning of whole word (".s:OnOrOff(g:EasyGrepInvertWholeWord).")")
-        call add(s:Options, "\"*: show file associations list (".s:OnOrOff(g:EasyGrepFileAssociationsInExplorer).")")
+        call add(s:Options, "\"o: open window on match (".EasyGrep#OnOrOff(g:EasyGrepOpenWindowOnMatch).")")
+        call add(s:Options, "\"g: separate multiple matches (".EasyGrep#OnOrOff(g:EasyGrepEveryMatch).")")
+        call add(s:Options, "\"p: jump to match (".EasyGrep#OnOrOff(g:EasyGrepJumpToMatch).")")
+        call add(s:Options, "\"!: invert the meaning of whole word (".EasyGrep#OnOrOff(g:EasyGrepInvertWholeWord).")")
+        call add(s:Options, "\"*: show file associations list (".EasyGrep#OnOrOff(g:EasyGrepFileAssociationsInExplorer).")")
         if g:EasyGrepFileAssociationsInExplorer
             call add(s:Options, "\"s: change file associations list sorting (".s:SortOptions[s:SortChoice].")")
         endif
@@ -1738,7 +1456,7 @@ function! s:SetUserGrepPattern(str)
     call s:SetGatewayVariables()
     let str = a:str
     if s:IsRecursivePattern(str)
-        call s:Error("User specified grep pattern may not have a recursive specifier")
+        call EasyGrep#Error("User specified grep pattern may not have a recursive specifier")
         call s:ClearGatewayVariables()
         return -1
     endif
@@ -1779,7 +1497,7 @@ function! s:CreateGrepDictionary()
     call add(s:Dict, [ "User" , "", g:EasyGrepMode==s:EasyGrepModeUser ? 1 : 0  ] )
 
     if len(s:Dict) != s:EasyGrepNumModes
-        call s:InternalFailure("EasyGrep's default settings are not internally consistent; please reinstall")
+        call EasyGrep#InternalFailure("EasyGrep's default settings are not internally consistent; please reinstall")
     endif
 
     call s:ParseFileAssociationList()
@@ -1834,7 +1552,7 @@ function! s:CheckLinks()
         let j = 0
         for p in patterns
             if s:IsLink(p) && s:FindTargetByKey(s:GetKeyFromLink(p)) == -1
-                call s:Warning("Key(".p.") links to a nonexistent key")
+                call EasyGrep#Warning("Key(".p.") links to a nonexistent key")
                 call remove(patterns, j)
                 let j -= 1
             endif
@@ -1842,7 +1560,7 @@ function! s:CheckLinks()
         endfor
 
         if empty(patterns)
-            call s:Warning("Key(".s:Dict[i][0].") has no valid patterns or links")
+            call EasyGrep#Warning("Key(".s:Dict[i][0].") has no valid patterns or links")
             call remove(s:Dict, i)
         else
             let s:Dict[i][1] = join(patterns)
@@ -1892,40 +1610,40 @@ function! s:ParseFileAssociationList()
     let lst = s:GetFileAssociationList()
 
     if empty(lst)
-        call s:Error("Grep Pattern file list can't be read")
+        call EasyGrep#Error("Grep Pattern file list can't be read")
         return
     endif
 
     if !filereadable(lst)
-        call s:Error("Grep Pattern file list can't be read")
+        call EasyGrep#Error("Grep Pattern file list can't be read")
         return
     endif
 
     let fileList = readfile(lst)
     if empty(fileList)
-        call s:Error("Grep Pattern file list is empty")
+        call EasyGrep#Error("Grep Pattern file list is empty")
         return
     endif
 
     let lineCounter = 0
     for line in fileList
         let lineCounter += 1
-        let line = s:Trim(line)
+        let line = EasyGrep#Trim(line)
         if empty(line) || line[0] == "\""
             continue
         endif
 
         let keys = split(line, "=")
         if len(keys) != 2
-            call s:Warning("Invalid line: ".line)
+            call EasyGrep#Warning("Invalid line: ".line)
             continue
         endif
 
-        let keys[0] = s:Trim(keys[0])
-        let keys[1] = s:Trim(keys[1])
+        let keys[0] = EasyGrep#Trim(keys[0])
+        let keys[1] = EasyGrep#Trim(keys[1])
 
         if empty(keys[0]) || empty(keys[1])
-            call s:Warning("Invalid line: ".line)
+            call EasyGrep#Warning("Invalid line: ".line)
             continue
         endif
 
@@ -1933,7 +1651,7 @@ function! s:ParseFileAssociationList()
         " is acceptable
 
         if s:IsInDict(keys[0])
-            call s:Warning("Key already added: ".keys[0])
+            call EasyGrep#Warning("Key already added: ".keys[0])
             continue
         endif
 
@@ -1942,16 +1660,16 @@ function! s:ParseFileAssociationList()
 
             " check for invalid filesystem characters.
             if match(p, "[/\\,;']") != -1
-                call s:Warning("Invalid pattern (".p.") in line(".lineCounter.")")
+                call EasyGrep#Warning("Invalid pattern (".p.") in line(".lineCounter.")")
                 continue
             endif
 
             if match(p, '[<>]') != -1
-                if    s:countstr(p, '<') > 1
-                \  || s:countstr(p, '>') > 1
+                if    EasyGrep#countstr(p, '<') > 1
+                \  || EasyGrep#countstr(p, '>') > 1
                 \  || p[0] != '<'
                 \  || p[len(p)-1] != '>'
-                    call s:Warning("Invalid link (".p.") in line(".lineCounter.")")
+                    call EasyGrep#Warning("Invalid link (".p.") in line(".lineCounter.")")
                     continue
                 endif
             endif
@@ -2038,7 +1756,7 @@ function! s:SanitizeMode()
 
     " Next ensure that our mode is sensible
     if g:EasyGrepMode < 0 || g:EasyGrepMode >= s:EasyGrepNumModesWithSpecial
-        call s:Error("Invalid value for g:EasyGrepMode (".g:EasyGrepMode."); reverting to 'All' mode.")
+        call EasyGrep#Error("Invalid value for g:EasyGrepMode (".g:EasyGrepMode."); reverting to 'All' mode.")
         call s:ForceGrepMode(s:EasyGrepModeAll)
     elseif g:EasyGrepMode == s:EasyGrepModeMultipleChoice
         " This is OK
@@ -2054,15 +1772,15 @@ endfunction
 " ValidateGrepCommand {{{
 function! s:ValidateGrepCommand()
     if !s:IsCommandVimgrep() && empty(&grepprg)
-        call s:Error("Cannot proceed; the 'grepprg' setting is empty while EasyGrep is configured to use the grep command")
-        call s:Info("If you are unsure what to do, revert grepprg to it's default with 'set grepprg&'")
+        call EasyGrep#Error("Cannot proceed; the 'grepprg' setting is empty while EasyGrep is configured to use the grep command")
+        call EasyGrep#Info("If you are unsure what to do, revert grepprg to it's default with 'set grepprg&'")
         return 0
     endif
 
     let commandParams = s:GetGrepCommandParameters()
     if empty(commandParams)
-        call s:Error("Cannot proceed; the configured 'grepprg' setting is not a known program")
-        call s:Error("Select a supported program with :GrepProgram")
+        call EasyGrep#Error("Cannot proceed; the configured 'grepprg' setting is not a known program")
+        call EasyGrep#Error("Select a supported program with :GrepProgram")
         return 0
     endif
 
@@ -2074,10 +1792,10 @@ function! s:CheckGrepCommandForChanges()
     if &grepprg != s:LastSeenGrepprg
         if s:CommandHas("opt_bool_isselffiltering")
             if !s:IsModeAll() && !s:IsModeBuffers()
-                call s:Info("==================================================================================")
-                call s:Info("The 'grepprg' has changed to '".s:GetGrepProgramName()."' since last inspected")
-                call s:Info("Switching to 'All' mode as the '".s:GetModeName(g:EasyGrepMode)."' mode is incompatible with this program")
-                call s:Info("==================================================================================")
+                call EasyGrep#Info("==================================================================================")
+                call EasyGrep#Info("The 'grepprg' has changed to '".s:GetGrepProgramName()."' since last inspected")
+                call EasyGrep#Info("Switching to 'All' mode as the '".s:GetModeName(g:EasyGrepMode)."' mode is incompatible with this program")
+                call EasyGrep#Info("==================================================================================")
                 call s:ForceGrepMode(s:EasyGrepModeAll)
             endif
         endif
@@ -2092,7 +1810,7 @@ function! s:CheckCommandRequirements()
     call s:SanitizeMode()
     if s:CommandHasLen("opt_str_warnonuse")
         let commandParams = s:GetGrepCommandParameters()
-        call s:Warning(commandParams["opt_str_warnonuse"])
+        call EasyGrep#Warning(commandParams["opt_str_warnonuse"])
     endif
 endfunction
 " }}}
@@ -2143,7 +1861,7 @@ function! <sid>GrepSelection(add, wholeword)
     call s:SetGatewayVariables()
     let currSelection=s:GetCurrentSelection()
     if empty(currSelection)
-        call s:Warning("No current selection")
+        call EasyGrep#Warning("No current selection")
         return s:ClearGatewayVariables()
     endif
     call s:DoGrep(currSelection, a:add, a:wholeword, "", 1)
@@ -2155,7 +1873,7 @@ function! <sid>GrepCurrentWord(add, wholeword)
     call s:SetGatewayVariables()
     let currWord=s:GetCurrentWord()
     if empty(currWord)
-        call s:Warning("No current word")
+        call EasyGrep#Warning("No current word")
         return s:ClearGatewayVariables()
     endif
 
@@ -2169,7 +1887,7 @@ function! <sid>ReplaceSelection(wholeword)
     call s:SetGatewayVariables()
     let currSelection=s:GetCurrentSelection()
     if empty(currSelection)
-        call s:Warning("No current selection")
+        call EasyGrep#Warning("No current selection")
         return s:ClearGatewayVariables()
     endif
 
@@ -2182,7 +1900,7 @@ function! <sid>ReplaceCurrentWord(wholeword)
     call s:SetGatewayVariables()
     let currWord=s:GetCurrentWord()
     if empty(currWord)
-        call s:Warning("No current word")
+        call EasyGrep#Warning("No current word")
         return s:ClearGatewayVariables()
     endif
 
@@ -2197,7 +1915,7 @@ function! s:GrepCommandLine(argv, add)
     call s:SetGatewayVariables()
     let opts = s:ParseCommandLine(a:argv)
     if !empty(opts["failedparse"])
-        call s:Error(opts["failedparse"])
+        call EasyGrep#Error(opts["failedparse"])
     else
         call s:SetCommandLineOptions(opts)
         call s:DoGrep(opts["pattern"], a:add, opts["whole-word"], opts["count"]>0 ? opts["count"] : "", opts["regex"] == "fixed" ? 1 : 0)
@@ -2228,14 +1946,14 @@ function! s:ParseCommandLine(argv)
     let j = 0
     while j < numtokens
         let tok = tokens[j]
-        let tok = s:Trim(tok)
+        let tok = EasyGrep#Trim(tok)
         if tok == "--"
             let parseopts = 0
             let j += 1
             continue
         endif
         if tok != "-" && tok[0] == '-' && parseopts
-            let tok = s:Trim(tok)
+            let tok = EasyGrep#Trim(tok)
             if tok =~ '-[0-9]\+'
                 let opts["count"] = tok[1:]
             else
@@ -2294,18 +2012,18 @@ endfunction
 " SetCommandLineOptions {{{
 function! s:SetCommandLineOptions(opts)
     let opts = a:opts
-    call s:SaveVariable("g:EasyGrepRecursive")
+    call EasyGrep#SaveVariable("g:EasyGrepRecursive")
     let g:EasyGrepRecursive = g:EasyGrepRecursive || opts["recursive"]
 
-    call s:SaveVariable("g:EasyGrepIgnoreCase")
+    call EasyGrep#SaveVariable("g:EasyGrepIgnoreCase")
     let g:EasyGrepIgnoreCase = (g:EasyGrepIgnoreCase || opts["case-insensitive"]) && !opts["case-sensitive"]
 endfunction
 " }}}
 " RestoreCommandLineOptions {{{
 function! s:RestoreCommandLineOptions(opts)
     let opts = a:opts
-    call s:RestoreVariable("g:EasyGrepRecursive")
-    call s:RestoreVariable("g:EasyGrepIgnoreCase")
+    call EasyGrep#RestoreVariable("g:EasyGrepRecursive")
+    call EasyGrep#RestoreVariable("g:EasyGrepIgnoreCase")
 endfunction
 " }}}
 " Replace {{{
@@ -2323,13 +2041,13 @@ function! s:Replace(bang, argv)
         let temp = substitute(a:argv, '\\/', ph, "g")
         let l = len(temp)
         if temp[l-1] != '/'
-            call s:Error("Missing trailing /")
+            call EasyGrep#Error("Missing trailing /")
             let invalid = 1
         elseif stridx(temp, '/', 1) == l-1
-            call s:Error("Missing middle /")
+            call EasyGrep#Error("Missing middle /")
             let invalid = 1
-        elseif s:countstr(temp, '/') > 3
-            call s:Error("Too many /'s, escape these if necessary")
+        elseif EasyGrep#countstr(temp, '/') > 3
+            call EasyGrep#Error("Too many /'s, escape these if necessary")
             let invalid = 1
         else
             let argv = split(temp, '/')
@@ -2342,7 +2060,7 @@ function! s:Replace(bang, argv)
     else
         let argv = split(a:argv)
         if len(argv) != 2
-            call s:Error("Too many arguments")
+            call EasyGrep#Error("Too many arguments")
             let invalid = 1
         endif
     endif
@@ -2363,18 +2081,18 @@ endfunction
 function! s:ReplaceUndo()
     call s:SetGatewayVariables()
     if !exists("s:actionList")
-        call s:Error("No saved actions to undo")
+        call EasyGrep#Error("No saved actions to undo")
         return s:ClearGatewayVariables()
     endif
 
     " If either of these variables exists, that means the last command was
     " interrupted; give it another shot
-    if !exists(s:GetSavedVariableName("switchbuf")) && !exists(s:GetSavedVariableName("autowriteall"))
+    if !exists(EasyGrep#GetSavedVariableName("switchbuf")) && !exists(EasyGrep#GetSavedVariableName("autowriteall"))
 
-        call s:SaveVariable("switchbuf")
+        call EasyGrep#SaveVariable("switchbuf")
         set switchbuf=useopen
         if g:EasyGrepReplaceWindowMode == 2
-            call s:SaveVariable("autowriteall")
+            call EasyGrep#SaveVariable("autowriteall")
             set autowriteall
         else
             if g:EasyGrepReplaceWindowMode == 0
@@ -2388,7 +2106,7 @@ function! s:ReplaceUndo()
     call EasyGrep#SetErrorList(s:LastErrorList)
     call EasyGrep#GotoStartErrorList()
 
-    let bufList = s:GetVisibleBuffers()
+    let bufList = EasyGrep#GetVisibleBuffers()
 
     let i = 0
     let numItems = len(s:actionList)
@@ -2443,10 +2161,10 @@ function! s:ReplaceUndo()
             let finished = 1
         catch /^Vim(\a\+):E36:/
             redraw
-            call s:Warning("Ran out of room for more windows")
+            call EasyGrep#Warning("Ran out of room for more windows")
             let finished = confirm("Do you want to save all windows and continue?", "&Yes\n&No")-1
             if finished == 1
-                call s:Warning("To continue, save unsaved windows, make some room (try :only) and run ReplaceUndo again")
+                call EasyGrep#Warning("To continue, save unsaved windows, make some room (try :only) and run ReplaceUndo again")
                 return
             else
                 wall
@@ -2454,19 +2172,19 @@ function! s:ReplaceUndo()
             endif
         catch /^Vim:Interrupt$/
             redraw
-            call s:Warning("Undo interrupted by user; state is not guaranteed")
+            call EasyGrep#Warning("Undo interrupted by user; state is not guaranteed")
             let finished = confirm("Are you sure you want to stop the undo?", "&Yes\n&No")-1
             let finished = !finished
         catch
             redraw
             echo v:exception
-            call s:Warning("Undo interrupted; state is not guaranteed")
+            call EasyGrep#Warning("Undo interrupted; state is not guaranteed")
             let finished = confirm("Do you want to continue undoing?", "&Yes\n&No")-1
         endtry
     endwhile
 
-    call s:RestoreVariable("switchbuf")
-    call s:RestoreVariable("autowriteall")
+    call EasyGrep#RestoreVariable("switchbuf")
+    call EasyGrep#RestoreVariable("autowriteall")
 
     unlet s:actionList
     unlet s:LastErrorList
@@ -2478,18 +2196,18 @@ endfunction
 " SetGrepVariables{{{
 function! s:SetGrepVariables(command)
     if s:IsCommandVimgrep()
-        call s:SaveVariable("ignorecase")
+        call EasyGrep#SaveVariable("ignorecase")
         let &ignorecase = g:EasyGrepIgnoreCase
 
-        call s:SaveVariable("wildignore")
+        call EasyGrep#SaveVariable("wildignore")
         silent exe "set wildignore+=".g:EasyGrepFilesToExclude
     endif
 endfunction
 "}}}
 " RestoreGrepVariables{{{
 function! s:RestoreGrepVariables()
-    call s:RestoreVariable("ignorecase")
-    call s:RestoreVariable("wildignore")
+    call EasyGrep#RestoreVariable("ignorecase")
+    call EasyGrep#RestoreVariable("wildignore")
 endfunction
 "}}}
 " CommandSupportsExclusions {{{
@@ -2540,7 +2258,7 @@ function! s:RegisterGrepProgram(programName, programSettingsDict)
     endif
 
     if has_key(s:commandParamsDict, a:programName)
-        call s:Error("Cannot register '".a:programName."' because it is already registered")
+        call EasyGrep#Error("Cannot register '".a:programName."' because it is already registered")
         return
     endif
 
@@ -2828,7 +2546,7 @@ function! s:GetGrepCommandLine(pattern, add, wholeword, count, escapeArgs, filte
     endif
 
     if s:CommandHas("opt_bool_directoryneedsbackslash")
-        call map(fileTargetList, 's:ForwardToBackSlash(v:val)')
+        call map(fileTargetList, 'EasyGrep#ForwardToBackSlash(v:val)')
     endif
 
     " Add exclusions
@@ -2854,8 +2572,8 @@ function! s:GetGrepCommandLine(pattern, add, wholeword, count, escapeArgs, filte
     " Finally, ensure that the paths we pass to the external grep command are
     " absolute paths. This command may be invoked from any location.
     if !s:IsCommandVimgrep()
-        call map(fileTargetList, 'substitute(v:val, "^\\.\\/", s:GetCwdEscaped()."/", "")')
-        call map(fileTargetList, 'substitute(v:val, "^\\.$", s:GetCwdEscaped(), "")')
+        call map(fileTargetList, 'substitute(v:val, "^\\.\\/", EasyGrep#GetCwdEscaped()."/", "")')
+        call map(fileTargetList, 'substitute(v:val, "^\\.$", EasyGrep#GetCwdEscaped(), "")')
     endif
 
     let filesToGrep = join(fileTargetList, ' ')
@@ -2871,7 +2589,7 @@ function! s:HasTargetsThatMatch(pattern)
     call s:CheckIfCurrentFileIsSearched()
 
     if s:IsModeBuffers() && empty(s:GetFileTargetList(1))
-        call s:Warning("No saved buffers to explore")
+        call EasyGrep#Warning("No saved buffers to explore")
         return 0
     endif
 
@@ -2892,7 +2610,7 @@ function! s:DoGrep(pattern, add, wholeword, count, escapeArgs)
     call s:CreateGrepDictionary()
 
     if s:OptionsExplorerOpen == 1
-        call s:Error("Error: Can't Grep while options window is open")
+        call EasyGrep#Error("Error: Can't Grep while options window is open")
         return 0
     endif
 
@@ -2914,10 +2632,10 @@ function! s:DoGrep(pattern, add, wholeword, count, escapeArgs)
     let failed = 0
     try
         if s:IsRecursiveSearch()
-            call s:Info("Running a recursive search, this may take a while")
+            call EasyGrep#Info("Running a recursive search, this may take a while")
         endif
 
-        call s:Log(grepCommand)
+        call EasyGrep#Log(grepCommand)
         silent execute grepCommand
     catch /.*E303.*/
         " This error reports that a swap file could not be opened; this is not a critical error
@@ -2935,7 +2653,7 @@ function! s:DoGrep(pattern, add, wholeword, count, escapeArgs)
             catch
             endtry
         else
-            call s:Error("FIXME: exception not caught ".v:exception)
+            call EasyGrep#Error("FIXME: exception not caught ".v:exception)
         endif
         let failed = 1
     endtry
@@ -2953,11 +2671,11 @@ function! s:DoGrep(pattern, add, wholeword, count, escapeArgs)
         redraw!
         if g:EasyGrepOpenWindowOnMatch
             if g:EasyGrepWindow == 0
-                if !s:IsQuickfixListOpen()
+                if !EasyGrep#IsQuickfixListOpen()
                     execute g:EasyGrepWindowPosition." copen"
                 endif
             else
-                if !s:IsLocationListOpen()
+                if !EasyGrep#IsLocationListOpen()
                     execute g:EasyGrepWindowPosition." lopen"
                 endif
             endif
@@ -2980,7 +2698,7 @@ endfunction
 function! s:HasFilesThatMatch()
     let fileTargetList = s:GetFileTargetList(1)
     for p in fileTargetList
-        let p = s:Trim(p)
+        let p = EasyGrep#Trim(p)
         let fileList = glob(p, 0, 1)
         for f in fileList
             if filereadable(f)
@@ -2994,7 +2712,7 @@ endfunction
 "}}}
 " FilterTargetsWithNoFiles {{{
 function! s:FilterTargetsWithNoFiles(fileTargetList)
-    call filter(a:fileTargetList, 'glob(s:Trim(v:val)) != ""')
+    call filter(a:fileTargetList, 'glob(EasyGrep#Trim(v:val)) != ""')
 endfunction
 "}}}
 " WarnNoMatches {{{
@@ -3011,17 +2729,17 @@ function! s:WarnNoMatches(pattern)
     let h = g:EasyGrepHidden    ? " (+Hidden)"    : ""
 
     redraw
-    call s:Warning("No matches for '".a:pattern."'")
-    call s:Warning("File Pattern: ".fpat.r.h)
+    call EasyGrep#Warning("No matches for '".a:pattern."'")
+    call EasyGrep#Warning("File Pattern: ".fpat.r.h)
 
     let dirs = s:GetDirectorySearchList()
     let s = "Directories:"
     for d in dirs
-        call s:Warning(s." ".d)
+        call EasyGrep#Warning(s." ".d)
         let s = "            "
     endfor
     if !empty(g:EasyGrepFilesToExclude) && s:CommandSupportsExclusions()
-        call s:Warning("Exclusions:  ".g:EasyGrepFilesToExclude)
+        call EasyGrep#Warning("Exclusions:  ".g:EasyGrepFilesToExclude)
     endif
 endfunction
 " }}}
@@ -3039,7 +2757,7 @@ function! s:ReplaceString(str, wholeword, escapeArgs)
     endif
     if r ==# a:str
         call s:EchoNewline()
-        call s:Warning("No change in pattern, ignoring")
+        call EasyGrep#Warning("No change in pattern, ignoring")
         return
     endif
 
@@ -3061,10 +2779,10 @@ function! s:DoReplace(target, replacement, wholeword, escapeArgs)
 
     let s:actionList = []
 
-    call s:SaveVariable("switchbuf")
+    call EasyGrep#SaveVariable("switchbuf")
     set switchbuf=useopen
     if g:EasyGrepReplaceWindowMode == 2
-        call s:SaveVariable("autowriteall")
+        call EasyGrep#SaveVariable("autowriteall")
         set autowriteall
     else
         if g:EasyGrepReplaceWindowMode == 0
@@ -3074,16 +2792,16 @@ function! s:DoReplace(target, replacement, wholeword, escapeArgs)
         endif
     endif
 
-    let bufList = s:GetVisibleBuffers()
+    let bufList = EasyGrep#GetVisibleBuffers()
 
     call EasyGrep#GotoStartErrorList()
 
-    call s:SaveVariable("ignorecase")
+    call EasyGrep#SaveVariable("ignorecase")
     let &ignorecase = g:EasyGrepIgnoreCase
 
-    call s:SaveVariable("cursorline")
+    call EasyGrep#SaveVariable("cursorline")
     set cursorline
-    call s:SaveVariable("hlsearch")
+    call EasyGrep#SaveVariable("hlsearch")
     set hlsearch
 
     if g:EasyGrepIgnoreCase
@@ -3113,8 +2831,8 @@ function! s:DoReplace(target, replacement, wholeword, escapeArgs)
 
             let thisFile = s:LastErrorList[i].bufnr
             if thisFile != lastFile
-                call s:RestoreVariable("cursorline", "no")
-                call s:RestoreVariable("hlsearch", "no")
+                call EasyGrep#RestoreVariable("cursorline", "no")
+                call EasyGrep#RestoreVariable("hlsearch", "no")
                 if g:EasyGrepReplaceWindowMode == 0
                     " only open a new tab when the window doesn't already exist
                     if index(bufList, thisFile) == -1
@@ -3244,23 +2962,23 @@ function! s:DoReplace(target, replacement, wholeword, escapeArgs)
 
         catch /^Vim(\a\+):E36:/
             redraw
-            call s:Warning("Ran out of room for more windows")
+            call EasyGrep#Warning("Ran out of room for more windows")
             let finished = confirm("Do you want to save all windows and continue?", "&Yes\n&No")-1
             if finished == 1
-                call s:Warning("To continue, save unsaved windows, make some room (try :only) and run Replace again")
+                call EasyGrep#Warning("To continue, save unsaved windows, make some room (try :only) and run Replace again")
             else
                 wall
                 only
             endif
         catch /^Vim:Interrupt$/
             redraw
-            call s:Warning("Replace interrupted by user")
+            call EasyGrep#Warning("Replace interrupted by user")
             let finished = confirm("Are you sure you want to stop the replace?", "&Yes\n&No")-1
             let finished = !finished
         catch
             redraw
             echo "Exception encountered: ".v:exception
-            call s:Warning("Replace interrupted")
+            call EasyGrep#Warning("Replace interrupted")
             let finished = confirm("Do you want to continue replace?", "&Yes\n&No")-1
         endtry
 
@@ -3268,11 +2986,11 @@ function! s:DoReplace(target, replacement, wholeword, escapeArgs)
 
     endwhile
 
-    call s:RestoreVariable("switchbuf")
-    call s:RestoreVariable("autowriteall")
-    call s:RestoreVariable("cursorline")
-    call s:RestoreVariable("hlsearch")
-    call s:RestoreVariable("ignorecase")
+    call EasyGrep#RestoreVariable("switchbuf")
+    call EasyGrep#RestoreVariable("autowriteall")
+    call EasyGrep#RestoreVariable("cursorline")
+    call EasyGrep#RestoreVariable("hlsearch")
+    call EasyGrep#RestoreVariable("ignorecase")
 endfunction
 "}}}
 " }}}
@@ -3289,14 +3007,14 @@ function! s:ResultListFilter(...)
                 let mode = 'v'
             elseif s == '-g'
                 if mode == 'v'
-                    call s:Error("Multiple -v / -g arguments given")
+                    call EasyGrep#Error("Multiple -v / -g arguments given")
                     return
                 endif
                 let mode = 'g'
             elseif s == '-f'
                 let entry = 'bufname(d.bufnr)'
             else
-                call s:Error("Invalid command line switch")
+                call EasyGrep#Error("Invalid command line switch")
                 return
             endif
         else
@@ -3305,13 +3023,13 @@ function! s:ResultListFilter(...)
     endfor
 
     if empty(filterlist)
-        call s:Error("Missing pattern to filter")
+        call EasyGrep#Error("Missing pattern to filter")
         return
     endif
 
     let lst = EasyGrep#GetErrorList()
     if empty(lst)
-        call s:Error("Error list is empty")
+        call EasyGrep#Error("Error list is empty")
         return
     endif
 
@@ -3340,7 +3058,7 @@ function! s:ResultListOpen(...)
     let lst = EasyGrep#GetErrorList()
 
     if empty(lst)
-        call s:Error("Error list is empty")
+        call EasyGrep#Error("Error list is empty")
         return
     endif
 
@@ -3357,16 +3075,16 @@ endfunction
 function! s:ResultListDo(command)
     let lst = EasyGrep#GetErrorList()
     if empty(lst)
-        call s:Error("Error list is empty")
+        call EasyGrep#Error("Error list is empty")
         return
     endif
 
     let numMatches = len(lst)
 
-    call s:SaveVariable("switchbuf")
+    call EasyGrep#SaveVariable("switchbuf")
     set switchbuf=useopen
     if g:EasyGrepReplaceWindowMode == 2
-        call s:SaveVariable("autowriteall")
+        call EasyGrep#SaveVariable("autowriteall")
         set autowriteall
     else
         if g:EasyGrepReplaceWindowMode == 0
@@ -3376,11 +3094,11 @@ function! s:ResultListDo(command)
         endif
     endif
 
-    let bufList = s:GetVisibleBuffers()
+    let bufList = EasyGrep#GetVisibleBuffers()
 
     call EasyGrep#GotoStartErrorList()
 
-    call s:SaveVariable("cursorline")
+    call EasyGrep#SaveVariable("cursorline")
     set cursorline
 
     let finished = 0
@@ -3394,7 +3112,7 @@ function! s:ResultListDo(command)
 
             let thisFile = lst[i].bufnr
             if thisFile != lastFile
-                call s:RestoreVariable("cursorline", "no")
+                call EasyGrep#RestoreVariable("cursorline", "no")
                 if g:EasyGrepReplaceWindowMode == 0
                     " only open a new tab when the window doesn't already exist
                     if index(bufList, thisFile) == -1
@@ -3482,23 +3200,23 @@ function! s:ResultListDo(command)
 
         catch /^Vim(\a\+):E36:/
             redraw
-            call s:Warning("Ran out of room for more windows")
+            call EasyGrep#Warning("Ran out of room for more windows")
             let finished = confirm("Do you want to save all windows and continue?", "&Yes\n&No")-1
             if finished == 1
-                call s:Warning("To continue, save unsaved windows, make some room (try :only) and run Replace again")
+                call EasyGrep#Warning("To continue, save unsaved windows, make some room (try :only) and run Replace again")
             else
                 wall
                 only
             endif
         catch /^Vim:Interrupt$/
             redraw
-            call s:Warning("ResultListDo interrupted by user")
+            call EasyGrep#Warning("ResultListDo interrupted by user")
             let finished = confirm("Are you sure you want to stop the ResultListDo?", "&Yes\n&No")-1
             let finished = !finished
         catch
             redraw
             echo "Exception encountered: ".v:exception
-            call s:Warning("ResultListDo interrupted")
+            call EasyGrep#Warning("ResultListDo interrupted")
             let finished = confirm("Do you want to continue ResultListDo?", "&Yes\n&No")-1
         endtry
 
@@ -3506,9 +3224,9 @@ function! s:ResultListDo(command)
 
     endwhile
 
-    call s:RestoreVariable("switchbuf")
-    call s:RestoreVariable("autowriteall")
-    call s:RestoreVariable("cursorline")
+    call EasyGrep#RestoreVariable("switchbuf")
+    call EasyGrep#RestoreVariable("autowriteall")
+    call EasyGrep#RestoreVariable("cursorline")
 
 endfunction
 "}}}
@@ -3525,7 +3243,7 @@ function! s:ResultListSave(f)
     let lst = EasyGrep#GetErrorList()
 
     if empty(lst)
-        call s:Error("No result list to save")
+        call EasyGrep#Error("No result list to save")
         return
     endif
 
@@ -3538,7 +3256,7 @@ function! s:ResultListSave(f)
 
         call writefile(contents, a:f)
     catch
-        call s:Error("Error saving result list to '".a:f."'")
+        call EasyGrep#Error("Error saving result list to '".a:f."'")
         return
     endtry
 
@@ -3656,7 +3374,7 @@ function! s:InitializeMode()
         " 3 - User
     else
         if g:EasyGrepMode < 0 || g:EasyGrepMode >= s:EasyGrepNumModesWithSpecial
-            call s:Error("Invalid value for g:EasyGrepMode (".g:EasyGrepMode."); reverting to 'All' mode.")
+            call EasyGrep#Error("Invalid value for g:EasyGrepMode (".g:EasyGrepMode."); reverting to 'All' mode.")
             let g:EasyGrepMode = s:EasyGrepModeAll
         endif
         call s:CheckCommandRequirements()
@@ -3720,8 +3438,8 @@ function! s:GetFileAssociationList()
             return g:EasyGrepFileAssociations
         endif
         let sawError = 1
-        call s:Error("The file specified by g:EasyGrepFileAssociations=".g:EasyGrepFileAssociations." cannot be read")
-        call s:Error("    Attempting to look for 'EasyGrepFileAssociations' in other locations")
+        call EasyGrep#Error("The file specified by g:EasyGrepFileAssociations=".g:EasyGrepFileAssociations." cannot be read")
+        call EasyGrep#Error("    Attempting to look for 'EasyGrepFileAssociations' in other locations")
     endif
 
     let nextToSource=fnamemodify(s:EasyGrepSourceFile, ":h")."/EasyGrepFileAssociations"
@@ -3730,7 +3448,7 @@ function! s:GetFileAssociationList()
     else
         let VimfilesDirs=split(&runtimepath, ',')
         for v in VimfilesDirs
-            let f = s:BackToForwardSlash(v)."/plugin/EasyGrepFileAssociations"
+            let f = EasyGrep#BackToForwardSlash(v)."/plugin/EasyGrepFileAssociations"
             if filereadable(f)
                 let g:EasyGrepFileAssociations=f
             endif
@@ -3740,8 +3458,8 @@ function! s:GetFileAssociationList()
     if empty(g:EasyGrepFileAssociations)
         let g:EasyGrepFileAssociations=""
     elseif sawError
-        call s:Error("    Found at: ".g:EasyGrepFileAssociations)
-        call s:Error("    Please fix your configuration to suppress these messages")
+        call EasyGrep#Error("    Found at: ".g:EasyGrepFileAssociations)
+        call EasyGrep#Error("    Please fix your configuration to suppress these messages")
     endif
     return g:EasyGrepFileAssociations
 endfunction
@@ -3760,7 +3478,7 @@ if !exists("g:EasyGrepReplaceWindowMode")
     let g:EasyGrepReplaceWindowMode=0
 else
     if g:EasyGrepReplaceWindowMode >= s:NumReplaceModeOptions
-        call s:Error("Invalid value for g:EasyGrepReplaceWindowMode")
+        call EasyGrep#Error("Invalid value for g:EasyGrepReplaceWindowMode")
         let g:EasyGrepReplaceWindowMode = 0
     endif
 endif
@@ -3785,7 +3503,7 @@ else
 \   && w != "belowright"
 \   && w != "topleft"
 \   && w != "botright"
-       call s:Error("Invalid position specified in g:EasyGrepWindowPosition")
+       call EasyGrep#Error("Invalid position specified in g:EasyGrepWindowPosition")
        let g:EasyGrepWindowPosition=""
    endif
 endif
@@ -3818,7 +3536,7 @@ function! s:CheckDefaultUserPattern()
 
     if !empty(error)
         let error = error."; switching to 'All' mode"
-        call s:Error(error)
+        call EasyGrep#Error(error)
         call s:ForceGrepMode(s:EasyGrepModeAll)
     endif
 endfunction
