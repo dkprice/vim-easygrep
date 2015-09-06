@@ -27,6 +27,13 @@ recursion_grep.vim
 # recursion_pt.vim # disabled; output is non-deterministic
 recursion_vimgrep.vim
 
+# recursionuserpattern
+recursionuserpattern_ack.vim
+recursionuserpattern_ag.vim
+recursionuserpattern_grep.vim
+recursionuserpattern_pt.vim
+recursionuserpattern_vimgrep.vim
+
 # simpleregex
 simpleregex_ack.vim
 simpleregex_ag.vim
