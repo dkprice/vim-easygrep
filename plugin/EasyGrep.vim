@@ -1707,6 +1707,12 @@ function! s:IsModeUser()
     return g:EasyGrepMode == s:EasyGrepModeUser
 endfunction
 " }}}
+" IsModeFiltered {{{
+function! s:IsModeFiltered()
+    call s:SanitizeMode()
+    return s:IsModeTracked() || s:IsModeUser()
+endfunction
+" }}}
 " IsModeMultipleChoice {{{
 function! s:IsModeMultipleChoice()
     call s:SanitizeMode()
@@ -1792,7 +1798,7 @@ endfunction
 function! s:CheckGrepCommandForChanges()
     if &grepprg != s:LastSeenGrepprg
         if s:CommandHas("opt_bool_isselffiltering")
-            if !s:IsModeAll() && !s:IsModeBuffers()
+            if s:IsModeFiltered()
                 call EasyGrep#Info("==================================================================================")
                 call EasyGrep#Info("The 'grepprg' has changed to '".s:GetGrepProgramName()."' since last inspected")
                 call EasyGrep#Info("Switching to 'All' mode as the '".s:GetModeName(g:EasyGrepMode)."' mode is incompatible with this program")
