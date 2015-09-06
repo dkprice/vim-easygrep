@@ -178,11 +178,6 @@ function! s:IsLocationListOpen()
     return s:IsListOpen("Location")
 endfunction
 " }}}
-" EscapeDirIfSpace {{{
-function! s:EscapeDirIfSpace(dir)
-    return match(a:dir, ' ') == -1 ? a:dir : s:ShellEscape(a:dir)
-endfunction
-"}}}
 " GetCwdEscaped {{{
 function! s:GetCwdEscaped()
     return s:FileEscape(getcwd())
@@ -210,87 +205,8 @@ function! s:ShellEscapeList(lst, seperator)
     return s:DoEscapeList(a:lst, a:seperator, function("s:ShellEscape"))
 endfunction
 "}}}
-" DoEscapeSpecialCharacters {{{
-function! s:DoEscapeSpecialCharacters(str, escapeonce, escapetwice)
-    let str = a:str
-
-    let i = 0
-    let len = strlen(a:escapeonce)
-    while i < len
-        let str = escape(str, a:escapeonce[i])
-        let i += 1
-    endwhile
-
-    let i = 0
-    let len = strlen(a:escapetwice)
-    while i < len
-        let str = escape(str, a:escapetwice[i])
-        let str = escape(str, a:escapetwice[i])
-        let i += 1
-    endwhile
-
-    return str
-endfunction
-"}}}
-" EscapeSpecialCharacters {{{
-function! s:EscapeSpecialCharacters(str)
-    if s:IsCommandVimgrep()
-        return s:EscapeSpecialCharactersForVim(a:str)
-    endif
-
-    let commandParams = s:GetGrepCommandParameters()
-    let escapeonce = s:CommandParameter(commandParams, "req_str_escapespecialcharacters")
-    let escapetwice = s:CommandParameterOr(commandParams, "opt_str_escapespecialcharacterstwice", "")
-    return s:DoEscapeSpecialCharacters(a:str, escapeonce, escapetwice)
-endfunction
-"}}}
-" EscapeSpecialCharactersForVim {{{
-function! s:EscapeSpecialCharactersForVim(str)
-    let escapeonce = "\\/^$#"
-    if &magic
-        let escapeonce .= "*.~[]"
-    endif
-    return s:DoEscapeSpecialCharacters(a:str, escapeonce, "")
-endfunction
-"}}}
-" IsRecursivePattern {{{
-function! s:IsRecursivePattern(pattern)
-    return stridx(a:pattern, "\*\*\/") == 0 ? 1 : 0
-endfunction
-" }}}
-" IsBufferDirSearchAllowed {{{
-function! s:IsBufferDirSearchAllowed()
-    if s:IsModeBuffers()
-        return 0
-    endif
-
-    let commandParams = s:GetGrepCommandParameters()
-    if !has_key(commandParams, "opt_bool_bufferdirsearchallowed")
-        return 1
-    endif
-
-    let bufferdirsearchallowed = commandParams["opt_bool_bufferdirsearchallowed"]
-    if bufferdirsearchallowed ==# "1"
-        return 1
-    elseif bufferdirsearchallowed ==# "0"
-        return 0
-    elseif bufferdirsearchallowed ==# "!recursive"
-        return !s:IsRecursiveSearch()
-    else
-        return 1
-    endif
-endfunction
-" }}}
-" IsRecursiveSearch {{{
-function! s:IsRecursiveSearch()
-    if g:EasyGrepRecursive
-        return !s:IsModeBuffers()
-    endif
-    return s:CommandHas("opt_bool_isinherentlyrecursive")
-endfunction
-" }}}
-" GetSavedName {{{
-function! s:GetSavedName(var)
+" GetSavedVariableName {{{
+function! s:GetSavedVariableName(var)
     let var = a:var
     if match(var, "g:") == 0
         let var = substitute(var, "g:", "g_", "")
@@ -303,7 +219,7 @@ function! s:SaveVariable(var)
     if empty(a:var)
         return
     endif
-    let savedName = s:GetSavedName(a:var)
+    let savedName = s:GetSavedVariableName(a:var)
     if match(a:var, "g:") == 0
         execute "let ".savedName." = ".a:var
     else
@@ -315,7 +231,7 @@ endfunction
 " if a second variable is present, indicate no unlet
 function! s:RestoreVariable(var, ...)
     let doUnlet = a:0 == 1
-    let savedName = s:GetSavedName(a:var)
+    let savedName = s:GetSavedVariableName(a:var)
     if exists(savedName)
         if match(a:var, "g:") == 0
             execute "let ".a:var." = ".savedName
@@ -461,6 +377,54 @@ endfunction
 " EchoNewline {{{
 function! <sid>EchoNewline()
     echo " "
+endfunction
+"}}}
+" EscapeDirIfSpace {{{
+function! s:EscapeDirIfSpace(dir)
+    return match(a:dir, ' ') == -1 ? a:dir : s:ShellEscape(a:dir)
+endfunction
+"}}}
+" DoEscapeSpecialCharacters {{{
+function! s:DoEscapeSpecialCharacters(str, escapeonce, escapetwice)
+    let str = a:str
+
+    let i = 0
+    let len = strlen(a:escapeonce)
+    while i < len
+        let str = escape(str, a:escapeonce[i])
+        let i += 1
+    endwhile
+
+    let i = 0
+    let len = strlen(a:escapetwice)
+    while i < len
+        let str = escape(str, a:escapetwice[i])
+        let str = escape(str, a:escapetwice[i])
+        let i += 1
+    endwhile
+
+    return str
+endfunction
+"}}}
+" EscapeSpecialCharacters {{{
+function! s:EscapeSpecialCharacters(str)
+    if s:IsCommandVimgrep()
+        return s:EscapeSpecialCharactersForVim(a:str)
+    endif
+
+    let commandParams = s:GetGrepCommandParameters()
+    let escapeonce = s:CommandParameter(commandParams, "req_str_escapespecialcharacters")
+    let escapetwice = s:CommandParameterOr(commandParams, "opt_str_escapespecialcharacterstwice", "")
+    return s:DoEscapeSpecialCharacters(a:str, escapeonce, escapetwice)
+endfunction
+"}}}
+" EscapeSpecialCharactersForVim {{{
+function! s:EscapeSpecialCharactersForVim(str)
+    let escapeonce = "\\/^$#"
+    if &magic
+        let escapeonce .= "*.~[]"
+    endif
+    return s:DoEscapeSpecialCharacters(a:str, escapeonce, "")
 endfunction
 "}}}
 " SetGrepRoot {{{
@@ -633,6 +597,42 @@ endfunction
 " GetCurrentSelection {{{
 function! s:GetCurrentSelection()
     return s:ClearNewline(@")
+endfunction
+" }}}
+" IsBufferDirSearchAllowed {{{
+function! s:IsBufferDirSearchAllowed()
+    if s:IsModeBuffers()
+        return 0
+    endif
+
+    let commandParams = s:GetGrepCommandParameters()
+    if !has_key(commandParams, "opt_bool_bufferdirsearchallowed")
+        return 1
+    endif
+
+    let bufferdirsearchallowed = commandParams["opt_bool_bufferdirsearchallowed"]
+    if bufferdirsearchallowed ==# "1"
+        return 1
+    elseif bufferdirsearchallowed ==# "0"
+        return 0
+    elseif bufferdirsearchallowed ==# "!recursive"
+        return !s:IsRecursiveSearch()
+    else
+        return 1
+    endif
+endfunction
+" }}}
+" IsRecursivePattern {{{
+function! s:IsRecursivePattern(pattern)
+    return stridx(a:pattern, "\*\*\/") == 0 ? 1 : 0
+endfunction
+" }}}
+" IsRecursiveSearch {{{
+function! s:IsRecursiveSearch()
+    if g:EasyGrepRecursive
+        return !s:IsModeBuffers()
+    endif
+    return s:CommandHas("opt_bool_isinherentlyrecursive")
 endfunction
 " }}}
 " ChangeDirectoryToGrepRoot {{{
@@ -2369,7 +2369,7 @@ function! s:ReplaceUndo()
 
     " If either of these variables exists, that means the last command was
     " interrupted; give it another shot
-    if !exists(s:GetSavedName("switchbuf")) && !exists(s:GetSavedName("autowriteall"))
+    if !exists(s:GetSavedVariableName("switchbuf")) && !exists(s:GetSavedVariableName("autowriteall"))
 
         call s:SaveVariable("switchbuf")
         set switchbuf=useopen
