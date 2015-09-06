@@ -625,6 +625,16 @@ function! s:GetGrepRoot()
     return s:GetGrepRootEx()[0]
 endfunction
 " }}}
+" GetCurrentWord {{{
+function! s:GetCurrentWord()
+    return expand("<cword>")
+endfunction
+" }}}
+" GetCurrentSelection {{{
+function! s:GetCurrentSelection()
+    return s:ClearNewline(@")
+endfunction
+" }}}
 " ChangeDirectoryToGrepRoot {{{
 function! s:ChangeDirectoryToGrepRoot()
     if g:EasyGrepRoot != "cwd" && !s:IsCommandVimgrep()
@@ -1193,7 +1203,7 @@ function! s:ActivateChoice(choice)
         else
             " If the user's choice matches a pattern from the file association's
             " list, this gives the user the option of choosing that pattern instead
-            let choice = s:GrepSetManual(userStr)
+            let choice = s:SetUserGrepPattern(userStr)
             if choice == -1
                 return
             elseif choice == s:EasyGrepModeUser
@@ -1723,8 +1733,8 @@ function! s:MapOptionsKeys()
 
 endfunction
 "}}}
-" GrepSetManual {{{
-function! s:GrepSetManual(str)
+" SetUserGrepPattern {{{
+function! s:SetUserGrepPattern(str)
     call s:SetGatewayVariables()
     let str = a:str
     if s:IsRecursivePattern(str)
@@ -2167,16 +2177,6 @@ function! <sid>ReplaceSelection(wholeword)
     return s:ClearGatewayVariables()
 endfunction
 "}}}
-" GetCurrentWord {{{
-function! s:GetCurrentWord()
-    return expand("<cword>")
-endfunction
-" }}}
-" GetCurrentSelection {{{
-function! s:GetCurrentSelection()
-    return s:ClearNewline(@")
-endfunction
-" }}}
 " ReplaceCurrentWord {{{
 function! <sid>ReplaceCurrentWord(wholeword)
     call s:SetGatewayVariables()
