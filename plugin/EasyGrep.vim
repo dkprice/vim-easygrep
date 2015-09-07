@@ -2322,7 +2322,7 @@ function! s:ConfigureGrepCommandParameters()
                 \ 'opt_bool_isinherentlyrecursive': '0',
                 \ 'opt_bool_isselffiltering': '0',
                 \ 'opt_bool_nofiletargets': '0',
-                \ 'opt_str_recursiveinclusionexpression': '"--include=\"" .v:val."\""',
+                \ 'opt_str_mapinclusionsexpression': '"--include=\"" .v:val."\""',
                 \ })
 
     call s:RegisterGrepProgram("git", {
@@ -2367,8 +2367,9 @@ function! s:ConfigureGrepCommandParameters()
                 \ 'opt_str_suppresserrormessages': '',
                 \ 'opt_bool_directoryneedsbackslash': '0',
                 \ 'opt_bool_isinherentlyrecursive': '1',
-                \ 'opt_bool_isselffiltering': '1',
+                \ 'opt_bool_isselffiltering': '0',
                 \ 'opt_bool_nofiletargets': '0',
+                \ 'opt_str_mapinclusionsexpression': '"--type=\"" .v:val."\""',
                 \ })
 
     call s:RegisterGrepProgram("ack-grep", g:EasyGrep_commandParamsDict["ack"])
@@ -2392,8 +2393,9 @@ function! s:ConfigureGrepCommandParameters()
                 \ 'opt_str_suppresserrormessages': '',
                 \ 'opt_bool_directoryneedsbackslash': '0',
                 \ 'opt_bool_isinherentlyrecursive': '1',
-                \ 'opt_bool_isselffiltering': '1',
+                \ 'opt_bool_isselffiltering': '0',
                 \ 'opt_bool_nofiletargets': '0',
+                \ 'opt_str_mapinclusionsexpression': '"--file-search-regex=\"" .v:val."\""',
                 \ })
 
     call s:RegisterGrepProgram("pt", {
@@ -2415,8 +2417,9 @@ function! s:ConfigureGrepCommandParameters()
                 \ 'opt_str_suppresserrormessages': '',
                 \ 'opt_bool_directoryneedsbackslash': '0',
                 \ 'opt_bool_isinherentlyrecursive': '1',
-                \ 'opt_bool_isselffiltering': '1',
+                \ 'opt_bool_isselffiltering': '0',
                 \ 'opt_bool_nofiletargets': '0',
+                \ 'opt_str_mapinclusionsexpression': '"--file-search-regexp=\"" .v:val."\""',
                 \ })
 
     call s:RegisterGrepProgram("csearch", {
@@ -2569,9 +2572,10 @@ function! s:GetGrepCommandLine(pattern, add, wholeword, count, escapeArgs, filte
     endif
 
     " Set extra inclusions and exclusions
-    if s:CommandHasLen("opt_str_recursiveinclusionexpression") && s:IsRecursiveSearch()
+    if s:IsModeFiltered() && s:CommandHasLen("opt_str_mapinclusionsexpression")
+        call EasyGrep#Log("File targets=".join(fileTargetList))
         " Explicitly specify the file types as arguments according to the configured expression
-        let opts .= " " . join(map(fileTargetList, commandParams["opt_str_recursiveinclusionexpression"]), ' '). " "
+        let opts .= " " . join(map(fileTargetList, commandParams["opt_str_mapinclusionsexpression"]), ' '). " "
         " while the files we specify will be directories
         let fileTargetList = s:GetDirectorySearchList()
     endif
