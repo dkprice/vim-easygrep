@@ -420,11 +420,11 @@ function! s:AddAdditionalLocationsToFileTargetList(fileTargetList)
         return fileTargetList
     endif
 
-    if g:EasyGrepSearchCurrentBufferDir && s:IsBufferDirSearchAllowed()
+    if g:EasyGrepSearchCurrentBufferDir && s:IsBufferDirSearchAllowed() && !s:CommandHasLen("opt_str_mapinclusionsexpression")
         let fileTargetList = s:ApplySearchDirectoriesToFileTargetList(fileTargetList)
     endif
 
-    if g:EasyGrepHidden
+    if g:EasyGrepHidden && !s:CommandHasLen("opt_str_hiddenswitch")
         let i = 0
         let size = len(fileTargetList)
         while i < size
@@ -2424,6 +2424,7 @@ function! s:ConfigureGrepCommandParameters()
                 \ 'opt_bool_isselffiltering': '0',
                 \ 'opt_bool_nofiletargets': '0',
                 \ 'opt_str_mapinclusionsexpression': '"--file-search-regex=\"" .substitute(v:val, "^\\*\\.", "\\\\.", "")."\""',
+                \ 'opt_str_hiddenswitch': '--hidden ',
                 \ })
 
     call s:RegisterGrepProgram("pt", {
@@ -2570,6 +2571,10 @@ function! s:GetGrepCommandLine(pattern, add, wholeword, count, escapeArgs, filte
         if s:CommandHasLen("req_str_casematch")
             let opts .= commandParams["req_str_casematch"]." "
         endif
+    endif
+
+    if g:EasyGrepHidden && s:CommandHasLen("opt_str_hiddenswitch")
+        let opts .= commandParams["opt_str_hiddenswitch"]." "
     endif
 
     " Suppress errors
