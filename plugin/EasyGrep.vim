@@ -2602,7 +2602,6 @@ function! s:GetGrepCommandLine(pattern, add, wholeword, count, escapeArgs, filte
 
     " Set extra inclusions and exclusions
     if s:IsModeFiltered() && s:CommandHasLen("opt_str_mapinclusionsexpression") && match(fileTargetList, "*", 0) != -1
-        call EasyGrep#Log("File targets=".join(fileTargetList))
         " Explicitly specify the file types as arguments according to the configured expression
         let opts .= " " . join(map(fileTargetList, commandParams["opt_str_mapinclusionsexpression"]), ' '). " "
         " while the files we specify will be directories
