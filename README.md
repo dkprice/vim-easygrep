@@ -11,10 +11,16 @@ For a screencast of the script in action go here: http://downloads.veryspeedy.ne
 
 ## Why EasyGrep?
 
-* Supports multiple Grep programs (vimgrep, grep, ack, ag, pt, csearch)
-* Mapping-based or command-line searches
-* Allows searching all files, just buffers, or a user-specified pattern.
-* Automatically escapes non-literal patterns
+* Supports multiple Grep programs (vimgrep, grep, ack, ag, pt, git grep, csearch).
+* Mapping-based or command-based searches.
+* Allows searching all files, just buffers, or a user-specified pattern. Allows
+excluding unwanted files.
+* Searches from a configurable location, like a project root (.git,.hg,.svn), current
+directory, or arbitrary directory.
+* Automatically escapes patterns to avoid regex confusion (so that you can
+search text like '->data()[x][y][z]')
+* Offers an interactive options explorer.
+* And much more...
 
 ## Using Easygrep
 
