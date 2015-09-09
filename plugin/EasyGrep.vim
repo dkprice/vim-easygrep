@@ -834,6 +834,7 @@ function! <sid>EchoOptionsSet()
             \ "g:EasyGrepEveryMatch",
             \ "g:EasyGrepJumpToMatch",
             \ "g:EasyGrepInvertWholeWord",
+            \ "g:EasyGrepPatternType",
             \ "g:EasyGrepFileAssociationsInExplorer",
             \ "g:EasyGrepExtraWarnings",
             \ "g:EasyGrepOptionPrefix",
@@ -1065,6 +1066,17 @@ function! s:GetGrepProgramVarAndName()
     return "(grepprg='".s:GetGrepProgramName()."')"
 endfunction
 " }}}
+" GetGrepPatternType {{{
+function! s:GetGrepPatternType()
+    if !exists("g:EasyGrepPatternType") || (g:EasyGrepPatternType != "regex" && g:EasyGrepPatternType != "fixed")
+        let g:EasyGrepPatternType="regex"
+    elseif (g:EasyGrepPatternType != "regex" && g:EasyGrepPatternType != "fixed")
+        call EasyGrep#Error("Invalid option for g:EasyGrepPatternType; switching to \"regex\"")
+        let g:EasyGrepPatternType="regex"
+    endif
+    return g:EasyGrepPatternType
+endfunction
+" }}}
 " ToggleCommand {{{
 function! <sid>ToggleCommand()
     let commandChoice = s:GetGrepCommandChoice(0)
@@ -1171,6 +1183,19 @@ function! <sid>ToggleReplaceWindowMode()
     call s:Echo("Set replace window mode to (".s:GetReplaceWindowModeString(g:EasyGrepReplaceWindowMode).")")
 endfunction
 " }}}
+" TogglePatternType {{{
+function! <sid>TogglePatternType()
+    call s:GetGrepPatternType()
+    if g:EasyGrepPatternType == "regex"
+        let g:EasyGrepPatternType = "fixed"
+    else
+        let g:EasyGrepPatternType = "regex"
+    endif
+    call s:RefreshAllOptions()
+
+    call s:Echo("Set pattern type to (".s:GetGrepPatternType().")")
+endfunction
+"}}}
 " ToggleOptionsDisplay {{{
 function! <sid>ToggleOptionsDisplay()
     let g:EasyGrepAllOptionsInExplorer = !g:EasyGrepAllOptionsInExplorer
@@ -1357,6 +1382,7 @@ function! s:CreateOptionMappings()
     exe "nmap <silent> ".p."g  :call <sid>ToggleEveryMatch()<cr>"
     exe "nmap <silent> ".p."p  :call <sid>ToggleJumpToMatch()<cr>"
     exe "nmap <silent> ".p."!  :call <sid>ToggleWholeWord()<cr>"
+    exe "nmap <silent> ".p."~  :call <sid>TogglePatternType()<cr>"
     exe "nmap <silent> ".p."e  :call <sid>EchoFilesSearched()<cr>"
     exe "nmap <silent> ".p."s  :call <sid>Sort()<cr>"
     exe "nmap <silent> ".p."m  :call <sid>ToggleReplaceWindowMode()<cr>"
@@ -1394,6 +1420,7 @@ function! s:CreateOptionsString()
         call add(s:Options, "\"g: separate multiple matches (".EasyGrep#OnOrOff(g:EasyGrepEveryMatch).")")
         call add(s:Options, "\"p: jump to match (".EasyGrep#OnOrOff(g:EasyGrepJumpToMatch).")")
         call add(s:Options, "\"!: invert the meaning of whole word (".EasyGrep#OnOrOff(g:EasyGrepInvertWholeWord).")")
+        call add(s:Options, "\"~: pattern type (".s:GetGrepPatternType().")")
         call add(s:Options, "\"*: show file associations list (".EasyGrep#OnOrOff(g:EasyGrepFileAssociationsInExplorer).")")
         if g:EasyGrepFileAssociationsInExplorer
             call add(s:Options, "\"s: change file associations list sorting (".s:SortOptions[s:SortChoice].")")
@@ -1438,6 +1465,7 @@ function! s:MapOptionsExplorerKeys()
     nnoremap <buffer> <silent> g    :call <sid>ToggleEveryMatch()<cr>
     nnoremap <buffer> <silent> p    :call <sid>ToggleJumpToMatch()<cr>
     nnoremap <buffer> <silent> !    :call <sid>ToggleWholeWord()<cr>
+    nnoremap <buffer> <silent> ~    :call <sid>TogglePatternType()<cr>
     nnoremap <buffer> <silent> *    :call <sid>ToggleFileAssociationsInExplorer()<cr>
     nnoremap <buffer> <silent> s    :call <sid>Sort()<cr>
 
@@ -1939,7 +1967,7 @@ function! s:ParseCommandLine(argv)
     let opts["case-sensitive"] = 0
     let opts["whole-word"] = 0
     let opts["count"] = 0
-    let opts["regex"] = "regex"
+    let opts["regex"] = s:GetGrepPatternType()
     let opts["pattern"] = ""
     let opts["failedparse"] = ""
     let parseopts = 1
@@ -3521,6 +3549,10 @@ endif
 
 if !exists("g:EasyGrepFilesToExclude")
     let g:EasyGrepFilesToExclude="*.swp,*~"
+endif
+
+if !exists("g:EasyGrepPatternType")
+    let g:EasyGrepPatternType="regex"
 endif
 
 " CheckDefaultUserPattern {{{
