@@ -2416,14 +2416,14 @@ function! s:ConfigureGrepCommandParameters()
                 \ 'req_str_escapespecialcharacters': "-\^$#.*+?()[]{}",
                 \ 'opt_str_escapespecialcharacterstwice': "|",
                 \ 'opt_str_mapexclusionsexpression': '"--ignore-dir=\"".v:val."\""',
-                \ 'opt_bool_filtertargetswithnofiles': '1',
+                \ 'opt_bool_filtertargetswithnofiles': '0',
                 \ 'opt_bool_bufferdirsearchallowed': '1',
                 \ 'opt_str_suppresserrormessages': '',
                 \ 'opt_bool_directoryneedsbackslash': '0',
                 \ 'opt_bool_isinherentlyrecursive': '1',
                 \ 'opt_bool_isselffiltering': '0',
                 \ 'opt_bool_nofiletargets': '0',
-                \ 'opt_str_mapinclusionsexpression': '"--file-search-regex=\"" .v:val."\""',
+                \ 'opt_str_mapinclusionsexpression': '"--file-search-regex=\"" .substitute(v:val, "^\\*\\.", "\\\\.", "")."\""',
                 \ })
 
     call s:RegisterGrepProgram("pt", {
@@ -2440,14 +2440,14 @@ function! s:ConfigureGrepCommandParameters()
                 \ 'req_str_escapespecialcharacters': "-\^$#.*+?()[]{}",
                 \ 'opt_str_escapespecialcharacterstwice': "",
                 \ 'opt_str_mapexclusionsexpression': '',
-                \ 'opt_bool_filtertargetswithnofiles': '1',
+                \ 'opt_bool_filtertargetswithnofiles': '0',
                 \ 'opt_bool_bufferdirsearchallowed': '1',
                 \ 'opt_str_suppresserrormessages': '',
                 \ 'opt_bool_directoryneedsbackslash': '0',
                 \ 'opt_bool_isinherentlyrecursive': '1',
                 \ 'opt_bool_isselffiltering': '0',
                 \ 'opt_bool_nofiletargets': '0',
-                \ 'opt_str_mapinclusionsexpression': '"--file-search-regexp=\"" .v:val."\""',
+                \ 'opt_str_mapinclusionsexpression': '"--file-search-regexp=\"" .substitute(v:val, "^\\*\\.", "\\\\.", "")."\""',
                 \ })
 
     call s:RegisterGrepProgram("csearch", {
@@ -2499,6 +2499,7 @@ endfunction
 " }}}
 " GetGrepCommandParameters {{{
 function! s:GetGrepCommandParameters()
+    call s:ConfigureGrepCommandParameters()
     if s:IsCommandVimgrep()
         return g:EasyGrep_commandParamsDict["vimgrep"]
     endif
@@ -2595,12 +2596,12 @@ function! s:GetGrepCommandLine(pattern, add, wholeword, count, escapeArgs, filte
     if s:CommandHas("opt_bool_isinherentlyrecursive")
         " Eliminate a trailing star
         call map(fileTargetList, 'substitute(v:val, "/\\*$", "/", "")')
-        "" Replace an individual star with a dot
+        " Replace an individual star with a dot
         call map(fileTargetList, 'substitute(v:val, "^\\*$", s:GetGrepRoot(), "")')
     endif
 
     " Set extra inclusions and exclusions
-    if s:IsModeFiltered() && s:CommandHasLen("opt_str_mapinclusionsexpression")
+    if s:IsModeFiltered() && s:CommandHasLen("opt_str_mapinclusionsexpression") && match(fileTargetList, "*", 0) != -1
         call EasyGrep#Log("File targets=".join(fileTargetList))
         " Explicitly specify the file types as arguments according to the configured expression
         let opts .= " " . join(map(fileTargetList, commandParams["opt_str_mapinclusionsexpression"]), ' '). " "
