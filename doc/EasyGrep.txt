@@ -34,9 +34,8 @@ Contribute:  Please report any bugs or suggestions       |EasyGrep_Bugs|
                 5.2 Explorer...............|EasyGrep_OptionsExplorer|
                 5.3 Details................|EasyGrep_OptionsDetail|
              6. Bugs.......................|EasyGrep_Bugs|
-             7. Future.....................|EasyGrep_Future|
-             8. History....................|EasyGrep_History|
-             9. License....................|EasyGrep_License|
+             7. History....................|EasyGrep_History|
+             8. License....................|EasyGrep_License|
 
 
 ==============================================================================
@@ -535,44 +534,18 @@ Specifies the default pattern for 'User' mode. (see |EasyGrepMode| and
 
 
 ==============================================================================
-  6. Future                                                  *EasyGrep_Future*
-==============================================================================
-
-------------------------------------------------------------------------------
-Provide recommendations on the best way to use the script
-------------------------------------------------------------------------------
-
-
-==============================================================================
-  7. Bugs                                                      *EasyGrep_Bugs*
+  6. Bugs                                                      *EasyGrep_Bugs*
 ==============================================================================
 
 If you discover any bugs not listed here, please contact the |EasyGrep_Author|
-or post an issue to the |EasyGrep_Repository|
-
-------------------------------------------------------------------------------
-Successive warning messages can hide a previous message
-------------------------------------------------------------------------------
-ReplaceUndo opens a window even if it is already open?
-------------------------------------------------------------------------------
-Report that a swap file can't be opened
-------------------------------------------------------------------------------
-Patterns with backslashes in them require double-backslash to be searched from
-the command line.  This behaviour matches the builtin / command but it may be
-unintuitive.
-------------------------------------------------------------------------------
-Support canceling a search and print a nice message
-------------------------------------------------------------------------------
-
-
+or post an issue to the |EasyGrep_Repository|.
 
 ==============================================================================
-  8. History                                                *EasyGrep_History*
+  7. History                                                *EasyGrep_History*
 ==============================================================================
 
-  1.2
-      Fixed: EasyGrepJumpToMatch was not respected when the command was grep.
-      Improved: lots of misc fixes
+  1.2+
+      See github for history
   1.1
       Improved: much better support when grepprg is ack or grep. These tools
           can search much more quickly than vimgrep and so may be preferable
@@ -703,7 +676,7 @@ Support canceling a search and print a nice message
 
 
 ==============================================================================
-  9. License                                                *EasyGrep_License*
+  8. License                                                *EasyGrep_License*
 ==============================================================================
 
                   Public domain, no restrictions whatsoever
