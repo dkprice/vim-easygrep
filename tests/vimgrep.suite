@@ -1,4 +1,8 @@
 
+#-------------------------------------------------------------------------------
+# Grep tests
+#-------------------------------------------------------------------------------
+
 # casesensitivity
 casesensitivity_ack.vim
 casesensitivity_ag.vim
@@ -33,3 +37,14 @@ simpleregex_ag.vim
 simpleregex_grep.vim
 simpleregex_pt.vim
 simpleregex_vimgrep.vim
+
+#-------------------------------------------------------------------------------
+# ResultList tests
+#-------------------------------------------------------------------------------
+
+
+#-------------
+# ResultListDo
+#-------------
+resultlistdo_vimgrep.vim
+
