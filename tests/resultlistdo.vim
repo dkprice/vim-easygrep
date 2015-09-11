@@ -2,7 +2,6 @@
 let testname="resultlistdo"
 let g:EasyGrepDefaultUserPattern="__resultlistdo.in"
 let g:EasyGrepMode=3
-let g:EasyGrepAutomated=1
 
 " Search
 ResultListTag GrepAdd resultlist
