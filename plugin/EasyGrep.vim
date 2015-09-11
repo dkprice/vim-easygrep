@@ -2343,7 +2343,7 @@ function! s:ConfigureGrepCommandParameters()
                 \ 'req_str_escapespecialcharacters': "-\^$#.*[]",
                 \ 'opt_str_escapespecialcharacterstwice': "",
                 \ 'opt_str_mapexclusionsexpression': '"--exclude=\"".v:val."\""." --exclude-dir=\"".v:val."\""',
-                \ 'opt_bool_filtertargetswithnofiles': '1',
+                \ 'opt_bool_filtertargetswithnofiles': '0',
                 \ 'opt_bool_bufferdirsearchallowed': '!recursive',
                 \ 'opt_str_suppresserrormessages': '-s',
                 \ 'opt_bool_directoryneedsbackslash': '0',
@@ -2367,7 +2367,7 @@ function! s:ConfigureGrepCommandParameters()
                 \ 'req_str_escapespecialcharacters': "-\^$#.*",
                 \ 'opt_str_escapespecialcharacterstwice': "",
                 \ 'opt_str_mapexclusionsexpression': '',
-                \ 'opt_bool_filtertargetswithnofiles': '1',
+                \ 'opt_bool_filtertargetswithnofiles': '0',
                 \ 'opt_bool_bufferdirsearchallowed': '0',
                 \ 'opt_str_suppresserrormessages': '',
                 \ 'opt_bool_directoryneedsbackslash': '0',
@@ -2593,6 +2593,14 @@ function! s:GetGrepCommandLine(pattern, add, wholeword, count, escapeArgs, filte
         call map(fileTargetList, 'EasyGrep#ForwardToBackSlash(v:val)')
     endif
 
+    " Set extra inclusions and exclusions
+    if s:IsModeFiltered() && s:CommandHasLen("opt_str_mapinclusionsexpression") && match(fileTargetList, "*", 0) != -1
+        " Explicitly specify the file types as arguments according to the configured expression
+        let opts .= " " . join(map(fileTargetList, commandParams["opt_str_mapinclusionsexpression"]), ' '). " "
+        " while the files we specify will be directories
+        let fileTargetList = s:GetDirectorySearchList()
+    endif
+
     " Add exclusions
     if s:CommandHasLen("opt_str_mapexclusionsexpression")
         let opts .= " " . join(map(split(filesToExclude, ','), commandParams["opt_str_mapexclusionsexpression"]), ' ') . " "
@@ -2603,14 +2611,6 @@ function! s:GetGrepCommandLine(pattern, add, wholeword, count, escapeArgs, filte
         call map(fileTargetList, 'substitute(v:val, "/\\*$", "/", "")')
         " Replace an individual star with a dot
         call map(fileTargetList, 'substitute(v:val, "^\\*$", s:GetGrepRoot(), "")')
-    endif
-
-    " Set extra inclusions and exclusions
-    if s:IsModeFiltered() && s:CommandHasLen("opt_str_mapinclusionsexpression") && match(fileTargetList, "*", 0) != -1
-        " Explicitly specify the file types as arguments according to the configured expression
-        let opts .= " " . join(map(fileTargetList, commandParams["opt_str_mapinclusionsexpression"]), ' '). " "
-        " while the files we specify will be directories
-        let fileTargetList = s:GetDirectorySearchList()
     endif
 
     " Finally, ensure that the paths we pass to the external grep command are
