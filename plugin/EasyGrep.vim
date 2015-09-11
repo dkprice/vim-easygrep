@@ -2427,7 +2427,7 @@ function! s:ConfigureGrepCommandParameters()
                 \ 'opt_bool_isselffiltering': '0',
                 \ 'opt_bool_nofiletargets': '0',
                 \ 'opt_str_mapinclusionsexpression': '"--file-search-regex=\"" .substitute(v:val, "^\\*\\.", "\\\\.", "")."\""',
-                \ 'opt_str_hiddenswitch': '--hidden ',
+                \ 'opt_str_hiddenswitch': '--hidden',
                 \ })
 
     call s:RegisterGrepProgram("pt", {
@@ -2452,6 +2452,7 @@ function! s:ConfigureGrepCommandParameters()
                 \ 'opt_bool_isselffiltering': '0',
                 \ 'opt_bool_nofiletargets': '0',
                 \ 'opt_str_mapinclusionsexpression': '"--file-search-regexp=\"" .substitute(v:val, "^\\*\\.", "\\\\.", "")."\""',
+                \ 'opt_str_hiddenswitch': '--hidden',
                 \ })
 
     call s:RegisterGrepProgram("csearch", {
