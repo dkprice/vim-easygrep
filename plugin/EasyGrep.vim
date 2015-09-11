@@ -2857,7 +2857,7 @@ function! s:DoReplace(target, replacement, wholeword, escapeArgs)
 
     let finished = 0
     let lastFile = -1
-    let doAll = 0
+    let doAll = exists("g:EasyGrepAutomatedTest")
     let i = 0
     while i < numMatches && !finished
         try
@@ -3138,7 +3138,7 @@ function! s:ResultListDo(command)
 
     let finished = 0
     let lastFile = -1
-    let doAll = 0
+    let doAll = exists("g:EasyGrepAutomatedTest")
     let i = 0
     while i < numMatches && !finished
         try
@@ -3226,7 +3226,7 @@ function! s:ResultListDo(command)
             endif
 
             if doit
-                exe .a:command
+                exe a:command
             endif
 
             if pendingQuit
