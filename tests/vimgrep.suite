@@ -24,6 +24,13 @@ exclusions_grep.vim
 exclusions_pt.vim
 exclusions_vimgrep.vim
 
+# hidden
+hidden_ack.vim
+hidden_ag.vim
+hidden_grep.vim
+hidden_pt.vim
+hidden_vimgrep.vim
+
 # recursion
 recursion_ack.vim
 recursion_ag.vim
