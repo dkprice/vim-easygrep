@@ -2397,7 +2397,10 @@ function! s:ConfigureGrepCommandParameters()
                 \ 'opt_bool_isinherentlyrecursive': '1',
                 \ 'opt_bool_isselffiltering': '0',
                 \ 'opt_bool_nofiletargets': '0',
-                \ 'opt_str_mapinclusionsexpression': '"--type=\"" .v:val."\""',
+                \ 'opt_str_mapinclusionsexpression': 'substitute(v:val, "^\\*\\.", "", "")',
+                \ 'opt_str_mapinclusionsexpressionseparator': ',',
+                \ 'opt_str_mapinclusionsprefix': '--type-set="easygrep:ext:',
+                \ 'opt_str_mapinclusionspostfix': '" --type=easygrep',
                 \ })
 
     call s:RegisterGrepProgram("ack-grep", g:EasyGrep_commandParamsDict["ack"])
@@ -2596,7 +2599,11 @@ function! s:GetGrepCommandLine(pattern, add, wholeword, count, escapeArgs, filte
     " Set extra inclusions and exclusions
     if s:IsModeFiltered() && s:CommandHasLen("opt_str_mapinclusionsexpression") && match(fileTargetList, "*", 0) != -1
         " Explicitly specify the file types as arguments according to the configured expression
-        let opts .= " " . join(map(fileTargetList, commandParams["opt_str_mapinclusionsexpression"]), ' '). " "
+        let opts .= " "
+            \ . s:CommandParameterOr(commandParams, "opt_str_mapinclusionsprefix", "")
+            \ . join(map(fileTargetList, commandParams["opt_str_mapinclusionsexpression"]), s:CommandParameterOr(commandParams, "opt_str_mapinclusionsexpressionseparator", ' '))
+            \ . s:CommandParameterOr(commandParams, "opt_str_mapinclusionspostfix", "")
+            \ . " "
         " while the files we specify will be directories
         let fileTargetList = s:GetDirectorySearchList()
     endif
