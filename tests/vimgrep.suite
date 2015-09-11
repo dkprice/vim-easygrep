@@ -21,7 +21,7 @@ wholeword_vimgrep.vim
 exclusions_ack.vim
 exclusions_ag.vim
 exclusions_grep.vim
-# exclusions_pt.vim      # not yet supported
+exclusions_pt.vim
 exclusions_vimgrep.vim
 
 # recursion
