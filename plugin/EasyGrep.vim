@@ -800,7 +800,7 @@ function! <sid>EchoGrepCommand()
     endif
 
     let placeholder = "<pattern>"
-    let grepCommand = s:GetGrepCommandLine(placeholder, "", 0, "", 1, 0)
+    let grepCommand = s:GetGrepCommandLine(placeholder, "", 0, "", 1, 0, "")
     call s:Echo("VIM command:           ".grepCommand)
 
     if s:GetGrepCommandName() == "grep"
@@ -1899,7 +1899,7 @@ function! <sid>GrepSelection(add, wholeword)
         call EasyGrep#Warning("No current selection")
         return s:ClearGatewayVariables()
     endif
-    call s:DoGrep(currSelection, a:add, a:wholeword, "", 1)
+    call s:DoGrep(currSelection, a:add, a:wholeword, "", 1, "")
     return s:ClearGatewayVariables()
 endfunction
 " }}}
@@ -1913,7 +1913,7 @@ function! <sid>GrepCurrentWord(add, wholeword)
     endif
 
     call s:CheckIfCurrentFileIsSearched()
-    let r = s:DoGrep(currWord, a:add, a:wholeword, "", 1)
+    let r = s:DoGrep(currWord, a:add, a:wholeword, "", 1, "")
     return s:ClearGatewayVariables()
 endfunction
 " }}}
@@ -1953,7 +1953,7 @@ function! s:GrepCommandLine(argv, add)
         call EasyGrep#Error(opts["failedparse"])
     else
         call s:SetCommandLineOptions(opts)
-        call s:DoGrep(opts["pattern"], a:add, opts["whole-word"], opts["count"]>0 ? opts["count"] : "", opts["regex"] == "fixed" ? 1 : 0)
+        call s:DoGrep(opts["pattern"], a:add, opts["whole-word"], opts["count"]>0 ? opts["count"] : "", opts["regex"] == "fixed" ? 1 : 0, opts["xgrep"])
         call s:RestoreCommandLineOptions(opts)
     endif
     return s:ClearGatewayVariables()
@@ -1969,6 +1969,7 @@ function! s:ParseCommandLine(argv)
     let opts["count"] = 0
     let opts["regex"] = s:GetGrepPatternType()
     let opts["pattern"] = ""
+    let opts["xgrep"] = ""
     let opts["failedparse"] = ""
     let parseopts = 1
 
@@ -2017,6 +2018,14 @@ function! s:ParseCommandLine(argv)
                             let opts["count"] = tok
                         else
                             let opts["failedparse"] = "Missing argument to -m"
+                        endif
+                    elseif c ==# 'X'
+                        let j += 1
+                        if j < numtokens
+                            let tok = tokens[j]
+                            let opts["xgrep"] .= " ".tok
+                        else
+                            let opts["failedparse"] = "Missing argument to -X"
                         endif
                     else
                         let opts["failedparse"] = "Invalid option (-".c.")"
@@ -2518,7 +2527,7 @@ function! s:GetGrepCommandParameters()
 endfunction
 " }}}
 " GetGrepCommandLine {{{
-function! s:GetGrepCommandLine(pattern, add, wholeword, count, escapeArgs, filterTargetsWithNoFiles)
+function! s:GetGrepCommandLine(pattern, add, wholeword, count, escapeArgs, filterTargetsWithNoFiles, xgrep)
 
     call s:CheckCommandRequirements()
 
@@ -2556,7 +2565,7 @@ function! s:GetGrepCommandLine(pattern, add, wholeword, count, escapeArgs, filte
     endif
     let pattern = commandParams["opt_str_patternprefix"].pattern.commandParams["opt_str_patternpostfix"]
 
-    let opts = ""
+    let opts = a:xgrep
     if wholeword
         let opts .= s:CommandParameterOr(commandParams, "opt_str_wholewordoption", "")
     endif
@@ -2658,7 +2667,7 @@ endfunction
 
 " }}}
 " DoGrep {{{
-function! s:DoGrep(pattern, add, wholeword, count, escapeArgs)
+function! s:DoGrep(pattern, add, wholeword, count, escapeArgs, xgrep)
     call s:CreateGrepDictionary()
 
     if s:OptionsExplorerOpen == 1
@@ -2676,7 +2685,7 @@ function! s:DoGrep(pattern, add, wholeword, count, escapeArgs)
     endif
 
     call s:SetGrepVariables(commandName)
-    let grepCommand = s:GetGrepCommandLine(a:pattern, a:add, a:wholeword, a:count, a:escapeArgs, 1)
+    let grepCommand = s:GetGrepCommandLine(a:pattern, a:add, a:wholeword, a:count, a:escapeArgs, 1, a:xgrep)
 
     " change directory to the grep root before executing
     call s:ChangeDirectoryToGrepRoot()
@@ -2819,7 +2828,7 @@ endfunction
 " DoReplace {{{
 function! s:DoReplace(target, replacement, wholeword, escapeArgs)
 
-    if !s:DoGrep(a:target, "", a:wholeword, "", a:escapeArgs)
+    if !s:DoGrep(a:target, "", a:wholeword, "", a:escapeArgs, "")
         return
     endif
 

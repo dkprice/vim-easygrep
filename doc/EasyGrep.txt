@@ -226,6 +226,7 @@ e.g.
          This allows for searches with regular expressions.
     -F   Perform a "fixed" search. EasyGrep will escape the PATTERN string
          before passing it to the configured grep program.
+    -X   Pass the next token, unmodified, to the grep program in use
 
                                                                     *:GrepAdd*
 :GrepAdd [OPTION]... PATTERN
