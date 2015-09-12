@@ -7,6 +7,21 @@ EasyGrep is a plugin for performing search and replace operations through multip
 
 EasyGrep provides both key mappings and commands to make search and replace easy. When using EasyGrep, searching for a word is as easy as typing <leader>vv (v v, not double-u) over the word for which you want to search.  This search can also be accomplished with the :Grep command and a user-specified pattern. Performing a "replace in files" is similar; type <leader>vr or use the :Replace command. Setting options is easy, simply type <leader>vo or :GrepOptions.  EasyGrep provides a great set of defaults but can also be configured to start up just how you like it; see the script for these options.  Most vimgrep (and grepprg) options are supported.
 
+## Why EasyGrep?
+
+* Supports multiple Grep programs (vimgrep, grep, ack, ag, pt, git grep, csearch).
+* Mapping-based or command-based searches.
+* Allows searching all files, just buffers, or a user-specified pattern. Allows
+excluding unwanted files.
+* Searches from a configurable location, like a project root (.git,.hg,.svn), current
+directory, or arbitrary directory.
+* Automatically escapes patterns to avoid regex confusion (so that you can
+search text like '->data()[x][y][z]')
+* Offers an interactive options explorer.
+* And much more...
+
+## Using Easygrep
+
 Keymappings:
 
     <Leader>vv  - Grep for the word under the cursor, match all occurences,
@@ -65,7 +80,7 @@ Commands:
           3. A user specified directory. The search location is fixed and does
              not change.
 
-Screencast:
+## Screencast
 
 ![Alt text](https://cloud.githubusercontent.com/assets/2375604/9804914/d0c39ff0-5800-11e5-8e7d-b77543bf2dcf.gif "EasyGrep demo")
 

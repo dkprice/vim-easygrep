@@ -8,7 +8,7 @@ Repository:  https://github.com/dkprice/vim-easygrep     *EasyGrep_Repository*
 
 Goal:        To be an easy to use, powerful find and     |EasyGrep_Motivation|
              replace tool for users of all skill levels.
-Version:     1.2                                         |EasyGrep_History|
+Version:     2.0                                         |EasyGrep_History|
 
 License:     Public domain, no restrictions whatsoever   |EasyGrep_License|
 Contribute:  Please report any bugs or suggestions       |EasyGrep_Bugs|
@@ -33,8 +33,8 @@ Contribute:  Please report any bugs or suggestions       |EasyGrep_Bugs|
                 5.1 Summary................|EasyGrep_OptionsSummary|
                 5.2 Explorer...............|EasyGrep_OptionsExplorer|
                 5.3 Details................|EasyGrep_OptionsDetail|
-             6. Bugs.......................|EasyGrep_Bugs|
-             7. Future.....................|EasyGrep_Future|
+             6. Supported Programs.........|EasyGrep_Programs|
+             7. Bugs.......................|EasyGrep_Bugs|
              8. History....................|EasyGrep_History|
              9. License....................|EasyGrep_License|
 
@@ -227,6 +227,7 @@ e.g.
          This allows for searches with regular expressions.
     -F   Perform a "fixed" search. EasyGrep will escape the PATTERN string
          before passing it to the configured grep program.
+    -X   Pass the next token, unmodified, to the grep program in use
 
                                                                     *:GrepAdd*
 :GrepAdd [OPTION]... PATTERN
@@ -319,6 +320,7 @@ o |EasyGrepSearchCurrentBufferDir|      - Whether to search current buffers dir
                                         in addition to working dir
 o |EasyGrepInvertWholeWord|             - Invert the meaning of whole word for vv
                                         and vV keymaps
+o |EasyGrepPatternType|                 - Specifies fixed or regex patterns
 o |EasyGrepFileAssociationsInExplorer|  - Whether to show the file associations
                                         list in the options explorer
 o |EasyGrepReplaceWindowMode|           - Controls whether to use tabs or splits
@@ -384,7 +386,7 @@ Specifies the location at which the grep command will be invoked.
 
         A failed search will act as is this option were set to "cwd".  Note
         that this result is cached for performance; to reset this result use
-        the |GrepRoot| command. 
+        the |GrepRoot| command.
 
     repo
         This is shorthand for setting a builtin set of source code
@@ -393,7 +395,7 @@ Specifies the location at which the grep command will be invoked.
         e.g. let g:EasyGrepRoot = "repo"
              *** is internally translated to ***
              let g:EasyGrepRoot = "search:.git,.hg,.svn"
-    
+
     [A directory]
         This sets the grep root to a user-specified directory. If this
         directory does not exist, an error will be reported and EasyGrep will
@@ -482,6 +484,14 @@ default meaning.  For example, when this option is activated, <Leader>vv
 matches whole word, while <Leader>vV matches everything that includes the
 word.  Note that this affects both keymappings and commands.
 
+*EasyGrepPatternType*  [default="regex"]
+Specifies how the Grep (and related) commands treat the specified pattern.
+When this option is "regex", the pattern is unchanged and will be passed to
+the underlying Grep program as is. When this option is "fixed", the specified
+pattern will be treated as it is is a fixed string, and EasyGrep will
+automatically escape whatever pieces of the pattern are needed so that the
+grep program will search for this pattern like a fixed, literal string.
+
 *EasyGrepFileAssociationsInExplorer*  [default=0]
 Specifies whether to show the file associations list in the options explorer
 window.
@@ -524,46 +534,57 @@ Specifies the default pattern for 'User' mode. (see |EasyGrepMode| and
 |EasyGrep_OperationModes|).  This pattern must be defined and non-empty if
 |EasyGrepMode| is set to start in 'User' mode.
 
-
 ==============================================================================
-  6. Future                                                  *EasyGrep_Future*
+  6. Supported Programs                                    *EasyGrep_Programs*
 ==============================================================================
 
-------------------------------------------------------------------------------
-Provide recommendations on the best way to use the script
-------------------------------------------------------------------------------
+See |GrepProgram| for details about how to change the program used by
+EasyGrep.
 
+vimgrep
+    Vim's builtin file grep. This is the (default) option, given that it is
+    guaranteed to be available, but it is not the recommended one as it is
+    slow for general use.
+    Required Version: 7.0
+
+grep
+    Globally search a regular expression and print
+    Required Version: any with --include and --exclude
+
+ack
+    A tool like grep, optimized for programmers.
+    http://beyondgrep.com/
+    Required Version: 2.14
+
+ag
+    The silver searcher
+    https://github.com/ggreer/the_silver_searcher
+    Required Version: 0.16
+
+pt
+    The platinum searcher
+    https://github.com/monochromegane/the_platinum_searcher
+    Required Version: 1.7.8
+
+csearch
+    Google codesearch
+    https://github.com/google/codesearch
+    Required Version: any
+    Note that the codesearch index must have already been generated.
 
 ==============================================================================
   7. Bugs                                                      *EasyGrep_Bugs*
 ==============================================================================
 
 If you discover any bugs not listed here, please contact the |EasyGrep_Author|
-or post an issue to the |EasyGrep_Repository|
-
-------------------------------------------------------------------------------
-Successive warning messages can hide a previous message
-------------------------------------------------------------------------------
-ReplaceUndo opens a window even if it is already open?
-------------------------------------------------------------------------------
-Report that a swap file can't be opened
-------------------------------------------------------------------------------
-Patterns with backslashes in them require double-backslash to be searched from
-the command line.  This behaviour matches the builtin / command but it may be
-unintuitive.
-------------------------------------------------------------------------------
-Support canceling a search and print a nice message
-------------------------------------------------------------------------------
-
-
+or post an issue to the |EasyGrep_Repository|.
 
 ==============================================================================
   8. History                                                *EasyGrep_History*
 ==============================================================================
 
-  1.2
-      Fixed: EasyGrepJumpToMatch was not respected when the command was grep.
-      Improved: lots of misc fixes
+  2.0+
+      See github for history
   1.1
       Improved: much better support when grepprg is ack or grep. These tools
           can search much more quickly than vimgrep and so may be preferable

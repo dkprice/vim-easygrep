@@ -21,8 +21,15 @@ wholeword_vimgrep.vim
 exclusions_ack.vim
 exclusions_ag.vim
 exclusions_grep.vim
-# exclusions_pt.vim      # not yet supported
+exclusions_pt.vim
 exclusions_vimgrep.vim
+
+# hidden
+hidden_ack.vim
+hidden_ag.vim
+hidden_grep.vim
+hidden_pt.vim
+hidden_vimgrep.vim
 
 # recursion
 recursion_ack.vim
@@ -30,6 +37,13 @@ recursion_ag.vim
 recursion_grep.vim
 # recursion_pt.vim # disabled; output is non-deterministic
 recursion_vimgrep.vim
+
+# recursionuserpattern
+recursionuserpattern_ack.vim
+recursionuserpattern_ag.vim
+recursionuserpattern_grep.vim
+recursionuserpattern_pt.vim
+recursionuserpattern_vimgrep.vim
 
 # simpleregex
 simpleregex_ack.vim
