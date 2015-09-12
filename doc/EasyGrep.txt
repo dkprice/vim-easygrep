@@ -33,9 +33,10 @@ Contribute:  Please report any bugs or suggestions       |EasyGrep_Bugs|
                 5.1 Summary................|EasyGrep_OptionsSummary|
                 5.2 Explorer...............|EasyGrep_OptionsExplorer|
                 5.3 Details................|EasyGrep_OptionsDetail|
-             6. Bugs.......................|EasyGrep_Bugs|
-             7. History....................|EasyGrep_History|
-             8. License....................|EasyGrep_License|
+             6. Supported Programs.........|EasyGrep_Programs|
+             7. Bugs.......................|EasyGrep_Bugs|
+             8. History....................|EasyGrep_History|
+             9. License....................|EasyGrep_License|
 
 
 ==============================================================================
@@ -533,16 +534,53 @@ Specifies the default pattern for 'User' mode. (see |EasyGrepMode| and
 |EasyGrep_OperationModes|).  This pattern must be defined and non-empty if
 |EasyGrepMode| is set to start in 'User' mode.
 
+==============================================================================
+  6. Supported Programs                                    *EasyGrep_Programs*
+==============================================================================
+
+See |GrepProgram| for details about how to change the program used by
+EasyGrep.
+
+vimgrep
+    Vim's builtin file grep. This is the (default) option, given that it is
+    guaranteed to be available, but it is not the recommended one as it is
+    slow for general use.
+    Required Version: 7.0
+
+grep
+    Globally search a regular expression and print
+    Required Version: any with --include and --exclude
+
+ack
+    A tool like grep, optimized for programmers.
+    http://beyondgrep.com/
+    Required Version: 2.14
+
+ag
+    The silver searcher
+    https://github.com/ggreer/the_silver_searcher
+    Required Version: 0.16
+
+pt
+    The platinum searcher
+    https://github.com/monochromegane/the_platinum_searcher
+    Required Version: 1.7.8
+
+csearch
+    Google codesearch
+    https://github.com/google/codesearch
+    Required Version: any
+    Note that the codesearch index must have already been generated.
 
 ==============================================================================
-  6. Bugs                                                      *EasyGrep_Bugs*
+  7. Bugs                                                      *EasyGrep_Bugs*
 ==============================================================================
 
 If you discover any bugs not listed here, please contact the |EasyGrep_Author|
 or post an issue to the |EasyGrep_Repository|.
 
 ==============================================================================
-  7. History                                                *EasyGrep_History*
+  8. History                                                *EasyGrep_History*
 ==============================================================================
 
   2.0+
@@ -677,7 +715,7 @@ or post an issue to the |EasyGrep_Repository|.
 
 
 ==============================================================================
-  8. License                                                *EasyGrep_License*
+  9. License                                                *EasyGrep_License*
 ==============================================================================
 
                   Public domain, no restrictions whatsoever
