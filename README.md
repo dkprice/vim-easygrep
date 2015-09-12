@@ -3,9 +3,7 @@ vim-easygrep
 
 Fast and Easy Find and Replace Across Multiple Files
 
-EasyGrep is a plugin for performing search and replace operations through multiple files. Vim already has builtin support for searching through files with its 'vimgrep' and 'grep' commands, but EasyGrep makes using them much, much easier. It also provides a powerful "Replace in Files" operation, something that is not very easy to do in Vim by default. With EasyGrep, you can specify with high-precision exactly the type of files you want to search, whether it be all files, only open buffers, only files matching a pattern, etc. Additionally, you can easily specify searching through hidden files, case-sensitivity, performing a recursive search, and many more options that make searching more easy.
-
-EasyGrep provides both key mappings and commands to make search and replace easy. When using EasyGrep, searching for a word is as easy as typing <leader>vv (v v, not double-u) over the word for which you want to search.  This search can also be accomplished with the :Grep command and a user-specified pattern. Performing a "replace in files" is similar; type <leader>vr or use the :Replace command. Setting options is easy, simply type <leader>vo or :GrepOptions.  EasyGrep provides a great set of defaults but can also be configured to start up just how you like it; see the script for these options.  Most vimgrep (and grepprg) options are supported.
+EasyGrep is a plugin for performing search and replace operations through multiple files. Vim already has builtin support for searching through files with its 'vimgrep' and 'grep' commands, but EasyGrep makes using them much, much easier.
 
 ## Why EasyGrep?
 
