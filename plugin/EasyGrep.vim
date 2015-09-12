@@ -9,13 +9,13 @@
 " License:       Public domain, no restrictions whatsoever
 " Documentation: type ":help EasyGrep"
 "
-" Version:       1.2 -- Programs can inspect g:EasyGrepVersion
+" Version:       2.0 -- Programs can inspect g:EasyGrepVersion
 
 " Initialization {{{
 if exists("g:EasyGrepVersion") || &cp || !has("quickfix")
     finish
 endif
-let g:EasyGrepVersion = "1.2"
+let g:EasyGrepVersion = "2.0"
 " Check for Vim version 700 or greater {{{
 if v:version < 700
     echo "Sorry, EasyGrep ".g:EasyGrepVersion." ONLY runs with Vim 7.0 and greater."

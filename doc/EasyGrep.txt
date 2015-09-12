@@ -8,7 +8,7 @@ Repository:  https://github.com/dkprice/vim-easygrep     *EasyGrep_Repository*
 
 Goal:        To be an easy to use, powerful find and     |EasyGrep_Motivation|
              replace tool for users of all skill levels.
-Version:     1.2                                         |EasyGrep_History|
+Version:     2.0                                         |EasyGrep_History|
 
 License:     Public domain, no restrictions whatsoever   |EasyGrep_License|
 Contribute:  Please report any bugs or suggestions       |EasyGrep_Bugs|
@@ -545,7 +545,7 @@ or post an issue to the |EasyGrep_Repository|.
   7. History                                                *EasyGrep_History*
 ==============================================================================
 
-  1.2+
+  2.0+
       See github for history
   1.1
       Improved: much better support when grepprg is ack or grep. These tools

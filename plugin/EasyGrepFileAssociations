@@ -1,5 +1,5 @@
 " EasyGrepFileAssociations
-" Version 1.2
+" Version 2.0
 "
 " This file is made up of Key-value pairs that associate file types
 " individual file extensions should only show up in one pair; behavior may be
