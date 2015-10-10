@@ -2082,6 +2082,7 @@ function! s:Replace(bang, argv)
     elseif l > 3 && a:argv[0] == '/'
         let ph = tempname()
         let ph = substitute(ph, '/', '_', 'g')
+        let ph = substitute(ph, '\\', '_', 'g')
         let temp = substitute(a:argv, '\\/', ph, "g")
         let l = len(temp)
         if temp[l-1] != '/'
