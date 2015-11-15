@@ -2571,6 +2571,10 @@ function! s:GetGrepCommandLine(pattern, add, wholeword, count, escapeArgs, filte
         let opts .= s:CommandParameterOr(commandParams, "opt_str_wholewordoption", "")
     endif
 
+    if exists("g:EasyGrepCommand") && g:EasyGrepCommand==1 && exists("g:EasyGrepPerlStyle") && g:EasyGrepPerlStyle==1
+        let opts .= "-P "
+    endif
+
     if s:IsRecursiveSearch()
         if s:CommandHasLen("req_str_recurse")
             let opts .= commandParams["req_str_recurse"]." "
@@ -2880,6 +2884,9 @@ function! s:DoReplace(target, replacement, wholeword, escapeArgs)
 
     if wholeword
         let target = "\\<".target."\\>"
+    endif
+    if exists("g:EasyGrepCommand") && g:EasyGrepCommand==1 && exists("g:EasyGrepPerlStyle") && g:EasyGrepPerlStyle==1
+        let target=E2v(target)
     endif
 
     let finished = 0

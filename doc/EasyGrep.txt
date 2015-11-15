@@ -305,6 +305,7 @@ o |EasyGrepFileAssociations|            - Specifies the location of the EasyGrep
                                         file associations
 o |EasyGrepMode|                        - Mode of operation
 o |EasyGrepCommand|                     - Whether to use vimgrep or grepprg
+o |EasyGrepPerlStyle|                   - Whether to use perl style regexp
 o |EasyGrepRecursive|                   - Recursive searching
 o |EasyGrepIgnoreCase|                  - Case-sensitivity in searches
 o |EasyGrepHidden|                      - Include hidden files in searches
@@ -424,6 +425,20 @@ command will be used.  This command inspects the 'grepprg' variable to
 determine the external tool that will be used for the search. Note that an
 external tool is often faster to search than vimgrep (see
 |EasyGrep_Performance|).
+
+*EasyGrepPerlStyle*  [default=0]
+Whether to use perl style regexp (in :Grep and :Replace).
+
+0 - use "grep"
+1 - use "grep -P"
+
+require these to make this work:
+set *EasyGrepCommand* to 1
+have https://github.com/othree/eregex.vim installed
+
+known issues:
+\b should replaced by \< and \>
+\c \C \i \I and \v \V \m \M won't work properly
 
 *EasyGrepRecursive*  [default=0]
 Specifies that recursive search be activated on start.
