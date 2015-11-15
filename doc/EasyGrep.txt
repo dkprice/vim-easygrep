@@ -433,7 +433,7 @@ Whether to use perl style regexp (in :Grep and :Replace).
 1 - use "grep -P"
 
 require these to make this work:
-set *EasyGrepCommand* to 1
+set |EasyGrepCommand| to 1
 have https://github.com/othree/eregex.vim installed
 
 known issues:
