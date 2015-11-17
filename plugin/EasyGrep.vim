@@ -2673,6 +2673,10 @@ endfunction
 " }}}
 " DoGrep {{{
 function! s:DoGrep(pattern, add, wholeword, count, escapeArgs, xgrep)
+    let l:pattern = a:pattern
+    let l:pattern = substitute(l:pattern, '\\<', '\\b', 'g')
+    let l:pattern = substitute(l:pattern, '\\>', '\\b', 'g')
+
     call s:CreateGrepDictionary()
 
     if s:OptionsExplorerOpen == 1
@@ -2680,7 +2684,7 @@ function! s:DoGrep(pattern, add, wholeword, count, escapeArgs, xgrep)
         return 0
     endif
 
-    if !s:HasTargetsThatMatch(a:pattern)
+    if !s:HasTargetsThatMatch(l:pattern)
         return 0
     endif
 
@@ -2690,7 +2694,7 @@ function! s:DoGrep(pattern, add, wholeword, count, escapeArgs, xgrep)
     endif
 
     call s:SetGrepVariables(commandName)
-    let grepCommand = s:GetGrepCommandLine(a:pattern, a:add, a:wholeword, a:count, a:escapeArgs, 1, a:xgrep)
+    let grepCommand = s:GetGrepCommandLine(l:pattern, a:add, a:wholeword, a:count, a:escapeArgs, 1, a:xgrep)
 
     " change directory to the grep root before executing
     call s:ChangeDirectoryToGrepRoot()
