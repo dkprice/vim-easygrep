@@ -2676,6 +2676,7 @@ function! s:DoGrep(pattern, add, wholeword, count, escapeArgs, xgrep)
     let l:pattern = a:pattern
     let l:pattern = substitute(l:pattern, '\\<', '\\b', 'g')
     let l:pattern = substitute(l:pattern, '\\>', '\\b', 'g')
+    let l:pattern = substitute(l:pattern, '\\', '\\\\', 'g')
 
     call s:CreateGrepDictionary()
 
