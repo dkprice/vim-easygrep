@@ -2892,7 +2892,13 @@ function! s:DoReplace(target, replacement, wholeword, escapeArgs)
         let target = "\\<".target."\\>"
     endif
     if exists("g:EasyGrepCommand") && g:EasyGrepCommand==1 && exists("g:EasyGrepPerlStyle") && g:EasyGrepPerlStyle==1
-        let target=E2v(target)
+        try
+            let target=E2v(target)
+        catch
+            echomsg "Warning: Replace by perl style regexp require othree/eregex.vim"
+            let dummy = getchar()
+            return
+        endtry
     endif
 
     let finished = 0
