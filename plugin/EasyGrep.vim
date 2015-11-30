@@ -2082,6 +2082,7 @@ function! s:Replace(bang, argv)
     elseif l > 3 && a:argv[0] == '/'
         let ph = tempname()
         let ph = substitute(ph, '/', '_', 'g')
+        let ph = substitute(ph, '\\', '_', 'g')
         let temp = substitute(a:argv, '\\/', ph, "g")
         let l = len(temp)
         if temp[l-1] != '/'
@@ -2570,6 +2571,10 @@ function! s:GetGrepCommandLine(pattern, add, wholeword, count, escapeArgs, filte
         let opts .= s:CommandParameterOr(commandParams, "opt_str_wholewordoption", "")
     endif
 
+    if exists("g:EasyGrepCommand") && g:EasyGrepCommand==1 && exists("g:EasyGrepPerlStyle") && g:EasyGrepPerlStyle==1
+        let opts .= "-P "
+    endif
+
     if s:IsRecursiveSearch()
         if s:CommandHasLen("req_str_recurse")
             let opts .= commandParams["req_str_recurse"]." "
@@ -2668,6 +2673,12 @@ endfunction
 " }}}
 " DoGrep {{{
 function! s:DoGrep(pattern, add, wholeword, count, escapeArgs, xgrep)
+    let l:pattern = a:pattern
+    let l:pattern = substitute(l:pattern, '\\<', '\\b', 'g')
+    let l:pattern = substitute(l:pattern, '\\>', '\\b', 'g')
+    let l:pattern = substitute(l:pattern, '\\', '\\\\', 'g')
+    let l:pattern = substitute(l:pattern, '%', '\\%', 'g')
+
     call s:CreateGrepDictionary()
 
     if s:OptionsExplorerOpen == 1
@@ -2675,7 +2686,7 @@ function! s:DoGrep(pattern, add, wholeword, count, escapeArgs, xgrep)
         return 0
     endif
 
-    if !s:HasTargetsThatMatch(a:pattern)
+    if !s:HasTargetsThatMatch(l:pattern)
         return 0
     endif
 
@@ -2685,7 +2696,7 @@ function! s:DoGrep(pattern, add, wholeword, count, escapeArgs, xgrep)
     endif
 
     call s:SetGrepVariables(commandName)
-    let grepCommand = s:GetGrepCommandLine(a:pattern, a:add, a:wholeword, a:count, a:escapeArgs, 1, a:xgrep)
+    let grepCommand = s:GetGrepCommandLine(l:pattern, a:add, a:wholeword, a:count, a:escapeArgs, 1, a:xgrep)
 
     " change directory to the grep root before executing
     call s:ChangeDirectoryToGrepRoot()
@@ -2879,6 +2890,15 @@ function! s:DoReplace(target, replacement, wholeword, escapeArgs)
 
     if wholeword
         let target = "\\<".target."\\>"
+    endif
+    if exists("g:EasyGrepCommand") && g:EasyGrepCommand==1 && exists("g:EasyGrepPerlStyle") && g:EasyGrepPerlStyle==1
+        try
+            let target=E2v(target)
+        catch
+            echomsg "Warning: Replace by perl style regexp require othree/eregex.vim"
+            let dummy = getchar()
+            return
+        endtry
     endif
 
     let finished = 0
