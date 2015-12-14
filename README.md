@@ -85,6 +85,7 @@ you may use perl style regexp while using Easygrep, simply:
 1. have https://github.com/othree/eregex.vim installed
 1. have `let g:EasyGrepCommand=1` and `grepprg` been set properly
 1. have `let g:EasyGrepPerlStyle=1`
+1. also make sure you have GNU grep greater than 2.5.3
 
 
 ## Screencast

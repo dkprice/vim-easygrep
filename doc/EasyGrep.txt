@@ -435,6 +435,7 @@ Whether to use perl style regexp (in :Grep and :Replace).
 require these to make this work:
 set |EasyGrepCommand| to 1
 have https://github.com/othree/eregex.vim installed
+support only GNU grep (greater than 2.5.3)
 
 known issues:
 \b should replaced by \< and \>
