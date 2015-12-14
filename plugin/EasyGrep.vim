@@ -2082,6 +2082,7 @@ function! s:Replace(bang, argv)
     elseif l > 3 && a:argv[0] == '/'
         let ph = tempname()
         let ph = substitute(ph, '/', '_', 'g')
+        let ph = substitute(ph, '\\', '_', 'g')
         let temp = substitute(a:argv, '\\/', ph, "g")
         let l = len(temp)
         if temp[l-1] != '/'
@@ -2557,7 +2558,23 @@ function! s:GetGrepCommandLine(pattern, add, wholeword, count, escapeArgs, filte
 
     let commandParams = s:GetGrepCommandParameters()
 
-    let pattern = a:escapeArgs ? s:EscapeSpecialCharacters(a:pattern) : a:pattern
+    if exists("g:EasyGrepCommand") && g:EasyGrepCommand==1 && exists("g:EasyGrepPerlStyle") && g:EasyGrepPerlStyle==1
+        let pattern = a:pattern
+        let pattern = substitute(pattern, '\\', '\\\\', 'g')
+        let pattern = substitute(pattern, '\\<', '\\b', 'g')
+        let pattern = substitute(pattern, '\\>', '\\b', 'g')
+        let pattern = substitute(pattern, '#', '\\#', 'g')
+        let pattern = substitute(pattern, '%', '\\%', 'g')
+        let pattern = substitute(pattern, '|', '\\|', 'g')
+        if(has("win32") || has("win64") || has("win95") || has("win16")) && stridx(&shell, "cmd") != -1
+            let pattern = substitute(pattern, '"', '""', 'g')
+        else
+            let pattern = substitute(pattern, '"', '\\"', 'g')
+            let pattern = substitute(pattern, '\$', '\\$', 'g')
+        endif
+    else
+        let pattern = a:escapeArgs ? s:EscapeSpecialCharacters(a:pattern) : a:pattern
+    endif
 
     " Enclose the pattern if needed; build from inner to outer
     if wholeword
@@ -2568,6 +2585,10 @@ function! s:GetGrepCommandLine(pattern, add, wholeword, count, escapeArgs, filte
     let opts = a:xgrep
     if wholeword
         let opts .= s:CommandParameterOr(commandParams, "opt_str_wholewordoption", "")
+    endif
+
+    if exists("g:EasyGrepCommand") && g:EasyGrepCommand==1 && exists("g:EasyGrepPerlStyle") && g:EasyGrepPerlStyle==1
+        let opts .= "-P "
     endif
 
     if s:IsRecursiveSearch()
@@ -2879,6 +2900,15 @@ function! s:DoReplace(target, replacement, wholeword, escapeArgs)
 
     if wholeword
         let target = "\\<".target."\\>"
+    endif
+    if exists("g:EasyGrepCommand") && g:EasyGrepCommand==1 && exists("g:EasyGrepPerlStyle") && g:EasyGrepPerlStyle==1
+        try
+            let target=E2v(target)
+        catch
+            echomsg "Warning: Replace by perl style regexp require othree/eregex.vim"
+            let dummy = getchar()
+            return
+        endtry
     endif
 
     let finished = 0
