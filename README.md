@@ -74,6 +74,16 @@ Commands:
           3. A user specified directory. The search location is fixed and does
              not change.
 
+    :ResultListOpen
+        Open all files in the result list
+
+    :ResultListFilter [+arg]
+        Filter the result list according to a user pattern, matching either file
+        or the result list text.
+
+    :ResultListDo [+arg]
+        Perform an action on all entries in the quickfix list
+
 ## Screencast
 
 ![Alt text](https://cloud.githubusercontent.com/assets/2375604/9804914/d0c39ff0-5800-11e5-8e7d-b77543bf2dcf.gif "EasyGrep demo")
