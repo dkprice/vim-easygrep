@@ -330,6 +330,7 @@ o |EasyGrepReplaceAllPerFile|           - Replace on per file or global basis
 o |EasyGrepOptionPrefix|                - Specify the keymap for toggling options
 o |EasyGrepExtraWarnings|               - Whether to show extra warnings
 o |EasyGrepDefaultUserPattern|          - The default 'User' mode pattern
+o |EasyGrepDisableCmdParam|             - whether disable grep cmd param
 
 
 ------------------------------------------------------------------------------
@@ -549,6 +550,9 @@ the potential to confuse some users.
 Specifies the default pattern for 'User' mode. (see |EasyGrepMode| and
 |EasyGrep_OperationModes|).  This pattern must be defined and non-empty if
 |EasyGrepMode| is set to start in 'User' mode.
+
+*EasyGrepDisableCmdParam*  [default=""]
+if set to 1, disable cmd param such as '-i' to ignore case when :Grep.
 
 ==============================================================================
   6. Supported Programs                                    *EasyGrep_Programs*

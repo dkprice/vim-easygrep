@@ -1973,6 +1973,11 @@ function! s:ParseCommandLine(argv)
     let opts["failedparse"] = ""
     let parseopts = 1
 
+    if exists("g:EasyGrepDisableCmdParam") && g:EasyGrepDisableCmdParam==1
+        let opts["pattern"] = a:argv
+        return opts
+    endif
+
     if empty(a:argv)
         return opts
     endif
