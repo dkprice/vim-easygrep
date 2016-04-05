@@ -2420,7 +2420,7 @@ function! s:ConfigureGrepCommandParameters()
                 \ 'req_bool_supportsexclusions': '1',
                 \ 'req_str_recurse': '',
                 \ 'req_str_caseignore': '-i',
-                \ 'req_str_casematch': '',
+                \ 'req_str_casematch': '-s',
                 \ 'opt_str_patternprefix': '"',
                 \ 'opt_str_patternpostfix': '"',
                 \ 'opt_str_wholewordprefix': '',
