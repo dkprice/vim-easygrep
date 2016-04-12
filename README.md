@@ -78,6 +78,16 @@ Commands:
           3. A user specified directory. The search location is fixed and does
              not change.
 
+    :ResultListOpen
+        Open all files in the result list
+
+    :ResultListFilter [+arg]
+        Filter the result list according to a user pattern, matching either file
+        or the result list text.
+
+    :ResultListDo [+arg]
+        Perform an action on all entries in the quickfix list
+
 ## Using Easygrep with perl style regexp
 
 you may use perl style regexp while using Easygrep, simply:

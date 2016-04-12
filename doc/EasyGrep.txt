@@ -381,7 +381,8 @@ Specifies the location at which the grep command will be invoked.
         Searches for a file or directory with the specified key and sets the
         location at which grep is invoked to that directory (or the directory
         containing the specified file).  This is useful for configuring
-        EasyGrep to grep from a project root.
+        EasyGrep to grep from a project root. Note that is it an error to
+        specify an absolute path as a search key.
 
         e.g. let g:EasyGrepRoot = "search:.git,.svn"
         e.g. let g:EasyGrepRoot = "search:myprojectroot"
@@ -390,11 +391,11 @@ Specifies the location at which the grep command will be invoked.
         that this result is cached for performance; to reset this result use
         the |GrepRoot| command.
 
-    repo
+    repository
         This is shorthand for setting a builtin set of source code
         repositories to search for.
 
-        e.g. let g:EasyGrepRoot = "repo"
+        e.g. let g:EasyGrepRoot = "repository"
              *** is internally translated to ***
              let g:EasyGrepRoot = "search:.git,.hg,.svn"
 
