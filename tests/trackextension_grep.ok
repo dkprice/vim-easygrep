@@ -1,0 +1,4 @@
+alphabet.in|1 col 1| GrepAdd a
+alphabet.in|1 col 0| a
+\home\matthew\.vim\bundle\easygrep\tests\__simpleregex.in|1 col 0| a
+\home\matthew\.vim\bundle\easygrep\tests\__simpleregex.in|53 col 0| [a-c]

@@ -1,0 +1,26 @@
+alphabet.in|1 col 1| GrepAdd a
+\home\matthew\.vim\bundle\easygrep\tests\recursion\a\alphabet.in|1 col 0| 1:a
+\home\matthew\.vim\bundle\easygrep\tests\recursion\c\alphabet.in|1 col 0| 1:a
+\home\matthew\.vim\bundle\easygrep\tests\recursion\b\alphabet.in|1 col 0| 1:a
+alphabet.in|1 col 0| 1:a
+\home\matthew\.vim\bundle\easygrep\tests\specialchar\specialchar.in|2 col 0| 4:myvar = this
+\home\matthew\.vim\bundle\easygrep\tests\specialchar\specialchar.in|3 col 0| 4:myvar =that
+\home\matthew\.vim\bundle\easygrep\tests\specialchar\specialchar.in|4 col 0| 4:myvar=that
+\home\matthew\.vim\bundle\easygrep\tests\specialchar\specialchar.in|6 col 0| 3://a.b[i][j][k] += float(blk->dt * q(i,j,k)->v[1]);
+\home\matthew\.vim\bundle\easygrep\tests\specialchar\specialchar.in|8 col 0| 10:"This is a \\string with lots\ of backslash"
+\home\matthew\.vim\bundle\easygrep\tests\specialchar\specialchar.in|9 col 0| 28:Don't forget to go to the mall!
+\home\matthew\.vim\bundle\easygrep\tests\specialchar\specialchar.in|10 col 0| 3:Email me at vim@danprice.fast-mail.org
+\home\matthew\.vim\bundle\easygrep\tests\specialchar\specialchar.in|11 col 0| 3:What is your phone #?
+\home\matthew\.vim\bundle\easygrep\tests\specialchar\specialchar.in|12 col 0| 3:What % of the sale is your commission?
+\home\matthew\.vim\bundle\easygrep\tests\specialchar\specialchar.in|13 col 0| 16:We don't use ~ a lot in English but in spanish it's used a lot.
+\home\matthew\.vim\bundle\easygrep\tests\specialchar\specialchar.in|14 col 0| 13:Use the ^ (caret) to switch between files.
+\home\matthew\.vim\bundle\easygrep\tests\specialchar\specialchar.in|15 col 0| 8:I like apples & bananas
+\home\matthew\.vim\bundle\easygrep\tests\specialchar\specialchar.in|17 col 0| 11:How important is this to you (it's important to me).
+\home\matthew\.vim\bundle\easygrep\tests\specialchar\specialchar.in|18 col 0| 3:What is this - that?
+\home\matthew\.vim\bundle\easygrep\tests\specialchar\specialchar.in|19 col 0| 1:a + b = c, elementary
+\home\matthew\.vim\bundle\easygrep\tests\specialchar\specialchar.in|20 col 0| 13:Group important words in {}
+\home\matthew\.vim\bundle\easygrep\tests\specialchar\specialchar.in|22 col 0| 2:Can you find \<this\>
+\home\matthew\.vim\bundle\easygrep\tests\specialchar\specialchar.in|23 col 0| 14:int x = Froobarnium();
+\home\matthew\.vim\bundle\easygrep\tests\specialchar\specialchar.in|24 col 0| 7:This has\ some \ escapes in it.
+\home\matthew\.vim\bundle\easygrep\tests\__simpleregex.in|1 col 0| 1:a
+\home\matthew\.vim\bundle\easygrep\tests\__simpleregex.in|53 col 0| 2:[a-c]

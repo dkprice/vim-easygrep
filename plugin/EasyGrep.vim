@@ -2344,8 +2344,8 @@ function! s:ConfigureGrepCommandParameters()
                 \ 'req_str_recurse': '-R',
                 \ 'req_str_caseignore': '-i',
                 \ 'req_str_casematch': '',
-                \ 'opt_str_patternprefix': '"',
-                \ 'opt_str_patternpostfix': '"',
+                \ 'opt_str_patternprefix': "'",
+                \ 'opt_str_patternpostfix': "'",
                 \ 'opt_str_wholewordprefix': '',
                 \ 'opt_str_wholewordpostfix': '',
                 \ 'opt_str_wholewordoption': '-w ',
@@ -2360,6 +2360,7 @@ function! s:ConfigureGrepCommandParameters()
                 \ 'opt_bool_isselffiltering': '0',
                 \ 'opt_bool_nofiletargets': '0',
                 \ 'opt_str_mapinclusionsexpression': '"--include=\"" .v:val."\""',
+                \ 'opt_bool_requireexplicitfiles': '1',
                 \ })
 
     call s:RegisterGrepProgram("git", {
@@ -2391,8 +2392,8 @@ function! s:ConfigureGrepCommandParameters()
                 \ 'req_str_recurse': '',
                 \ 'req_str_caseignore': '-i',
                 \ 'req_str_casematch': '',
-                \ 'opt_str_patternprefix': '"',
-                \ 'opt_str_patternpostfix': '"',
+                \ 'opt_str_patternprefix': "'",
+                \ 'opt_str_patternpostfix': "'",
                 \ 'opt_str_wholewordprefix': '',
                 \ 'opt_str_wholewordpostfix': '',
                 \ 'opt_str_wholewordoption': '-w ',
@@ -2419,9 +2420,9 @@ function! s:ConfigureGrepCommandParameters()
                 \ 'req_bool_supportsexclusions': '1',
                 \ 'req_str_recurse': '',
                 \ 'req_str_caseignore': '-i',
-                \ 'req_str_casematch': '',
-                \ 'opt_str_patternprefix': '"',
-                \ 'opt_str_patternpostfix': '"',
+                \ 'req_str_casematch': '-s',
+                \ 'opt_str_patternprefix': "'",
+                \ 'opt_str_patternpostfix': "'",
                 \ 'opt_str_wholewordprefix': '',
                 \ 'opt_str_wholewordpostfix': '',
                 \ 'opt_str_wholewordoption': '-w ',
@@ -2616,6 +2617,9 @@ function! s:GetGrepCommandLine(pattern, add, wholeword, count, escapeArgs, filte
             \ . " "
         " while the files we specify will be directories
         let fileTargetList = s:GetDirectorySearchList()
+        if s:CommandHas("opt_bool_requireexplicitfiles") && !s:IsRecursiveSearch()
+          call map(fileTargetList, "substitute(v:val, '$', '/*', 'g')")
+        endif
     endif
 
     " Add exclusions
