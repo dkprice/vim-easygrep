@@ -52,6 +52,15 @@ simpleregex_grep.vim
 simpleregex_pt.vim
 simpleregex_vimgrep.vim
 
+# trackextension
+trackextension_ack.vim
+trackextension_ag.vim
+trackextension_grep.vim
+trackextension_pt.vim
+trackextension_vimgrep.vim
+
+
+
 #-------------------------------------------------------------------------------
 # ResultList tests
 #-------------------------------------------------------------------------------

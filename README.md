@@ -28,7 +28,7 @@ Keymappings:
                   |star|
     <Leader>va  - Like vv, but add to existing list
     <Leader>vA  - Like vV, but add to existing list
-    <Leader>vr  - Perform a global search search on the word under the cursor
+    <Leader>vr  - Perform a global search on the word under the cursor
                   and prompt for a pattern with which to replace it.
     <Leader>vo  - Select the files to search in and set grep options
     <Leader>vy* - Invoke any option from the options explorer, where * is the

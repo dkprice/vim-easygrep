@@ -1,0 +1,4 @@
+alphabet.in|1 col 1| GrepAdd a
+__simpleregex.in|1 col 1| a
+__simpleregex.in|53 col 2| [a-c]
+alphabet.in|1 col 1| a
