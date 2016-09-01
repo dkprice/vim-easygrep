@@ -34,6 +34,14 @@ let s:EasyGrepModeUser=3
 let s:EasyGrepNumModes=4
 let s:EasyGrepRepositoryList="search:.git,.hg,.svn"
 
+" Whether use perl style regexp
+if exists("g:EasyGrepPerlStyle") && g:EasyGrepPerlStyle==1
+    " perl style regexp require GNU grep
+    if match(system('grep --version'), "GNU") < 0
+        let g:EasyGrepPerlStyle=0
+    endif
+endif
+
 " This is a special mode
 let s:EasyGrepModeMultipleChoice=4
 let s:EasyGrepNumModesWithSpecial = 5
@@ -2575,6 +2583,7 @@ function! s:GetGrepCommandLine(pattern, add, wholeword, count, escapeArgs, filte
         if(has("win32") || has("win64") || has("win95") || has("win16")) && stridx(&shell, "cmd") != -1
             let pattern = substitute(pattern, '"', '""', 'g')
         else
+            let pattern = substitute(pattern, '\%(\\\)\@<!\\\\\[', '\\\[', 'g')
             let pattern = substitute(pattern, '"', '\\"', 'g')
             let pattern = substitute(pattern, '\$', '\\$', 'g')
         endif
