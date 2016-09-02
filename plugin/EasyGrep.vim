@@ -2612,7 +2612,7 @@ function! s:GetGrepCommandLine(pattern, add, wholeword, count, escapeArgs, filte
         endif
     endif
 
-    if g:EasyGrepIgnoreCase
+    if g:EasyGrepIgnoreCase && !(&smartcase && match(a:pattern, '[A-Z]') >= 0)
         if s:CommandHasLen("req_str_caseignore")
             let opts .= commandParams["req_str_caseignore"]." "
         endif
