@@ -2573,6 +2573,7 @@ function! s:GetGrepCommandLine(pattern, add, wholeword, count, escapeArgs, filte
     let commandParams = s:GetGrepCommandParameters()
 
     if exists("g:EasyGrepCommand") && g:EasyGrepCommand==1 && exists("g:EasyGrepPerlStyle") && g:EasyGrepPerlStyle==1
+        let commandParams = deepcopy(commandParams)
         let commandParams["opt_str_patternprefix"] = '"'
         let commandParams["opt_str_patternpostfix"] = '"'
 
