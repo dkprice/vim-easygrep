@@ -2573,8 +2573,16 @@ function! s:GetGrepCommandLine(pattern, add, wholeword, count, escapeArgs, filte
     let commandParams = s:GetGrepCommandParameters()
 
     if exists("g:EasyGrepCommand") && g:EasyGrepCommand==1 && exists("g:EasyGrepPerlStyle") && g:EasyGrepPerlStyle==1
+        let commandParams["opt_str_patternprefix"] = '"'
+        let commandParams["opt_str_patternpostfix"] = '"'
+
         let pattern = a:pattern
-        let pattern = substitute(pattern, '\\', '\\\\', 'g')
+        let pattern = substitute(pattern, '\\\\', '_t_slash_t_', 'g')
+        let pattern = substitute(pattern, '\\|', '_t_mslash_t_', 'g')
+
+        if exists("g:EasyGrepDisableCmdParam") && g:EasyGrepDisableCmdParam==1
+            let pattern = substitute(pattern, '-', '\\-', 'g')
+        endif
         let pattern = substitute(pattern, '\\<', '\\b', 'g')
         let pattern = substitute(pattern, '\\>', '\\b', 'g')
         let pattern = substitute(pattern, '#', '\\#', 'g')
@@ -2582,14 +2590,17 @@ function! s:GetGrepCommandLine(pattern, add, wholeword, count, escapeArgs, filte
         let pattern = substitute(pattern, '|', '\\|', 'g')
         if(has("win32") || has("win64") || has("win95") || has("win16")) && stridx(&shell, "cmd") != -1
             let pattern = substitute(pattern, '"', '""', 'g')
-            let pattern = substitute(pattern, '&', '\^&', 'g')
-            let pattern = substitute(pattern, '\%(\\\)\@<!\\\\\^', '\\\^\^', 'g')
+
+            let pattern = substitute(pattern, '_t_mslash_t_', '\\\\|', 'g')
         else
-            let pattern = substitute(pattern, '\%(\\\)\@<!\\\\\[', '\\\[', 'g')
-            let pattern = substitute(pattern, '\%(\\\)\@<!\\\\\^', '\\\^', 'g')
             let pattern = substitute(pattern, '"', '\\"', 'g')
-            let pattern = substitute(pattern, '\$', '\\$', 'g')
+            let pattern = substitute(pattern, '`', '\\`', 'g')
+            let pattern = substitute(pattern, '\\\$', '\\\\\\\$', 'g')
+
+            let pattern = substitute(pattern, '_t_mslash_t_', '\\\\|', 'g')
         endif
+
+        let pattern = substitute(pattern, '_t_slash_t_', '\\\\\\\\', 'g')
     else
         let pattern = a:escapeArgs ? s:EscapeSpecialCharacters(a:pattern) : a:pattern
     endif
@@ -2615,7 +2626,7 @@ function! s:GetGrepCommandLine(pattern, add, wholeword, count, escapeArgs, filte
         endif
     endif
 
-    if g:EasyGrepIgnoreCase && !(&smartcase && match(a:pattern, '[A-Z]') >= 0)
+    if g:EasyGrepIgnoreCase && !(&smartcase && match(a:pattern, '\C[A-Z]') >= 0)
         if s:CommandHasLen("req_str_caseignore")
             let opts .= commandParams["req_str_caseignore"]." "
         endif
