@@ -2582,8 +2582,11 @@ function! s:GetGrepCommandLine(pattern, add, wholeword, count, escapeArgs, filte
         let pattern = substitute(pattern, '|', '\\|', 'g')
         if(has("win32") || has("win64") || has("win95") || has("win16")) && stridx(&shell, "cmd") != -1
             let pattern = substitute(pattern, '"', '""', 'g')
+            let pattern = substitute(pattern, '&', '\^&', 'g')
+            let pattern = substitute(pattern, '\%(\\\)\@<!\\\\\^', '\\\^\^', 'g')
         else
             let pattern = substitute(pattern, '\%(\\\)\@<!\\\\\[', '\\\[', 'g')
+            let pattern = substitute(pattern, '\%(\\\)\@<!\\\\\^', '\\\^', 'g')
             let pattern = substitute(pattern, '"', '\\"', 'g')
             let pattern = substitute(pattern, '\$', '\\$', 'g')
         endif
