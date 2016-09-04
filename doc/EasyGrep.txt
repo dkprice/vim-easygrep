@@ -305,6 +305,7 @@ o |EasyGrepFileAssociations|            - Specifies the location of the EasyGrep
                                         file associations
 o |EasyGrepMode|                        - Mode of operation
 o |EasyGrepCommand|                     - Whether to use vimgrep or grepprg
+o |EasyGrepPerlStyle|                   - Whether to use perl style regexp
 o |EasyGrepRecursive|                   - Recursive searching
 o |EasyGrepIgnoreCase|                  - Case-sensitivity in searches
 o |EasyGrepHidden|                      - Include hidden files in searches
@@ -329,6 +330,7 @@ o |EasyGrepReplaceAllPerFile|           - Replace on per file or global basis
 o |EasyGrepOptionPrefix|                - Specify the keymap for toggling options
 o |EasyGrepExtraWarnings|               - Whether to show extra warnings
 o |EasyGrepDefaultUserPattern|          - The default 'User' mode pattern
+o |EasyGrepDisableCmdParam|             - whether disable grep cmd param
 
 
 ------------------------------------------------------------------------------
@@ -425,6 +427,21 @@ command will be used.  This command inspects the 'grepprg' variable to
 determine the external tool that will be used for the search. Note that an
 external tool is often faster to search than vimgrep (see
 |EasyGrep_Performance|).
+
+*EasyGrepPerlStyle*  [default=0]
+Whether to use perl style regexp (in :Grep and :Replace).
+
+0 - use "grep"
+1 - use "grep -P"
+
+require these to make this work:
+set |EasyGrepCommand| to 1
+have https://github.com/othree/eregex.vim installed
+support only GNU grep (greater than 2.5.3)
+
+known issues:
+\b should replaced by \< and \>
+\c \C \i \I and \v \V \m \M won't work properly
 
 *EasyGrepRecursive*  [default=0]
 Specifies that recursive search be activated on start.
@@ -534,6 +551,9 @@ the potential to confuse some users.
 Specifies the default pattern for 'User' mode. (see |EasyGrepMode| and
 |EasyGrep_OperationModes|).  This pattern must be defined and non-empty if
 |EasyGrepMode| is set to start in 'User' mode.
+
+*EasyGrepDisableCmdParam*  [default=""]
+if set to 1, disable cmd param such as '-i' to ignore case when :Grep.
 
 ==============================================================================
   6. Supported Programs                                    *EasyGrep_Programs*

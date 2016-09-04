@@ -88,6 +88,16 @@ Commands:
     :ResultListDo [+arg]
         Perform an action on all entries in the quickfix list
 
+## Using Easygrep with perl style regexp
+
+you may use perl style regexp while using Easygrep, simply:
+
+1. have https://github.com/othree/eregex.vim installed
+1. have `let g:EasyGrepCommand=1` and `grepprg` been set properly
+1. have `let g:EasyGrepPerlStyle=1`
+1. also make sure you have GNU grep greater than 2.5.3
+
+
 ## Screencast
 
 ![Alt text](https://cloud.githubusercontent.com/assets/2375604/9804914/d0c39ff0-5800-11e5-8e7d-b77543bf2dcf.gif "EasyGrep demo")
