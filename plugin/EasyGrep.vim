@@ -34,6 +34,14 @@ let s:EasyGrepModeUser=3
 let s:EasyGrepNumModes=4
 let s:EasyGrepRepositoryList="search:.git,.hg,.svn"
 
+" Whether use perl style regexp
+if exists("g:EasyGrepPerlStyle") && g:EasyGrepPerlStyle==1
+    " perl style regexp require GNU grep
+    if match(system('grep --version'), "GNU") < 0
+        let g:EasyGrepPerlStyle=0
+    endif
+endif
+
 " This is a special mode
 let s:EasyGrepModeMultipleChoice=4
 let s:EasyGrepNumModesWithSpecial = 5
@@ -1973,6 +1981,11 @@ function! s:ParseCommandLine(argv)
     let opts["failedparse"] = ""
     let parseopts = 1
 
+    if exists("g:EasyGrepDisableCmdParam") && g:EasyGrepDisableCmdParam==1
+        let opts["pattern"] = a:argv
+        return opts
+    endif
+
     if empty(a:argv)
         return opts
     endif
@@ -2082,6 +2095,7 @@ function! s:Replace(bang, argv)
     elseif l > 3 && a:argv[0] == '/'
         let ph = tempname()
         let ph = substitute(ph, '/', '_', 'g')
+        let ph = substitute(ph, '\\', '_', 'g')
         let temp = substitute(a:argv, '\\/', ph, "g")
         let l = len(temp)
         if temp[l-1] != '/'
@@ -2344,8 +2358,8 @@ function! s:ConfigureGrepCommandParameters()
                 \ 'req_str_recurse': '-R',
                 \ 'req_str_caseignore': '-i',
                 \ 'req_str_casematch': '',
-                \ 'opt_str_patternprefix': '"',
-                \ 'opt_str_patternpostfix': '"',
+                \ 'opt_str_patternprefix': "'",
+                \ 'opt_str_patternpostfix': "'",
                 \ 'opt_str_wholewordprefix': '',
                 \ 'opt_str_wholewordpostfix': '',
                 \ 'opt_str_wholewordoption': '-w ',
@@ -2360,6 +2374,7 @@ function! s:ConfigureGrepCommandParameters()
                 \ 'opt_bool_isselffiltering': '0',
                 \ 'opt_bool_nofiletargets': '0',
                 \ 'opt_str_mapinclusionsexpression': '"--include=\"" .v:val."\""',
+                \ 'opt_bool_requireexplicitfiles': '1',
                 \ })
 
     call s:RegisterGrepProgram("git", {
@@ -2391,8 +2406,8 @@ function! s:ConfigureGrepCommandParameters()
                 \ 'req_str_recurse': '',
                 \ 'req_str_caseignore': '-i',
                 \ 'req_str_casematch': '',
-                \ 'opt_str_patternprefix': '"',
-                \ 'opt_str_patternpostfix': '"',
+                \ 'opt_str_patternprefix': "'",
+                \ 'opt_str_patternpostfix': "'",
                 \ 'opt_str_wholewordprefix': '',
                 \ 'opt_str_wholewordpostfix': '',
                 \ 'opt_str_wholewordoption': '-w ',
@@ -2419,9 +2434,9 @@ function! s:ConfigureGrepCommandParameters()
                 \ 'req_bool_supportsexclusions': '1',
                 \ 'req_str_recurse': '',
                 \ 'req_str_caseignore': '-i',
-                \ 'req_str_casematch': '',
-                \ 'opt_str_patternprefix': '"',
-                \ 'opt_str_patternpostfix': '"',
+                \ 'req_str_casematch': '-s',
+                \ 'opt_str_patternprefix': "'",
+                \ 'opt_str_patternpostfix': "'",
                 \ 'opt_str_wholewordprefix': '',
                 \ 'opt_str_wholewordpostfix': '',
                 \ 'opt_str_wholewordoption': '-w ',
@@ -2557,7 +2572,39 @@ function! s:GetGrepCommandLine(pattern, add, wholeword, count, escapeArgs, filte
 
     let commandParams = s:GetGrepCommandParameters()
 
-    let pattern = a:escapeArgs ? s:EscapeSpecialCharacters(a:pattern) : a:pattern
+    if exists("g:EasyGrepCommand") && g:EasyGrepCommand==1 && exists("g:EasyGrepPerlStyle") && g:EasyGrepPerlStyle==1
+        let commandParams = deepcopy(commandParams)
+        let commandParams["opt_str_patternprefix"] = '"'
+        let commandParams["opt_str_patternpostfix"] = '"'
+
+        let pattern = a:pattern
+        let pattern = substitute(pattern, '\\\\', '_t_slash_t_', 'g')
+        let pattern = substitute(pattern, '\\|', '_t_mslash_t_', 'g')
+
+        if exists("g:EasyGrepDisableCmdParam") && g:EasyGrepDisableCmdParam==1
+            let pattern = substitute(pattern, '-', '\\-', 'g')
+        endif
+        let pattern = substitute(pattern, '\\<', '\\b', 'g')
+        let pattern = substitute(pattern, '\\>', '\\b', 'g')
+        let pattern = substitute(pattern, '#', '\\#', 'g')
+        let pattern = substitute(pattern, '%', '\\%', 'g')
+        let pattern = substitute(pattern, '|', '\\|', 'g')
+        if(has("win32") || has("win64") || has("win95") || has("win16")) && stridx(&shell, "cmd") != -1
+            let pattern = substitute(pattern, '"', '""', 'g')
+
+            let pattern = substitute(pattern, '_t_mslash_t_', '\\\\|', 'g')
+        else
+            let pattern = substitute(pattern, '"', '\\"', 'g')
+            let pattern = substitute(pattern, '`', '\\`', 'g')
+            let pattern = substitute(pattern, '\\\$', '\\\\\\\$', 'g')
+
+            let pattern = substitute(pattern, '_t_mslash_t_', '\\\\|', 'g')
+        endif
+
+        let pattern = substitute(pattern, '_t_slash_t_', '\\\\\\\\', 'g')
+    else
+        let pattern = a:escapeArgs ? s:EscapeSpecialCharacters(a:pattern) : a:pattern
+    endif
 
     " Enclose the pattern if needed; build from inner to outer
     if wholeword
@@ -2570,13 +2617,17 @@ function! s:GetGrepCommandLine(pattern, add, wholeword, count, escapeArgs, filte
         let opts .= s:CommandParameterOr(commandParams, "opt_str_wholewordoption", "")
     endif
 
+    if exists("g:EasyGrepCommand") && g:EasyGrepCommand==1 && exists("g:EasyGrepPerlStyle") && g:EasyGrepPerlStyle==1
+        let opts .= "-P "
+    endif
+
     if s:IsRecursiveSearch()
         if s:CommandHasLen("req_str_recurse")
             let opts .= commandParams["req_str_recurse"]." "
         endif
     endif
 
-    if g:EasyGrepIgnoreCase
+    if g:EasyGrepIgnoreCase && !(&smartcase && match(a:pattern, '\C[A-Z]') >= 0)
         if s:CommandHasLen("req_str_caseignore")
             let opts .= commandParams["req_str_caseignore"]." "
         endif
@@ -2616,6 +2667,9 @@ function! s:GetGrepCommandLine(pattern, add, wholeword, count, escapeArgs, filte
             \ . " "
         " while the files we specify will be directories
         let fileTargetList = s:GetDirectorySearchList()
+        if s:CommandHas("opt_bool_requireexplicitfiles") && !s:IsRecursiveSearch()
+          call map(fileTargetList, "substitute(v:val, '$', '/*', 'g')")
+        endif
     endif
 
     " Add exclusions
@@ -2879,6 +2933,15 @@ function! s:DoReplace(target, replacement, wholeword, escapeArgs)
 
     if wholeword
         let target = "\\<".target."\\>"
+    endif
+    if exists("g:EasyGrepCommand") && g:EasyGrepCommand==1 && exists("g:EasyGrepPerlStyle") && g:EasyGrepPerlStyle==1
+        try
+            let target=E2v(target)
+        catch
+            echomsg "Warning: Replace by perl style regexp require othree/eregex.vim"
+            let dummy = getchar()
+            return
+        endtry
     endif
 
     let finished = 0
