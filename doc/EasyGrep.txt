@@ -326,6 +326,7 @@ o |EasyGrepFileAssociationsInExplorer|  - Whether to show the file associations
 o |EasyGrepReplaceWindowMode|           - Controls whether to use tabs or splits
                                         when replacing in files
 o |EasyGrepReplaceAllPerFile|           - Replace on per file or global basis
+o |EasyGrepNoMappings|                  - Turns all mappings off
 o |EasyGrepOptionPrefix|                - Specify the keymap for toggling options
 o |EasyGrepExtraWarnings|               - Whether to show extra warnings
 o |EasyGrepDefaultUserPattern|          - The default 'User' mode pattern
@@ -497,6 +498,10 @@ grep program will search for this pattern like a fixed, literal string.
 Specifies whether to show the file associations list in the options explorer
 window.
 
+*EasyGrepNoMappings*  [default=0]
+Instructs EasyGrep to create no mappings when this option is set to 1. This
+option implies EasyGrepOptionPrefix=''.
+
 *EasyGrepOptionPrefix*  [default=<leader>vy]
 Specifies the prefix that is used when building keymaps for setting options
 directly.  To specify that no option keymaps be created, set this to the empty
@@ -507,7 +512,7 @@ Default:
 Custom:
     let g:EasyGrepOptionPrefix=',oe'      (where ',oe' is your custom prefix)
 None:
-    let g:EasyGrepOptionPrefix=''         (this disables all mappings)
+    let g:EasyGrepOptionPrefix=''         (this disables all options explorer mappings)
 
 *EasyGrepReplaceWindowMode*  [default=0]
 Specifies the mode that the script will use when a buffer needs to be changed
