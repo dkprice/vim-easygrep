@@ -7,7 +7,7 @@ if %1.==clean. goto Clean
 if %1.==run. goto Run
 if %1.==runall. goto RunAll
 
-echo "usage: runall.bat clean|run|runall"
+echo "usage: test.bat clean|run|runall"
 goto End
 
 
