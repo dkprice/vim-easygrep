@@ -331,6 +331,8 @@ o |EasyGrepOptionPrefix|                - Specify the keymap for toggling option
 o |EasyGrepExtraWarnings|               - Whether to show extra warnings
 o |EasyGrepDefaultUserPattern|          - The default 'User' mode pattern
 o |EasyGrepDisableCmdParam|             - whether disable grep cmd param
+o |EasyGrepSearchCurrentBufferOnly|     - Only search the current buffer when
+                                        EasyGrepMode is Buffers
 
 
 ------------------------------------------------------------------------------
@@ -554,6 +556,10 @@ Specifies the default pattern for 'User' mode. (see |EasyGrepMode| and
 
 *EasyGrepDisableCmdParam*  [default=""]
 if set to 1, disable cmd param such as '-i' to ignore case when :Grep.
+
+*EasyGrepSearchCurrentBufferOnly*  [default=0]
+When set to 1 and |EasyGrepMode| is Buffers, instructs EasyGrep to only search
+the current buffer.
 
 ==============================================================================
   6. Supported Programs                                    *EasyGrep_Programs*

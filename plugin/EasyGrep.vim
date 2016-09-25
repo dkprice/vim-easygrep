@@ -391,7 +391,12 @@ function! s:GetFileTargetList(addAdditionalLocations)
     let addAdditionalLocations = a:addAdditionalLocations
     let fileTargetList = []
     if s:IsModeBuffers()
-        let fileTargetList = EasyGrep#EscapeList(EasyGrep#GetBufferNamesList(), " ")
+        if g:EasyGrepSearchCurrentBufferOnly
+            let currFile = bufname("%")
+            let fileTargetList = [ currFile ]
+        else
+            let fileTargetList = EasyGrep#EscapeList(EasyGrep#GetBufferNamesList(), " ")
+        endif
         let addAdditionalLocations = 0
     elseif s:IsModeTracked()
         let fileTargetList = s:GetFileTargetList_Tracked()
@@ -3642,6 +3647,10 @@ endif
 
 if !exists("g:EasyGrepPatternType")
     let g:EasyGrepPatternType="regex"
+endif
+
+if !exists("g:EasyGrepSearchCurrentBufferOnly")
+    let g:EasyGrepSearchCurrentBufferOnly=0
 endif
 
 " CheckDefaultUserPattern {{{
