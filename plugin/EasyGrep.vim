@@ -793,7 +793,7 @@ function! <sid>EchoGrepCommand()
     endif
 
     let recursiveTag = s:IsRecursiveSearch() ? " (Recursive)" : ""
-    call s:Echo("Search Mode:           ".s:GetModeName(g:EasyGrepMode).recursiveTag)
+    call s:Echo("Search Mode:           ".s:GetModeName(s:GetNumericEasyGrepMode()).recursiveTag)
 
     if !s:CommandHas("opt_bool_nofiletargets")
         if g:EasyGrepSearchCurrentBufferDir && s:IsBufferDirSearchAllowed()
@@ -1532,11 +1532,12 @@ function! s:CreateGrepDictionary()
         return
     endif
 
+    let mode = s:GetNumericEasyGrepMode()
     let s:Dict = [ ]
-    call add(s:Dict, [ "All" , "*", g:EasyGrepMode==s:EasyGrepModeAll ? 1 : 0 ] )
-    call add(s:Dict, [ "Buffers" , "*Buffers*", g:EasyGrepMode==s:EasyGrepModeBuffers ? 1 : 0  ] )
-    call add(s:Dict, [ "TrackExt" , "*", g:EasyGrepMode==s:EasyGrepModeTracked ? 1 : 0  ] )
-    call add(s:Dict, [ "User" , "", g:EasyGrepMode==s:EasyGrepModeUser ? 1 : 0  ] )
+    call add(s:Dict, [ "All" , "*", mode==s:EasyGrepModeAll ? 1 : 0 ] )
+    call add(s:Dict, [ "Buffers" , "*Buffers*", mode==s:EasyGrepModeBuffers ? 1 : 0  ] )
+    call add(s:Dict, [ "TrackExt" , "*", mode==s:EasyGrepModeTracked ? 1 : 0  ] )
+    call add(s:Dict, [ "User" , "", mode==s:EasyGrepModeUser ? 1 : 0  ] )
 
     if len(s:Dict) != s:EasyGrepNumModes
         call EasyGrep#InternalFailure("EasyGrep's default settings are not internally consistent; please reinstall")
@@ -1727,25 +1728,25 @@ endfunction
 " IsModeAll {{{
 function! s:IsModeAll()
     call s:SanitizeMode()
-    return g:EasyGrepMode == s:EasyGrepModeAll
+    return s:GetNumericEasyGrepMode() == s:EasyGrepModeAll
 endfunction
 " }}}
 " IsModeBuffers {{{
 function! s:IsModeBuffers()
     call s:SanitizeMode()
-    return g:EasyGrepMode == s:EasyGrepModeBuffers
+    return s:GetNumericEasyGrepMode() == s:EasyGrepModeBuffers
 endfunction
 " }}}
 " IsModeTracked {{{
 function! s:IsModeTracked()
     call s:SanitizeMode()
-    return g:EasyGrepMode == s:EasyGrepModeTracked
+    return s:GetNumericEasyGrepMode() == s:EasyGrepModeTracked
 endfunction
 " }}}
 " IsModeUser {{{
 function! s:IsModeUser()
     call s:SanitizeMode()
-    return g:EasyGrepMode == s:EasyGrepModeUser
+    return s:GetNumericEasyGrepMode() == s:EasyGrepModeUser
 endfunction
 " }}}
 " IsModeFiltered {{{
@@ -1757,7 +1758,7 @@ endfunction
 " IsModeMultipleChoice {{{
 function! s:IsModeMultipleChoice()
     call s:SanitizeMode()
-    return g:EasyGrepMode == s:EasyGrepModeMultipleChoice
+    return s:GetNumericEasyGrepMode() == s:EasyGrepModeMultipleChoice
 endfunction
 " }}}
 " GetModeName {{{
@@ -1783,10 +1784,26 @@ endfunction
 " ForceGrepMode {{{
 function! s:ForceGrepMode(mode)
     call s:SetGrepMode(a:mode)
+    let mode = s:GetNumericEasyGrepMode()
     if exists("s:Dict")
         call s:ClearActivatedItems()
-        let s:Dict[a:mode][2] = 1
+        let s:Dict[mode][2] = 1
     endif
+endfunction
+" }}}
+" GetNumericEasyGrepMode {{{
+function! s:GetNumericEasyGrepMode()
+    if g:EasyGrepMode == 'All'
+        return 0
+    elseif g:EasyGrepMode == 'Buffers'
+        return 1
+    elseif g:EasyGrepMode == 'Track' || g:EasyGrepMode == 'Tracked' || g:EasyGrepMode == 'TrackExt'
+        return 2
+    elseif g:EasyGrepMode == 'User'
+        return 3
+    endif
+
+    return g:EasyGrepMode
 endfunction
 " }}}
 " SanitizeMode {{{
@@ -1803,12 +1820,13 @@ function! s:SanitizeMode()
     endif
 
     " Next ensure that our mode is sensible
-    if g:EasyGrepMode < 0 || g:EasyGrepMode >= s:EasyGrepNumModesWithSpecial
+    let mode = s:GetNumericEasyGrepMode()
+    if mode < 0 || mode >= s:EasyGrepNumModesWithSpecial
         call EasyGrep#Error("Invalid value for g:EasyGrepMode (".g:EasyGrepMode."); reverting to 'All' mode.")
         call s:ForceGrepMode(s:EasyGrepModeAll)
-    elseif g:EasyGrepMode == s:EasyGrepModeMultipleChoice
+    elseif mode == s:EasyGrepModeMultipleChoice
         " This is OK
-    elseif s:Dict[g:EasyGrepMode][2] != 1
+    elseif s:Dict[mode][2] != 1
         " The user switched the mode by explicitly setting the g:EasyGrepMode
         " global variable; make sure to sync up with it
         call s:ForceGrepMode(g:EasyGrepMode)
@@ -1842,7 +1860,7 @@ function! s:CheckGrepCommandForChanges()
             if s:IsModeFiltered()
                 call EasyGrep#Info("==================================================================================")
                 call EasyGrep#Info("The 'grepprg' has changed to '".s:GetGrepProgramName()."' since last inspected")
-                call EasyGrep#Info("Switching to 'All' mode as the '".s:GetModeName(g:EasyGrepMode)."' mode is incompatible with this program")
+                call EasyGrep#Info("Switching to 'All' mode as the '".s:GetModeName(s:GetNumericEasyGrepMode())."' mode is incompatible with this program")
                 call EasyGrep#Info("==================================================================================")
                 call s:ForceGrepMode(s:EasyGrepModeAll)
             endif
@@ -3502,7 +3520,8 @@ function! s:InitializeMode()
         " 2 - Track
         " 3 - User
     else
-        if g:EasyGrepMode < 0 || g:EasyGrepMode >= s:EasyGrepNumModesWithSpecial
+        let mode = s:GetNumericEasyGrepMode()
+        if mode < 0 || mode >= s:EasyGrepNumModesWithSpecial
             call EasyGrep#Error("Invalid value for g:EasyGrepMode (".g:EasyGrepMode."); reverting to 'All' mode.")
             let g:EasyGrepMode = s:EasyGrepModeAll
         endif
@@ -3656,7 +3675,7 @@ endif
 " CheckDefaultUserPattern {{{
 function! s:CheckDefaultUserPattern()
     let error = ""
-    let userModeAndEmpty = (g:EasyGrepMode == s:EasyGrepModeUser) && empty(s:Dict[s:EasyGrepModeUser][1])
+    let userModeAndEmpty = (s:GetNumericEasyGrepMode() == s:EasyGrepModeUser) && empty(s:Dict[s:EasyGrepModeUser][1])
     if exists("g:EasyGrepDefaultUserPattern")
         if empty(g:EasyGrepDefaultUserPattern) && userModeAndEmpty
             let error = "Cannot start in 'User' mode when g:EasyGrepDefaultUserPattern is empty"
