@@ -437,7 +437,7 @@ function! s:AddAdditionalLocationsToFileTargetList(fileTargetList)
         let fileTargetList = s:ApplySearchDirectoriesToFileTargetList(fileTargetList)
     endif
 
-    if g:EasyGrepHidden && !s:CommandHasLen("opt_str_hiddenswitch")
+    if g:EasyGrepHidden && !s:CommandHasLen("opt_str_hiddenswitch") && !s:CommandHasLen("opt_str_nohiddenswitch")
         let i = 0
         let size = len(fileTargetList)
         while i < size
@@ -2448,6 +2448,7 @@ function! s:ConfigureGrepCommandParameters()
                 \ 'opt_str_mapinclusionsexpressionseparator': ',',
                 \ 'opt_str_mapinclusionsprefix': '--type-set="easygrep:ext:',
                 \ 'opt_str_mapinclusionspostfix': '" --type=easygrep',
+                \ 'opt_str_nohiddenswitch': '--ignore-file=match:"^."',
                 \ })
 
     call s:RegisterGrepProgram("ack-grep", g:EasyGrep_commandParamsDict["ack"])
@@ -2660,8 +2661,14 @@ function! s:GetGrepCommandLine(pattern, add, wholeword, count, escapeArgs, filte
         endif
     endif
 
-    if g:EasyGrepHidden && s:CommandHasLen("opt_str_hiddenswitch")
-        let opts .= commandParams["opt_str_hiddenswitch"]." "
+    if g:EasyGrepHidden
+        if s:CommandHasLen("opt_str_hiddenswitch")
+            let opts .= commandParams["opt_str_hiddenswitch"]." "
+        endif
+    else
+        if s:CommandHasLen("opt_str_nohiddenswitch")
+            let opts .= commandParams["opt_str_nohiddenswitch"]." "
+        endif
     endif
 
     " Suppress errors
