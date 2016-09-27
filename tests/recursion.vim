@@ -6,9 +6,9 @@ let g:EasyGrepMode=0
 let g:EasyGrepRecursive=1
 GrepRoot recursion
 
-ResultListTag GrepAdd -I c
+ResultListTag EasyGrepTest GrepAdd -I c
 GrepAdd -I c
-ResultListTag GrepAdd -I C
+ResultListTag EasyGrepTest GrepAdd -I C
 GrepAdd -I C
 
 cclose
