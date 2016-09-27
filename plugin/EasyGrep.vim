@@ -819,7 +819,9 @@ function! <sid>EchoGrepCommand()
     if s:GetGrepCommandName() == "grep"
         let shellCommand = substitute(grepCommand, "grep", &grepprg, "")
         call s:Echo("Shell command:         ".shellCommand)
-        let @* = shellCommand
+        if has("xterm_clipboard")
+            let @* = shellCommand
+        endif
     endif
 
     if s:GetGrepCommandChoice(0) != s:GetGrepCommandChoice(1)
