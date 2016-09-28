@@ -824,7 +824,6 @@ function! <sid>EchoGrepCommand()
     if s:GetGrepCommandName() == "grep"
         let shellCommand = substitute(grepCommand, "grep", &grepprg, "")
         call s:Echo("Shell command:         ".shellCommand)
-        let @* = shellCommand
     endif
 
     if s:GetGrepCommandChoice(0) != s:GetGrepCommandChoice(1)
@@ -2611,7 +2610,7 @@ function! s:GetGrepCommandLine(pattern, add, wholeword, count, escapeArgs, filte
         let pattern = substitute(pattern, '\\|', '_t_mslash_t_', 'g')
 
         if exists("g:EasyGrepDisableCmdParam") && g:EasyGrepDisableCmdParam==1
-            let pattern = substitute(pattern, '-', '\\-', 'g')
+            let pattern = substitute(pattern, '^-', '\\-', 'g')
         endif
         let pattern = substitute(pattern, '\\<', '\\b', 'g')
         let pattern = substitute(pattern, '\\>', '\\b', 'g')
