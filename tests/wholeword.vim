@@ -23,6 +23,7 @@ ResultListTag EasyGrepTest GrepAdd -w wholeword
 GrepAdd -w wholeword
 
 cclose
+ResultListSanitize
 exe "ResultListSave ".testname.".out"
 quit!
 

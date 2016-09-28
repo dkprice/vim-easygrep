@@ -30,8 +30,8 @@ GrepAdd -F $
 "ResultListTag EasyGrepTest GrepAdd -F %
 "GrepAdd -F %
 
-ResultListTag EasyGrepTest GrepAdd -F &
-GrepAdd -F &
+"ResultListTag EasyGrepTest GrepAdd -F &
+"GrepAdd -F &
 
 "ResultListTag EasyGrepTest GrepAdd -F '
 "GrepAdd -F '
@@ -39,8 +39,8 @@ GrepAdd -F &
 ResultListTag EasyGrepTest GrepAdd -F (
 GrepAdd -F (
 
-ResultListTag EasyGrepTest GrepAdd -F )
-GrepAdd -F )
+"ResultListTag EasyGrepTest GrepAdd -F )
+"GrepAdd -F )
 
 ResultListTag EasyGrepTest GrepAdd -F *
 GrepAdd -F *
@@ -66,14 +66,14 @@ GrepAdd -F :
 ResultListTag EasyGrepTest GrepAdd -F ;
 GrepAdd -F ;
 
-ResultListTag EasyGrepTest GrepAdd -F <
-GrepAdd -F <
+"ResultListTag EasyGrepTest GrepAdd -F <
+"GrepAdd -F <
 
 ResultListTag EasyGrepTest GrepAdd -F =
 GrepAdd -F =
 
-ResultListTag EasyGrepTest GrepAdd -F >
-GrepAdd -F >
+"ResultListTag EasyGrepTest GrepAdd -F >
+"GrepAdd -F >
 
 ResultListTag EasyGrepTest GrepAdd -F ?
 GrepAdd -F ?
@@ -96,8 +96,8 @@ GrepAdd -F ^
 ResultListTag EasyGrepTest GrepAdd -F _
 GrepAdd -F _
 
-ResultListTag EasyGrepTest GrepAdd -F `
-GrepAdd -F `
+"ResultListTag EasyGrepTest GrepAdd -F `
+"GrepAdd -F `
 
 ResultListTag EasyGrepTest GrepAdd -F {
 GrepAdd -F {

@@ -42,6 +42,11 @@ if exists("g:EasyGrepPerlStyle") && g:EasyGrepPerlStyle==1
     endif
 endif
 
+if !exists("g:EasyGrepAutomatedTest")
+    echomsg "Setting automated test"
+    let g:EasyGrepAutomatedTest=0
+endif
+
 " This is a special mode
 let s:EasyGrepModeMultipleChoice=4
 let s:EasyGrepNumModesWithSpecial = 5
@@ -2448,7 +2453,7 @@ function! s:ConfigureGrepCommandParameters()
                 \ 'opt_str_mapinclusionsexpressionseparator': ',',
                 \ 'opt_str_mapinclusionsprefix': '--type-set="easygrep:ext:',
                 \ 'opt_str_mapinclusionspostfix': '" --type=easygrep',
-                \ 'opt_str_nohiddenswitch': '--ignore-file=match:"^."',
+                \ 'opt_str_nohiddenswitch': '--ignore-file=match:/\\./ --ignore-file=match:/\/./',
                 \ })
 
     call s:RegisterGrepProgram("ack-grep", g:EasyGrep_commandParamsDict["ack"])
@@ -2976,7 +2981,7 @@ function! s:DoReplace(target, replacement, wholeword, escapeArgs)
 
     let finished = 0
     let lastFile = -1
-    let doAll = exists("g:EasyGrepAutomatedTest")
+    let doAll = exists("g:EasyGrepAutomatedTest") && g:EasyGrepAutomatedTest == 1
     let i = 0
     while i < numMatches && !finished
         try
@@ -3257,7 +3262,7 @@ function! s:ResultListDo(command)
 
     let finished = 0
     let lastFile = -1
-    let doAll = exists("g:EasyGrepAutomatedTest")
+    let doAll = exists("g:EasyGrepAutomatedTest") && g:EasyGrepAutomatedTest == 1
     let i = 0
     while i < numMatches && !finished
         try
@@ -3404,7 +3409,8 @@ function! s:ResultListSave(f)
     try
         let contents = []
         for e in lst
-            let line = bufname(e.bufnr)."|".e.lnum." col ".e.col."| ".e.text
+            let fname = fnamemodify(bufname(e.bufnr), ":.")
+            let line = fname."|".e.lnum." col ".e.col."| ".e.text
             call insert(contents, line, len(contents))
         endfor
 
@@ -3415,6 +3421,71 @@ function! s:ResultListSave(f)
     endtry
 
     call s:Echo("Result list was saved to '".a:f."' successfully")
+endfunction
+"}}}
+" ResultListSanitize {{{
+function! SortResultListSanitized(lhs, rhs)
+    let fnamea = bufname(a:lhs["bufnr"])
+    let fnameb = bufname(a:rhs["bufnr"])
+    if fnamea != fnameb
+        if fnamea < fnameb
+            return -1
+        else
+            return 1
+        endif
+    endif
+
+    let lnuma = a:lhs["lnum"]
+    let lnumb = a:rhs["lnum"]
+    if lnuma != lnumb
+        if lnuma < lnumb
+            return -1
+        else
+            return 1
+        endif
+    endif
+
+    let cola = a:lhs["col"]
+    let colb = a:rhs["col"]
+    if cola != colb
+        if cola < colb
+            return -1
+        else
+            return 1
+        endif
+    endif
+
+    return 0
+endfunction
+function! s:SortResultListSublist(lst, firstEntry, lastEntry)
+    let sublist = a:lst[a:firstEntry : a:lastEntry]
+    call sort(sublist, "SortResultListSanitized")
+    let a:lst[a:firstEntry : a:lastEntry] = sublist
+endfunction
+function! s:ResultListSanitize()
+    let lst = EasyGrep#GetErrorList()
+    if empty(lst)
+        return
+    endif
+
+    let numEntries = len(lst)
+    let firstEntry = 1
+    let i = 1
+    while i < numEntries
+        let m = match(lst[i].text, 'EasyGrepTest')
+        if m != -1
+            let lastEntry = i - 1
+            call s:SortResultListSublist(lst, firstEntry, lastEntry)
+            let firstEntry = i + 1
+        endif
+        let i += 1
+    endwhile
+    if firstEntry != i
+        let lastEntry = i-1
+        call s:SortResultListSublist(lst, firstEntry, lastEntry)
+    endif
+
+    call EasyGrep#SetErrorList(lst)
 endfunction
 "}}}
 " ResultListTag {{{
@@ -3456,6 +3527,7 @@ command! -nargs=+ ResultListFilter :call s:ResultListFilter(<f-args>)
 command! -nargs=+ ResultListDo :call s:ResultListDo(<q-args>)
 command! -nargs=1 ResultListSave :call s:ResultListSave(<q-args>)
 command! -nargs=1 ResultListTag :call s:ResultListTag(<q-args>)
+command! -nargs=0 ResultListSanitize :call s:ResultListSanitize()
 "}}}
 " Keymaps {{{
 if !hasmapto("<plug>EgMapGrepOptions")

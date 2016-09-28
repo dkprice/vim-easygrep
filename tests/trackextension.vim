@@ -13,6 +13,7 @@ ResultListTag EasyGrepTest GrepAdd a
 GrepAdd a
 
 cclose
+ResultListSanitize
 exe "ResultListSave ".testname.".out"
 quit!
 

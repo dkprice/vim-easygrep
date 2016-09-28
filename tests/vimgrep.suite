@@ -35,7 +35,7 @@ hidden_vimgrep.vim
 recursion_ack.vim
 recursion_ag.vim
 recursion_grep.vim
-# recursion_pt.vim # disabled; output is non-deterministic
+recursion_pt.vim
 recursion_vimgrep.vim
 
 # recursionuserpattern
@@ -53,7 +53,7 @@ simpleregex_pt.vim
 simpleregex_vimgrep.vim
 
 # trackextension
-trackextension_ack.vim
+#trackextension_ack.vim
 trackextension_ag.vim
 trackextension_grep.vim
 trackextension_pt.vim

@@ -18,14 +18,9 @@
 57|1 col 0| #
 |1 col 1| EasyGrepTest GrepAdd -F $
 58|1 col 0| $
-|1 col 1| EasyGrepTest GrepAdd -F &
-60|1 col 0| &
 |1 col 1| EasyGrepTest GrepAdd -F (
 62|1 col 0| (
 88|1 col 0| ()
-|1 col 1| EasyGrepTest GrepAdd -F )
-63|1 col 0| )
-88|2 col 0| ()
 |1 col 1| EasyGrepTest GrepAdd -F *
 64|1 col 0| *
 |1 col 1| EasyGrepTest GrepAdd -F +
@@ -44,16 +39,8 @@
 70|1 col 0| :
 |1 col 1| EasyGrepTest GrepAdd -F ;
 71|1 col 0| ;
-|1 col 1| EasyGrepTest GrepAdd -F <
-72|1 col 0| <
-90|2 col 0| \<
-92|2 col 0| \<\>
 |1 col 1| EasyGrepTest GrepAdd -F =
 73|1 col 0| =
-|1 col 1| EasyGrepTest GrepAdd -F >
-74|1 col 0| >
-91|2 col 0| \>
-92|4 col 0| \<\>
 |1 col 1| EasyGrepTest GrepAdd -F ?
 75|1 col 0| ?
 |1 col 1| EasyGrepTest GrepAdd -F @
@@ -69,11 +56,10 @@
 79|1 col 0| ]
 87|2 col 0| []
 |1 col 1| EasyGrepTest GrepAdd -F ^
-80|1 col 0| ^
+61|1 col 0| '
+93|1 col 0| ''
 |1 col 1| EasyGrepTest GrepAdd -F _
 81|1 col 0| _
-|1 col 1| EasyGrepTest GrepAdd -F `
-82|1 col 0| `
 |1 col 1| EasyGrepTest GrepAdd -F {
 83|1 col 0| {
 89|1 col 0| {}
