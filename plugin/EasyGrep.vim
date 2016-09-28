@@ -819,7 +819,6 @@ function! <sid>EchoGrepCommand()
     if s:GetGrepCommandName() == "grep"
         let shellCommand = substitute(grepCommand, "grep", &grepprg, "")
         call s:Echo("Shell command:         ".shellCommand)
-        let @* = shellCommand
     endif
 
     if s:GetGrepCommandChoice(0) != s:GetGrepCommandChoice(1)
