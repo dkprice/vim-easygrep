@@ -619,6 +619,10 @@ endfunction
 " OptionsExplorer {{{
 " OpenOptionsExplorer {{{
 function! s:OpenOptionsExplorer()
+    if s:OptionsExplorerOpen
+        return
+    endif
+
     let s:OptionsExplorerOpen = 1
 
     call s:CreateOptionsString()
