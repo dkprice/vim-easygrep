@@ -53,7 +53,7 @@ simpleregex_pt.vim
 simpleregex_vimgrep.vim
 
 # trackextension
-#trackextension_ack.vim
+trackextension_ack.vim
 trackextension_ag.vim
 trackextension_grep.vim
 trackextension_pt.vim

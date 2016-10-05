@@ -43,7 +43,6 @@ if exists("g:EasyGrepPerlStyle") && g:EasyGrepPerlStyle==1
 endif
 
 if !exists("g:EasyGrepAutomatedTest")
-    echomsg "Setting automated test"
     let g:EasyGrepAutomatedTest=0
 endif
 
@@ -2430,7 +2429,8 @@ function! s:ConfigureGrepCommandParameters()
     call s:RegisterGrepProgram("ack", {
                 \ 'req_str_programargs': '-s --nogroup --nocolor --column --with-filename',
                 \ 'req_bool_supportsexclusions': '1',
-                \ 'req_str_recurse': '',
+                \ 'req_str_recurse': '-R',
+                \ 'req_str_norecurse': '--no-recurse',
                 \ 'req_str_caseignore': '-i',
                 \ 'req_str_casematch': '',
                 \ 'opt_str_patternprefix': "'",
@@ -2445,7 +2445,7 @@ function! s:ConfigureGrepCommandParameters()
                 \ 'opt_bool_bufferdirsearchallowed': '1',
                 \ 'opt_str_suppresserrormessages': '',
                 \ 'opt_bool_directoryneedsbackslash': '0',
-                \ 'opt_bool_isinherentlyrecursive': '1',
+                \ 'opt_bool_isinherentlyrecursive': '0',
                 \ 'opt_bool_isselffiltering': '0',
                 \ 'opt_bool_nofiletargets': '0',
                 \ 'opt_str_mapinclusionsexpression': 'substitute(v:val, "^\\*\\.", "", "")',
@@ -2652,6 +2652,10 @@ function! s:GetGrepCommandLine(pattern, add, wholeword, count, escapeArgs, filte
     if s:IsRecursiveSearch()
         if s:CommandHasLen("req_str_recurse")
             let opts .= commandParams["req_str_recurse"]." "
+        endif
+    else
+        if s:CommandHasLen("req_str_norecurse")
+            let opts .= commandParams["req_str_norecurse"]." "
         endif
     endif
 
