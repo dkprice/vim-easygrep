@@ -2528,6 +2528,32 @@ function! s:ConfigureGrepCommandParameters()
                 \ 'opt_str_hiddenswitch': '--hidden',
                 \ })
 
+    call s:RegisterGrepProgram("rg", {
+                \ 'req_str_programargs': '--vimgrep',
+                \ 'req_bool_supportsexclusions': '0',
+                \ 'req_str_recurse': '',
+                \ 'req_str_caseignore': '-i',
+                \ 'req_str_casematch': '',
+                \ 'opt_str_patternprefix': '"',
+                \ 'opt_str_patternpostfix': '"',
+                \ 'opt_str_wholewordprefix': '',
+                \ 'opt_str_wholewordpostfix': '',
+                \ 'opt_str_wholewordoption': '',
+                \ 'req_str_escapespecialcharacters': "-\^$#.*+?()[]{}",
+                \ 'opt_str_escapespecialcharacterstwice': "",
+                \ 'opt_str_mapexclusionsexpression': '',
+                \ 'opt_bool_filtertargetswithnofiles': '0',
+                \ 'opt_bool_bufferdirsearchallowed': '1',
+                \ 'opt_str_suppresserrormessages': '',
+                \ 'opt_bool_directoryneedsbackslash': '0',
+                \ 'opt_bool_isinherentlyrecursive': '1',
+                \ 'opt_bool_nofiletargets': '0',
+                \ 'opt_str_mapinclusionsexpression': '',
+                \ 'opt_str_mapinclusionsprefix': '--type-add="easygrep:',
+                \ 'opt_str_mapinclusionspostfix': '" --type=easygrep',
+                \ 'opt_str_hiddenswitch': '--hidden',
+                \ })
+
     call s:RegisterGrepProgram("sift", {
                 \ 'req_str_programargs': '-n --no-group --no-color',
                 \ 'req_bool_supportsexclusions': '0',
