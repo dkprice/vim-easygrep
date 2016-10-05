@@ -2851,7 +2851,7 @@ function! s:WarnNoMatches(pattern)
     let r = s:IsRecursiveSearch() ? " (+Recursive)" : ""
     let h = g:EasyGrepHidden    ? " (+Hidden)"    : ""
 
-    redraw
+    redraw!
     call EasyGrep#Warning("No matches for '".a:pattern."'")
     call EasyGrep#Warning("File Pattern: ".fpat.r.h)
 
