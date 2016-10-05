@@ -1,0 +1,20 @@
+alphabet.in|1 col 1| EasyGrepTest GrepAdd c g:EasyGrepIgnoreCase=0
+alphabet.in|0 col 0| 3:c
+alphabet.in|1 col 1| EasyGrepTest GrepAdd C g:EasyGrepIgnoreCase=0
+alphabet.in|0 col 0| 29:C
+alphabet.in|1 col 1| EasyGrepTest GrepAdd -I c
+alphabet.in|0 col 0| 3:c
+alphabet.in|1 col 1| EasyGrepTest GrepAdd -I C
+alphabet.in|0 col 0| 29:C
+alphabet.in|1 col 1| EasyGrepTest GrepAdd c g:EasyGrepIgnoreCase=1
+alphabet.in|0 col 0| 3:c
+alphabet.in|0 col 0| 29:C
+alphabet.in|1 col 1| EasyGrepTest GrepAdd C g:EasyGrepIgnoreCase=1
+alphabet.in|0 col 0| 3:c
+alphabet.in|0 col 0| 29:C
+alphabet.in|1 col 1| EasyGrepTest GrepAdd -i c
+alphabet.in|0 col 0| 3:c
+alphabet.in|0 col 0| 29:C
+alphabet.in|1 col 1| EasyGrepTest GrepAdd -i C
+alphabet.in|0 col 0| 3:c
+alphabet.in|0 col 0| 29:C

@@ -1,0 +1,8 @@
+|1 col 1| EasyGrepTest GrepAdd -I c
+recursion\a\alphabet.in|3 col 0| c
+recursion\b\alphabet.in|3 col 0| c
+recursion\c\alphabet.in|3 col 0| c
+|1 col 1| EasyGrepTest GrepAdd -I C
+recursion\a\alphabet.in|29 col 0| C
+recursion\b\alphabet.in|29 col 0| C
+recursion\c\alphabet.in|29 col 0| C

@@ -1,0 +1,12 @@
+allext\alphabet.a|1 col 1| EasyGrepTest GrepAdd a (exclude b c)
+allext\alphabet.a|1 col 0| a
+allext\alphabet.a|1 col 1| EasyGrepTest GrepAdd A (exclude b c)
+allext\alphabet.a|27 col 0| A
+allext\alphabet.a|1 col 1| EasyGrepTest GrepAdd b (exclude a c)
+allext\alphabet.b|2 col 0| b
+allext\alphabet.a|1 col 1| EasyGrepTest GrepAdd B (exclude a c)
+allext\alphabet.b|28 col 0| B
+allext\alphabet.a|1 col 1| EasyGrepTest GrepAdd c (exclude a b)
+allext\alphabet.c|3 col 0| c
+allext\alphabet.a|1 col 1| EasyGrepTest GrepAdd C (exclude a b)
+allext\alphabet.c|29 col 0| C

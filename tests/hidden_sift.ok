@@ -1,0 +1,6 @@
+|1 col 1| EasyGrepTest GrepAdd c g:EasyGrepHidden=0
+|1 col 1| EasyGrepTest GrepAdd C g:EasyGrepHidden=0
+|1 col 1| EasyGrepTest GrepAdd c g:EasyGrepHidden=1
+hidden\.hiddenfile|1 col 0| ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789
+|1 col 1| EasyGrepTest GrepAdd C g:EasyGrepHidden=1
+hidden\.hiddenfile|1 col 0| ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789

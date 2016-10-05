@@ -1,0 +1,5 @@
+    let thisfileext=expand("%:e")
+alphabet.in|1 col 1| EasyGrepTest GrepAdd a
+__simpleregex.in|1 col 0| 1:a
+__simpleregex.in|53 col 0| 2:[a-c]
+alphabet.in|1 col 0| 1:a
