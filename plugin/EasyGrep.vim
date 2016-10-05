@@ -623,6 +623,10 @@ endfunction
 " OptionsExplorer {{{
 " OpenOptionsExplorer {{{
 function! s:OpenOptionsExplorer()
+    if s:OptionsExplorerOpen
+        return
+    endif
+
     let s:OptionsExplorerOpen = 1
 
     call s:CreateOptionsString()
@@ -2905,7 +2909,7 @@ function! s:WarnNoMatches(pattern)
     let r = s:IsRecursiveSearch() ? " (+Recursive)" : ""
     let h = g:EasyGrepHidden    ? " (+Hidden)"    : ""
 
-    redraw
+    redraw!
     call EasyGrep#Warning("No matches for '".a:pattern."'")
     call EasyGrep#Warning("File Pattern: ".fpat.r.h)
 
