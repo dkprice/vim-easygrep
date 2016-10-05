@@ -845,6 +845,7 @@ function! <sid>EchoOptionsSet()
             \ "g:EasyGrepSearchCurrentBufferDir",
             \ "g:EasyGrepIgnoreCase",
             \ "g:EasyGrepHidden",
+            \ "g:EasyGrepBinary",
             \ "g:EasyGrepFilesToInclude",
             \ "g:EasyGrepFilesToExclude",
             \ "g:EasyGrepAllOptionsInExplorer",
@@ -1142,6 +1143,15 @@ function! <sid>ToggleHidden()
     call s:Echo("Set hidden files included to (".EasyGrep#OnOrOff(g:EasyGrepHidden).")")
 endfunction
 " }}}
+" ToggleBinary {{{
+function! <sid>ToggleBinary()
+    let g:EasyGrepBinary = !g:EasyGrepBinary
+
+    call s:RefreshAllOptions()
+
+    call s:Echo("Set binary files included to (".EasyGrep#OnOrOff(g:EasyGrepBinary).")")
+endfunction
+" }}}
 " ToggleBufferDirectories {{{
 function! <sid>ToggleBufferDirectories()
     let g:EasyGrepSearchCurrentBufferDir = !g:EasyGrepSearchCurrentBufferDir
@@ -1397,6 +1407,7 @@ function! s:CreateOptionMappings()
     exe "nmap <silent> ".p."d  :call <sid>ToggleBufferDirectories()<cr>"
     exe "nmap <silent> ".p."i  :call <sid>ToggleIgnoreCase()<cr>"
     exe "nmap <silent> ".p."h  :call <sid>ToggleHidden()<cr>"
+    exe "nmap <silent> ".p."B  :call <sid>ToggleBinary()<cr>"
     exe "nmap <silent> ".p."w  :call <sid>ToggleWindow()<cr>"
     exe "nmap <silent> ".p."o  :call <sid>ToggleOpenWindow()<cr>"
     exe "nmap <silent> ".p."g  :call <sid>ToggleEveryMatch()<cr>"
@@ -1432,6 +1443,7 @@ function! s:CreateOptionsString()
     call add(s:Options, "\"h: hidden files included (".EasyGrep#OnOrOff(g:EasyGrepHidden).")")
     call add(s:Options, "\"e: echo files that would be searched")
     if g:EasyGrepAllOptionsInExplorer
+        call add(s:Options, "\"B: binary files included (".EasyGrep#OnOrOff(g:EasyGrepBinary).")")
         call add(s:Options, "\"x: set files to exclude")
         call add(s:Options, "\"c: change grep command (".s:GetGrepCommandNameWithOptions().")")
         call add(s:Options, "\"w: window to use (".EasyGrep#GetErrorListName().")")
@@ -1475,6 +1487,7 @@ function! s:MapOptionsExplorerKeys()
     nnoremap <buffer> <silent> d    :call <sid>ToggleBufferDirectories()<cr>
     nnoremap <buffer> <silent> i    :call <sid>ToggleIgnoreCase()<cr>
     nnoremap <buffer> <silent> h    :call <sid>ToggleHidden()<cr>
+    nnoremap <buffer> <silent> B    :call <sid>ToggleBinary()<cr>
     nnoremap <buffer> <silent> e    :call <sid>EchoFilesSearched()<cr>
 
     nnoremap <buffer> <silent> x    :call <sid>SetFilesToExclude()<cr>
@@ -2405,6 +2418,8 @@ function! s:ConfigureGrepCommandParameters()
                 \ 'opt_bool_nofiletargets': '0',
                 \ 'opt_str_mapinclusionsexpression': '"--include=\"" .v:val."\""',
                 \ 'opt_bool_requireexplicitfiles': '1',
+                \ 'opt_str_binaryswitch': '-I',
+                \ 'opt_bool_binaryexcludedbydefault': '0',
                 \ })
 
     call s:RegisterGrepProgram("git", {
@@ -2484,6 +2499,8 @@ function! s:ConfigureGrepCommandParameters()
                 \ 'opt_bool_nofiletargets': '0',
                 \ 'opt_str_mapinclusionsexpression': '"--file-search-regex=\"" .substitute(v:val, "^\\*\\.", "\\\\.", "")."\""',
                 \ 'opt_str_hiddenswitch': '--hidden',
+                \ 'opt_str_binaryswitch': '--search-binary',
+                \ 'opt_bool_binaryexcludedbydefault': '1',
                 \ })
 
     call s:RegisterGrepProgram("pt", {
@@ -2707,6 +2724,12 @@ function! s:GetGrepCommandLine(pattern, add, wholeword, count, escapeArgs, filte
         endif
     endif
 
+    if s:CommandHasLen("opt_str_binaryswitch") &&
+        \ ((g:EasyGrepBinary && s:CommandHas("opt_bool_binaryexcludedbydefault")) ||
+            \ (!g:EasyGrepBinary && !s:CommandHas("opt_bool_binaryexcludedbydefault")))
+        let opts .= commandParams["opt_str_binaryswitch"]." "
+    endif
+
     " Suppress errors
     if s:CommandHasLen("opt_str_suppresserrormessages")
         let opts .= commandParams["opt_str_suppresserrormessages"]." "
@@ -2908,10 +2931,11 @@ function! s:WarnNoMatches(pattern)
 
     let r = s:IsRecursiveSearch() ? " (+Recursive)" : ""
     let h = g:EasyGrepHidden    ? " (+Hidden)"    : ""
+    let b = g:EasyGrepBinary    ? " (+Binary)"    : ""
 
     redraw!
     call EasyGrep#Warning("No matches for '".a:pattern."'")
-    call EasyGrep#Warning("File Pattern: ".fpat.r.h)
+    call EasyGrep#Warning("File Pattern: ".fpat.r.h.b)
 
     let dirs = s:GetDirectorySearchList()
     let s = "Directories:"
@@ -3658,6 +3682,10 @@ endif
 
 if !exists("g:EasyGrepHidden")
     let g:EasyGrepHidden=0
+endif
+
+if !exists("g:EasyGrepBinary")
+    let g:EasyGrepBinary=0
 endif
 
 if !exists("g:EasyGrepAllOptionsInExplorer")
