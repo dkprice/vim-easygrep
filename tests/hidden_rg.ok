@@ -1,0 +1,10 @@
+|1 col 1| EasyGrepTest GrepAdd c g:EasyGrepHidden=0
+|0 col 0| No files were searched, which means ripgrep probably applied a filter you didn't expect. Try running again with --debug.
+|1 col 1| EasyGrepTest GrepAdd C g:EasyGrepHidden=0
+|0 col 0| No files were searched, which means ripgrep probably applied a filter you didn't expect. Try running again with --debug.
+|1 col 1| EasyGrepTest GrepAdd c g:EasyGrepHidden=1
+hidden\.hiddenfile|1 col 0| 29:ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789
+hidden\.hiddenfile~|1 col 0| 29:ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789
+|1 col 1| EasyGrepTest GrepAdd C g:EasyGrepHidden=1
+hidden\.hiddenfile|1 col 0| 3:ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789
+hidden\.hiddenfile~|1 col 0| 3:ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789

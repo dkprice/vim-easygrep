@@ -1,0 +1,18 @@
+__wholeword.in|1 col 1| EasyGrepTest GrepAdd whole
+1|1 col 0| whole
+3|1 col 0| wholeword
+4|5 col 0| wordwholeword
+__wholeword.in|1 col 1| EasyGrepTest GrepAdd word
+2|1 col 0| word
+3|6 col 0| wholeword
+4|1 col 0| wordwholeword
+4|10 col 0| wordwholeword
+__wholeword.in|1 col 1| EasyGrepTest GrepAdd wholeword
+3|1 col 0| wholeword
+4|5 col 0| wordwholeword
+__wholeword.in|1 col 1| EasyGrepTest GrepAdd -w whole
+1|1 col 0| whole
+__wholeword.in|1 col 1| EasyGrepTest GrepAdd -w word
+2|1 col 0| word
+__wholeword.in|1 col 1| EasyGrepTest GrepAdd -w wholeword
+3|1 col 0| wholeword

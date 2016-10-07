@@ -1,0 +1,4 @@
+|1 col 1| EasyGrepTest GrepAdd -I c
+recursionuserpattern\c\alphabet.c|3 col 0| 1:c
+|1 col 1| EasyGrepTest GrepAdd -I C
+recursionuserpattern\c\alphabet.c|29 col 0| 1:C

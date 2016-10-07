@@ -17,6 +17,7 @@ ResultListTag EasyGrepTest GrepAdd C g:EasyGrepHidden=1
 GrepAdd C
 
 cclose
+ResultListSanitize
 exe "ResultListSave ".testname.".out"
 quit!
 
