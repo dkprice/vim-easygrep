@@ -1444,6 +1444,7 @@ function! s:CreateOptionsString()
     call add(s:Options, "\"e: echo files that would be searched")
     if g:EasyGrepAllOptionsInExplorer
         call add(s:Options, "\"B: binary files included (".EasyGrep#OnOrOff(g:EasyGrepBinary).")")
+        call add(s:Options, "\"I: set files to include")
         call add(s:Options, "\"x: set files to exclude")
         call add(s:Options, "\"c: change grep command (".s:GetGrepCommandNameWithOptions().")")
         call add(s:Options, "\"w: window to use (".EasyGrep#GetErrorListName().")")
@@ -1490,6 +1491,7 @@ function! s:MapOptionsExplorerKeys()
     nnoremap <buffer> <silent> B    :call <sid>ToggleBinary()<cr>
     nnoremap <buffer> <silent> e    :call <sid>EchoFilesSearched()<cr>
 
+    nnoremap <buffer> <silent> I    :call <sid>SetFilesToInclude()<cr>
     nnoremap <buffer> <silent> x    :call <sid>SetFilesToExclude()<cr>
     nnoremap <buffer> <silent> c    :call <sid>ToggleCommand()<cr>
     nnoremap <buffer> <silent> w    :call <sid>ToggleWindow()<cr>
@@ -2762,6 +2764,7 @@ function! s:GetGrepCommandLine(pattern, add, wholeword, count, escapeArgs, filte
     endif
 
     let fileTargetList = s:CommandHas("opt_bool_nofiletargets") ? [] : s:GetFileTargetList(1)
+    let filesToInclude = g:EasyGrepFilesToInclude
     let filesToExclude = g:EasyGrepFilesToExclude
 
     if a:filterTargetsWithNoFiles && s:CommandHas("opt_bool_filtertargetswithnofiles")
@@ -2785,6 +2788,11 @@ function! s:GetGrepCommandLine(pattern, add, wholeword, count, escapeArgs, filte
         if s:CommandHas("opt_bool_requireexplicitfiles") && !s:IsRecursiveSearch()
           call map(fileTargetList, "substitute(v:val, '$', '/*', 'g')")
         endif
+    endif
+
+    " Add inclusions
+    if s:CommandHasLen("opt_str_mapinclusionsexpression")
+        let opts .= " " . join(map(split(filesToInclude, ','), commandParams["opt_str_mapinclusionsexpression"]), ' ') . " "
     endif
 
     " Add exclusions
