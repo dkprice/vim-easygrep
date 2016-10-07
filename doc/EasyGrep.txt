@@ -309,6 +309,7 @@ o |EasyGrepPerlStyle|                   - Whether to use perl style regexp
 o |EasyGrepRecursive|                   - Recursive searching
 o |EasyGrepIgnoreCase|                  - Case-sensitivity in searches
 o |EasyGrepHidden|                      - Include hidden files in searches
+o |EasyGrepBinary|                      - Include binary files in searches
 o |EasyGrepFilesToExclude|              - Comma-separated list of files patterns
                                         that will be excluded from the search
 o |EasyGrepAllOptionsInExplorer|        - How many options to show in the explorer
@@ -457,7 +458,10 @@ Specifies that hidden files search be activated on start.  Note that hidden
 implies the unix meaning of those files that are prepended with a '.', and not
 the Windows meaning of those files with a hidden attribute.
 
-*EasyGrepFilesToExclude*  [default=""]
+*EasyGrepBinary*  [default=0]
+Specifies that binary files search be activated on start.
+
+*EasyGrepFilesToExclude*  [default="*.swp,*~"]
 Specifies a string of file patterns that will be excluded from the search.
 Multiple exclusions must be separated by commas. Note that these patterns will
 be passed unmodified on to the search program.
