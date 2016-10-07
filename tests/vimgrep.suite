@@ -8,6 +8,8 @@ casesensitivity_ack.vim
 casesensitivity_ag.vim
 casesensitivity_grep.vim
 casesensitivity_pt.vim
+casesensitivity_rg.vim
+#casesensitivity_sift.vim
 casesensitivity_vimgrep.vim
 
 # wholeword
@@ -15,6 +17,8 @@ wholeword_ack.vim
 wholeword_ag.vim
 wholeword_grep.vim
 wholeword_pt.vim
+wholeword_rg.vim
+#wholeword_sift.vim
 wholeword_vimgrep.vim
 
 # exclusions
@@ -22,6 +26,8 @@ exclusions_ack.vim
 exclusions_ag.vim
 exclusions_grep.vim
 exclusions_pt.vim
+exclusions_rg.vim
+#exclusions_sift.vim
 exclusions_vimgrep.vim
 
 # hidden
@@ -29,13 +35,17 @@ hidden_ack.vim
 hidden_ag.vim
 hidden_grep.vim
 hidden_pt.vim
+hidden_rg.vim
+#hidden_sift.vim
 hidden_vimgrep.vim
 
 # recursion
 recursion_ack.vim
 recursion_ag.vim
 recursion_grep.vim
-# recursion_pt.vim # disabled; output is non-deterministic
+recursion_pt.vim
+recursion_rg.vim
+#recursion_sift.vim
 recursion_vimgrep.vim
 
 # recursionuserpattern
@@ -43,6 +53,8 @@ recursionuserpattern_ack.vim
 recursionuserpattern_ag.vim
 recursionuserpattern_grep.vim
 recursionuserpattern_pt.vim
+recursionuserpattern_rg.vim
+#recursionuserpattern_sift.vim
 recursionuserpattern_vimgrep.vim
 
 # simpleregex
@@ -50,6 +62,8 @@ simpleregex_ack.vim
 simpleregex_ag.vim
 simpleregex_grep.vim
 simpleregex_pt.vim
+simpleregex_rg.vim
+#simpleregex_sift.vim
 simpleregex_vimgrep.vim
 
 # trackextension
@@ -57,6 +71,8 @@ trackextension_ack.vim
 trackextension_ag.vim
 trackextension_grep.vim
 trackextension_pt.vim
+trackextension_rg.vim
+#trackextension_sift.vim
 trackextension_vimgrep.vim
 
 

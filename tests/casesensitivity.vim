@@ -10,24 +10,24 @@ edit alphabet.in
 
 " case-sensitive
 let g:EasyGrepIgnoreCase=0
-ResultListTag GrepAdd c g:EasyGrepIgnoreCase=0
+ResultListTag EasyGrepTest GrepAdd c g:EasyGrepIgnoreCase=0
 GrepAdd c
-ResultListTag GrepAdd C g:EasyGrepIgnoreCase=0
+ResultListTag EasyGrepTest GrepAdd C g:EasyGrepIgnoreCase=0
 GrepAdd C
-ResultListTag GrepAdd -I c
+ResultListTag EasyGrepTest GrepAdd -I c
 GrepAdd -I c
-ResultListTag GrepAdd -I C
+ResultListTag EasyGrepTest GrepAdd -I C
 GrepAdd -I C
 
 " case-insensitive
 let g:EasyGrepIgnoreCase=1
-ResultListTag GrepAdd c g:EasyGrepIgnoreCase=1
+ResultListTag EasyGrepTest GrepAdd c g:EasyGrepIgnoreCase=1
 GrepAdd c
-ResultListTag GrepAdd C g:EasyGrepIgnoreCase=1
+ResultListTag EasyGrepTest GrepAdd C g:EasyGrepIgnoreCase=1
 GrepAdd C
-ResultListTag GrepAdd -i c
+ResultListTag EasyGrepTest GrepAdd -i c
 GrepAdd -i c
-ResultListTag GrepAdd -i C
+ResultListTag EasyGrepTest GrepAdd -i C
 GrepAdd -i C
 
 cclose

@@ -7,22 +7,23 @@ let g:EasyGrepMode=3
 edit __wholeword.in
 
 " Search no whole word
-ResultListTag GrepAdd whole
+ResultListTag EasyGrepTest GrepAdd whole
 GrepAdd whole
-ResultListTag GrepAdd word
+ResultListTag EasyGrepTest GrepAdd word
 GrepAdd word
-ResultListTag GrepAdd wholeword
+ResultListTag EasyGrepTest GrepAdd wholeword
 GrepAdd wholeword
 
 " Explicit whole word
-ResultListTag GrepAdd -w whole
+ResultListTag EasyGrepTest GrepAdd -w whole
 GrepAdd -w whole
-ResultListTag GrepAdd -w word
+ResultListTag EasyGrepTest GrepAdd -w word
 GrepAdd -w word
-ResultListTag GrepAdd -w wholeword
+ResultListTag EasyGrepTest GrepAdd -w wholeword
 GrepAdd -w wholeword
 
 cclose
+ResultListSanitize
 exe "ResultListSave ".testname.".out"
 quit!
 

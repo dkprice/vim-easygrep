@@ -42,6 +42,10 @@ if exists("g:EasyGrepPerlStyle") && g:EasyGrepPerlStyle==1
     endif
 endif
 
+if !exists("g:EasyGrepAutomatedTest")
+    let g:EasyGrepAutomatedTest=0
+endif
+
 " This is a special mode
 let s:EasyGrepModeMultipleChoice=4
 let s:EasyGrepNumModesWithSpecial = 5
@@ -437,7 +441,7 @@ function! s:AddAdditionalLocationsToFileTargetList(fileTargetList)
         let fileTargetList = s:ApplySearchDirectoriesToFileTargetList(fileTargetList)
     endif
 
-    if g:EasyGrepHidden && !s:CommandHasLen("opt_str_hiddenswitch")
+    if g:EasyGrepHidden && !s:CommandHasLen("opt_str_hiddenswitch") && !s:CommandHasLen("opt_str_nohiddenswitch")
         let i = 0
         let size = len(fileTargetList)
         while i < size
@@ -619,6 +623,10 @@ endfunction
 " OptionsExplorer {{{
 " OpenOptionsExplorer {{{
 function! s:OpenOptionsExplorer()
+    if s:OptionsExplorerOpen
+        return
+    endif
+
     let s:OptionsExplorerOpen = 1
 
     call s:CreateOptionsString()
@@ -793,7 +801,7 @@ function! <sid>EchoGrepCommand()
     endif
 
     let recursiveTag = s:IsRecursiveSearch() ? " (Recursive)" : ""
-    call s:Echo("Search Mode:           ".s:GetModeName(g:EasyGrepMode).recursiveTag)
+    call s:Echo("Search Mode:           ".s:GetModeName(s:GetNumericEasyGrepMode()).recursiveTag)
 
     if !s:CommandHas("opt_bool_nofiletargets")
         if g:EasyGrepSearchCurrentBufferDir && s:IsBufferDirSearchAllowed()
@@ -837,6 +845,7 @@ function! <sid>EchoOptionsSet()
             \ "g:EasyGrepSearchCurrentBufferDir",
             \ "g:EasyGrepIgnoreCase",
             \ "g:EasyGrepHidden",
+            \ "g:EasyGrepBinary",
             \ "g:EasyGrepFilesToInclude",
             \ "g:EasyGrepFilesToExclude",
             \ "g:EasyGrepAllOptionsInExplorer",
@@ -1134,6 +1143,15 @@ function! <sid>ToggleHidden()
     call s:Echo("Set hidden files included to (".EasyGrep#OnOrOff(g:EasyGrepHidden).")")
 endfunction
 " }}}
+" ToggleBinary {{{
+function! <sid>ToggleBinary()
+    let g:EasyGrepBinary = !g:EasyGrepBinary
+
+    call s:RefreshAllOptions()
+
+    call s:Echo("Set binary files included to (".EasyGrep#OnOrOff(g:EasyGrepBinary).")")
+endfunction
+" }}}
 " ToggleBufferDirectories {{{
 function! <sid>ToggleBufferDirectories()
     let g:EasyGrepSearchCurrentBufferDir = !g:EasyGrepSearchCurrentBufferDir
@@ -1389,6 +1407,7 @@ function! s:CreateOptionMappings()
     exe "nmap <silent> ".p."d  :call <sid>ToggleBufferDirectories()<cr>"
     exe "nmap <silent> ".p."i  :call <sid>ToggleIgnoreCase()<cr>"
     exe "nmap <silent> ".p."h  :call <sid>ToggleHidden()<cr>"
+    exe "nmap <silent> ".p."B  :call <sid>ToggleBinary()<cr>"
     exe "nmap <silent> ".p."w  :call <sid>ToggleWindow()<cr>"
     exe "nmap <silent> ".p."o  :call <sid>ToggleOpenWindow()<cr>"
     exe "nmap <silent> ".p."g  :call <sid>ToggleEveryMatch()<cr>"
@@ -1424,6 +1443,7 @@ function! s:CreateOptionsString()
     call add(s:Options, "\"h: hidden files included (".EasyGrep#OnOrOff(g:EasyGrepHidden).")")
     call add(s:Options, "\"e: echo files that would be searched")
     if g:EasyGrepAllOptionsInExplorer
+        call add(s:Options, "\"B: binary files included (".EasyGrep#OnOrOff(g:EasyGrepBinary).")")
         call add(s:Options, "\"I: set files to include")
         call add(s:Options, "\"x: set files to exclude")
         call add(s:Options, "\"c: change grep command (".s:GetGrepCommandNameWithOptions().")")
@@ -1468,6 +1488,7 @@ function! s:MapOptionsExplorerKeys()
     nnoremap <buffer> <silent> d    :call <sid>ToggleBufferDirectories()<cr>
     nnoremap <buffer> <silent> i    :call <sid>ToggleIgnoreCase()<cr>
     nnoremap <buffer> <silent> h    :call <sid>ToggleHidden()<cr>
+    nnoremap <buffer> <silent> B    :call <sid>ToggleBinary()<cr>
     nnoremap <buffer> <silent> e    :call <sid>EchoFilesSearched()<cr>
 
     nnoremap <buffer> <silent> I    :call <sid>SetFilesToInclude()<cr>
@@ -1533,11 +1554,12 @@ function! s:CreateGrepDictionary()
         return
     endif
 
+    let mode = s:GetNumericEasyGrepMode()
     let s:Dict = [ ]
-    call add(s:Dict, [ "All" , "*", g:EasyGrepMode==s:EasyGrepModeAll ? 1 : 0 ] )
-    call add(s:Dict, [ "Buffers" , "*Buffers*", g:EasyGrepMode==s:EasyGrepModeBuffers ? 1 : 0  ] )
-    call add(s:Dict, [ "TrackExt" , "*", g:EasyGrepMode==s:EasyGrepModeTracked ? 1 : 0  ] )
-    call add(s:Dict, [ "User" , "", g:EasyGrepMode==s:EasyGrepModeUser ? 1 : 0  ] )
+    call add(s:Dict, [ "All" , "*", mode==s:EasyGrepModeAll ? 1 : 0 ] )
+    call add(s:Dict, [ "Buffers" , "*Buffers*", mode==s:EasyGrepModeBuffers ? 1 : 0  ] )
+    call add(s:Dict, [ "TrackExt" , "*", mode==s:EasyGrepModeTracked ? 1 : 0  ] )
+    call add(s:Dict, [ "User" , "", mode==s:EasyGrepModeUser ? 1 : 0  ] )
 
     if len(s:Dict) != s:EasyGrepNumModes
         call EasyGrep#InternalFailure("EasyGrep's default settings are not internally consistent; please reinstall")
@@ -1728,25 +1750,25 @@ endfunction
 " IsModeAll {{{
 function! s:IsModeAll()
     call s:SanitizeMode()
-    return g:EasyGrepMode == s:EasyGrepModeAll
+    return s:GetNumericEasyGrepMode() == s:EasyGrepModeAll
 endfunction
 " }}}
 " IsModeBuffers {{{
 function! s:IsModeBuffers()
     call s:SanitizeMode()
-    return g:EasyGrepMode == s:EasyGrepModeBuffers
+    return s:GetNumericEasyGrepMode() == s:EasyGrepModeBuffers
 endfunction
 " }}}
 " IsModeTracked {{{
 function! s:IsModeTracked()
     call s:SanitizeMode()
-    return g:EasyGrepMode == s:EasyGrepModeTracked
+    return s:GetNumericEasyGrepMode() == s:EasyGrepModeTracked
 endfunction
 " }}}
 " IsModeUser {{{
 function! s:IsModeUser()
     call s:SanitizeMode()
-    return g:EasyGrepMode == s:EasyGrepModeUser
+    return s:GetNumericEasyGrepMode() == s:EasyGrepModeUser
 endfunction
 " }}}
 " IsModeFiltered {{{
@@ -1758,7 +1780,7 @@ endfunction
 " IsModeMultipleChoice {{{
 function! s:IsModeMultipleChoice()
     call s:SanitizeMode()
-    return g:EasyGrepMode == s:EasyGrepModeMultipleChoice
+    return s:GetNumericEasyGrepMode() == s:EasyGrepModeMultipleChoice
 endfunction
 " }}}
 " GetModeName {{{
@@ -1784,10 +1806,26 @@ endfunction
 " ForceGrepMode {{{
 function! s:ForceGrepMode(mode)
     call s:SetGrepMode(a:mode)
+    let mode = s:GetNumericEasyGrepMode()
     if exists("s:Dict")
         call s:ClearActivatedItems()
-        let s:Dict[a:mode][2] = 1
+        let s:Dict[mode][2] = 1
     endif
+endfunction
+" }}}
+" GetNumericEasyGrepMode {{{
+function! s:GetNumericEasyGrepMode()
+    if g:EasyGrepMode == 'All'
+        return 0
+    elseif g:EasyGrepMode == 'Buffers'
+        return 1
+    elseif g:EasyGrepMode == 'Track' || g:EasyGrepMode == 'Tracked' || g:EasyGrepMode == 'TrackExt'
+        return 2
+    elseif g:EasyGrepMode == 'User'
+        return 3
+    endif
+
+    return g:EasyGrepMode
 endfunction
 " }}}
 " SanitizeMode {{{
@@ -1804,12 +1842,13 @@ function! s:SanitizeMode()
     endif
 
     " Next ensure that our mode is sensible
-    if g:EasyGrepMode < 0 || g:EasyGrepMode >= s:EasyGrepNumModesWithSpecial
+    let mode = s:GetNumericEasyGrepMode()
+    if mode < 0 || mode >= s:EasyGrepNumModesWithSpecial
         call EasyGrep#Error("Invalid value for g:EasyGrepMode (".g:EasyGrepMode."); reverting to 'All' mode.")
         call s:ForceGrepMode(s:EasyGrepModeAll)
-    elseif g:EasyGrepMode == s:EasyGrepModeMultipleChoice
+    elseif mode == s:EasyGrepModeMultipleChoice
         " This is OK
-    elseif s:Dict[g:EasyGrepMode][2] != 1
+    elseif s:Dict[mode][2] != 1
         " The user switched the mode by explicitly setting the g:EasyGrepMode
         " global variable; make sure to sync up with it
         call s:ForceGrepMode(g:EasyGrepMode)
@@ -1843,7 +1882,7 @@ function! s:CheckGrepCommandForChanges()
             if s:IsModeFiltered()
                 call EasyGrep#Info("==================================================================================")
                 call EasyGrep#Info("The 'grepprg' has changed to '".s:GetGrepProgramName()."' since last inspected")
-                call EasyGrep#Info("Switching to 'All' mode as the '".s:GetModeName(g:EasyGrepMode)."' mode is incompatible with this program")
+                call EasyGrep#Info("Switching to 'All' mode as the '".s:GetModeName(s:GetNumericEasyGrepMode())."' mode is incompatible with this program")
                 call EasyGrep#Info("==================================================================================")
                 call s:ForceGrepMode(s:EasyGrepModeAll)
             endif
@@ -2381,6 +2420,8 @@ function! s:ConfigureGrepCommandParameters()
                 \ 'opt_bool_nofiletargets': '0',
                 \ 'opt_str_mapinclusionsexpression': '"--include=\"" .v:val."\""',
                 \ 'opt_bool_requireexplicitfiles': '1',
+                \ 'opt_str_binaryswitch': '-I',
+                \ 'opt_bool_binaryexcludedbydefault': '0',
                 \ })
 
     call s:RegisterGrepProgram("git", {
@@ -2409,7 +2450,8 @@ function! s:ConfigureGrepCommandParameters()
     call s:RegisterGrepProgram("ack", {
                 \ 'req_str_programargs': '-s --nogroup --nocolor --column --with-filename',
                 \ 'req_bool_supportsexclusions': '1',
-                \ 'req_str_recurse': '',
+                \ 'req_str_recurse': '-R',
+                \ 'req_str_norecurse': '--no-recurse',
                 \ 'req_str_caseignore': '-i',
                 \ 'req_str_casematch': '',
                 \ 'opt_str_patternprefix': "'",
@@ -2424,13 +2466,14 @@ function! s:ConfigureGrepCommandParameters()
                 \ 'opt_bool_bufferdirsearchallowed': '1',
                 \ 'opt_str_suppresserrormessages': '',
                 \ 'opt_bool_directoryneedsbackslash': '0',
-                \ 'opt_bool_isinherentlyrecursive': '1',
+                \ 'opt_bool_isinherentlyrecursive': '0',
                 \ 'opt_bool_isselffiltering': '0',
                 \ 'opt_bool_nofiletargets': '0',
                 \ 'opt_str_mapinclusionsexpression': 'substitute(v:val, "^\\*\\.", "", "")',
                 \ 'opt_str_mapinclusionsexpressionseparator': ',',
                 \ 'opt_str_mapinclusionsprefix': '--type-set="easygrep:ext:',
                 \ 'opt_str_mapinclusionspostfix': '" --type=easygrep',
+                \ 'opt_str_nohiddenswitch': '--ignore-file=match:/\\./ --ignore-file=match:/\/./',
                 \ })
 
     call s:RegisterGrepProgram("ack-grep", g:EasyGrep_commandParamsDict["ack"])
@@ -2458,6 +2501,8 @@ function! s:ConfigureGrepCommandParameters()
                 \ 'opt_bool_nofiletargets': '0',
                 \ 'opt_str_mapinclusionsexpression': '"--file-search-regex=\"" .substitute(v:val, "^\\*\\.", "\\\\.", "")."\""',
                 \ 'opt_str_hiddenswitch': '--hidden',
+                \ 'opt_str_binaryswitch': '--search-binary',
+                \ 'opt_bool_binaryexcludedbydefault': '1',
                 \ })
 
     call s:RegisterGrepProgram("pt", {
@@ -2483,6 +2528,56 @@ function! s:ConfigureGrepCommandParameters()
                 \ 'opt_bool_nofiletargets': '0',
                 \ 'opt_str_mapinclusionsexpression': '"--file-search-regexp=\"" .substitute(v:val, "^\\*\\.", "\\\\.", "")."\""',
                 \ 'opt_str_hiddenswitch': '--hidden',
+                \ })
+
+    call s:RegisterGrepProgram("rg", {
+                \ 'req_str_programargs': '--vimgrep',
+                \ 'req_bool_supportsexclusions': '0',
+                \ 'req_str_recurse': '',
+                \ 'req_str_caseignore': '-i',
+                \ 'req_str_casematch': '',
+                \ 'opt_str_patternprefix': '"',
+                \ 'opt_str_patternpostfix': '"',
+                \ 'opt_str_wholewordprefix': '',
+                \ 'opt_str_wholewordpostfix': '',
+                \ 'opt_str_wholewordoption': '-w ',
+                \ 'req_str_escapespecialcharacters': "\^$#.*+?()[]{}",
+                \ 'opt_str_escapespecialcharacterstwice': "",
+                \ 'opt_str_mapexclusionsexpression': '',
+                \ 'opt_bool_filtertargetswithnofiles': '1',
+                \ 'opt_bool_bufferdirsearchallowed': '1',
+                \ 'opt_str_suppresserrormessages': '',
+                \ 'opt_bool_directoryneedsbackslash': '0',
+                \ 'opt_bool_isinherentlyrecursive': '1',
+                \ 'opt_bool_nofiletargets': '0',
+                \ 'opt_str_mapinclusionsexpression': '',
+                \ 'opt_str_mapinclusionsprefix': '--type-add="easygrep:',
+                \ 'opt_str_mapinclusionspostfix': '" --type=easygrep',
+                \ 'opt_str_hiddenswitch': '--hidden',
+                \ })
+
+    call s:RegisterGrepProgram("sift", {
+                \ 'req_str_programargs': '-n --no-group --no-color',
+                \ 'req_bool_supportsexclusions': '0',
+                \ 'req_str_recurse': '-r',
+                \ 'req_str_caseignore': '-i',
+                \ 'req_str_casematch': '-I',
+                \ 'opt_str_patternprefix': '"',
+                \ 'opt_str_patternpostfix': '"',
+                \ 'opt_str_wholewordprefix': '\b',
+                \ 'opt_str_wholewordpostfix': '\b',
+                \ 'opt_str_wholewordoption': ' ',
+                \ 'req_str_escapespecialcharacters': "-\^$#.*+?()[]{}",
+                \ 'opt_str_escapespecialcharacterstwice': "",
+                \ 'opt_str_mapexclusionsexpression': '',
+                \ 'opt_bool_filtertargetswithnofiles': '0',
+                \ 'opt_bool_bufferdirsearchallowed': '1',
+                \ 'opt_str_suppresserrormessages': '',
+                \ 'opt_bool_directoryneedsbackslash': '0',
+                \ 'opt_bool_isinherentlyrecursive': '1',
+                \ 'opt_bool_isselffiltering': '0',
+                \ 'opt_bool_nofiletargets': '0',
+                \ 'opt_str_mapinclusionsexpression': '',
                 \ })
 
     call s:RegisterGrepProgram("csearch", {
@@ -2631,6 +2726,10 @@ function! s:GetGrepCommandLine(pattern, add, wholeword, count, escapeArgs, filte
         if s:CommandHasLen("req_str_recurse")
             let opts .= commandParams["req_str_recurse"]." "
         endif
+    else
+        if s:CommandHasLen("req_str_norecurse")
+            let opts .= commandParams["req_str_norecurse"]." "
+        endif
     endif
 
     if g:EasyGrepIgnoreCase && !(&smartcase && match(a:pattern, '\C[A-Z]') >= 0)
@@ -2643,8 +2742,20 @@ function! s:GetGrepCommandLine(pattern, add, wholeword, count, escapeArgs, filte
         endif
     endif
 
-    if g:EasyGrepHidden && s:CommandHasLen("opt_str_hiddenswitch")
-        let opts .= commandParams["opt_str_hiddenswitch"]." "
+    if g:EasyGrepHidden
+        if s:CommandHasLen("opt_str_hiddenswitch")
+            let opts .= commandParams["opt_str_hiddenswitch"]." "
+        endif
+    else
+        if s:CommandHasLen("opt_str_nohiddenswitch")
+            let opts .= commandParams["opt_str_nohiddenswitch"]." "
+        endif
+    endif
+
+    if s:CommandHasLen("opt_str_binaryswitch") &&
+        \ ((g:EasyGrepBinary && s:CommandHas("opt_bool_binaryexcludedbydefault")) ||
+            \ (!g:EasyGrepBinary && !s:CommandHas("opt_bool_binaryexcludedbydefault")))
+        let opts .= commandParams["opt_str_binaryswitch"]." "
     endif
 
     " Suppress errors
@@ -2854,10 +2965,11 @@ function! s:WarnNoMatches(pattern)
 
     let r = s:IsRecursiveSearch() ? " (+Recursive)" : ""
     let h = g:EasyGrepHidden    ? " (+Hidden)"    : ""
+    let b = g:EasyGrepBinary    ? " (+Binary)"    : ""
 
-    redraw
+    redraw!
     call EasyGrep#Warning("No matches for '".a:pattern."'")
-    call EasyGrep#Warning("File Pattern: ".fpat.r.h)
+    call EasyGrep#Warning("File Pattern: ".fpat.r.h.b)
 
     let dirs = s:GetDirectorySearchList()
     let s = "Directories:"
@@ -2958,7 +3070,7 @@ function! s:DoReplace(target, replacement, wholeword, escapeArgs)
 
     let finished = 0
     let lastFile = -1
-    let doAll = exists("g:EasyGrepAutomatedTest")
+    let doAll = exists("g:EasyGrepAutomatedTest") && g:EasyGrepAutomatedTest == 1
     let i = 0
     while i < numMatches && !finished
         try
@@ -3239,7 +3351,7 @@ function! s:ResultListDo(command)
 
     let finished = 0
     let lastFile = -1
-    let doAll = exists("g:EasyGrepAutomatedTest")
+    let doAll = exists("g:EasyGrepAutomatedTest") && g:EasyGrepAutomatedTest == 1
     let i = 0
     while i < numMatches && !finished
         try
@@ -3386,7 +3498,8 @@ function! s:ResultListSave(f)
     try
         let contents = []
         for e in lst
-            let line = bufname(e.bufnr)."|".e.lnum." col ".e.col."| ".e.text
+            let fname = fnamemodify(bufname(e.bufnr), ":.")
+            let line = fname."|".e.lnum." col ".e.col."| ".e.text
             call insert(contents, line, len(contents))
         endfor
 
@@ -3397,6 +3510,71 @@ function! s:ResultListSave(f)
     endtry
 
     call s:Echo("Result list was saved to '".a:f."' successfully")
+endfunction
+"}}}
+" ResultListSanitize {{{
+function! SortResultListSanitized(lhs, rhs)
+    let fnamea = bufname(a:lhs["bufnr"])
+    let fnameb = bufname(a:rhs["bufnr"])
+    if fnamea != fnameb
+        if fnamea < fnameb
+            return -1
+        else
+            return 1
+        endif
+    endif
+
+    let lnuma = a:lhs["lnum"]
+    let lnumb = a:rhs["lnum"]
+    if lnuma != lnumb
+        if lnuma < lnumb
+            return -1
+        else
+            return 1
+        endif
+    endif
+
+    let cola = a:lhs["col"]
+    let colb = a:rhs["col"]
+    if cola != colb
+        if cola < colb
+            return -1
+        else
+            return 1
+        endif
+    endif
+
+    return 0
+endfunction
+function! s:SortResultListSublist(lst, firstEntry, lastEntry)
+    let sublist = a:lst[a:firstEntry : a:lastEntry]
+    call sort(sublist, "SortResultListSanitized")
+    let a:lst[a:firstEntry : a:lastEntry] = sublist
+endfunction
+function! s:ResultListSanitize()
+    let lst = EasyGrep#GetErrorList()
+    if empty(lst)
+        return
+    endif
+
+    let numEntries = len(lst)
+    let firstEntry = 1
+    let i = 1
+    while i < numEntries
+        let m = match(lst[i].text, 'EasyGrepTest')
+        if m != -1
+            let lastEntry = i - 1
+            call s:SortResultListSublist(lst, firstEntry, lastEntry)
+            let firstEntry = i + 1
+        endif
+        let i += 1
+    endwhile
+    if firstEntry != i
+        let lastEntry = i-1
+        call s:SortResultListSublist(lst, firstEntry, lastEntry)
+    endif
+
+    call EasyGrep#SetErrorList(lst)
 endfunction
 "}}}
 " ResultListTag {{{
@@ -3438,6 +3616,7 @@ command! -nargs=+ ResultListFilter :call s:ResultListFilter(<f-args>)
 command! -nargs=+ ResultListDo :call s:ResultListDo(<q-args>)
 command! -nargs=1 ResultListSave :call s:ResultListSave(<q-args>)
 command! -nargs=1 ResultListTag :call s:ResultListTag(<q-args>)
+command! -nargs=0 ResultListSanitize :call s:ResultListSanitize()
 "}}}
 " Keymaps {{{
 if !hasmapto("<plug>EgMapGrepOptions")
@@ -3509,7 +3688,8 @@ function! s:InitializeMode()
         " 2 - Track
         " 3 - User
     else
-        if g:EasyGrepMode < 0 || g:EasyGrepMode >= s:EasyGrepNumModesWithSpecial
+        let mode = s:GetNumericEasyGrepMode()
+        if mode < 0 || mode >= s:EasyGrepNumModesWithSpecial
             call EasyGrep#Error("Invalid value for g:EasyGrepMode (".g:EasyGrepMode."); reverting to 'All' mode.")
             let g:EasyGrepMode = s:EasyGrepModeAll
         endif
@@ -3536,6 +3716,10 @@ endif
 
 if !exists("g:EasyGrepHidden")
     let g:EasyGrepHidden=0
+endif
+
+if !exists("g:EasyGrepBinary")
+    let g:EasyGrepBinary=0
 endif
 
 if !exists("g:EasyGrepAllOptionsInExplorer")
@@ -3663,7 +3847,7 @@ endif
 " CheckDefaultUserPattern {{{
 function! s:CheckDefaultUserPattern()
     let error = ""
-    let userModeAndEmpty = (g:EasyGrepMode == s:EasyGrepModeUser) && empty(s:Dict[s:EasyGrepModeUser][1])
+    let userModeAndEmpty = (s:GetNumericEasyGrepMode() == s:EasyGrepModeUser) && empty(s:Dict[s:EasyGrepModeUser][1])
     if exists("g:EasyGrepDefaultUserPattern")
         if empty(g:EasyGrepDefaultUserPattern) && userModeAndEmpty
             let error = "Cannot start in 'User' mode when g:EasyGrepDefaultUserPattern is empty"

@@ -1,0 +1,71 @@
+|1 col 1| EasyGrepTest GrepAdd -E [a-c]
+1|1 col 0| a
+2|1 col 0| b
+3|1 col 0| c
+53|2 col 0| [a-c]
+53|4 col 0| [a-c]
+|1 col 1| EasyGrepTest GrepAdd -E [A-C]
+27|1 col 0| A
+28|1 col 0| B
+29|1 col 0| C
+54|2 col 0| [A-C]
+54|4 col 0| [A-C]
+|1 col 1| EasyGrepTest GrepAdd -F [a-c]
+53|1 col 0| [a-c]
+|1 col 1| EasyGrepTest GrepAdd -F [A-C]
+54|1 col 0| [A-C]
+|1 col 1| EasyGrepTest GrepAdd -F !
+55|1 col 0| !
+|1 col 1| EasyGrepTest GrepAdd -F #
+57|1 col 0| #
+|1 col 1| EasyGrepTest GrepAdd -F $
+58|1 col 0| $
+|1 col 1| EasyGrepTest GrepAdd -F (
+62|1 col 0| (
+88|1 col 0| ()
+|1 col 1| EasyGrepTest GrepAdd -F *
+64|1 col 0| *
+|1 col 1| EasyGrepTest GrepAdd -F +
+65|1 col 0| +
+|1 col 1| EasyGrepTest GrepAdd -F ,
+66|1 col 0| ,
+|1 col 1| EasyGrepTest GrepAdd -F -
+53|3 col 0| [a-c]
+54|3 col 0| [A-C]
+67|1 col 0| -
+|1 col 1| EasyGrepTest GrepAdd -F .
+68|1 col 0| .
+|1 col 1| EasyGrepTest GrepAdd -F /
+69|1 col 0| /
+|1 col 1| EasyGrepTest GrepAdd -F :
+70|1 col 0| :
+|1 col 1| EasyGrepTest GrepAdd -F ;
+71|1 col 0| ;
+|1 col 1| EasyGrepTest GrepAdd -F =
+73|1 col 0| =
+|1 col 1| EasyGrepTest GrepAdd -F ?
+75|1 col 0| ?
+|1 col 1| EasyGrepTest GrepAdd -F @
+76|1 col 0| @
+|1 col 1| EasyGrepTest GrepAdd -F [
+53|1 col 0| [a-c]
+54|1 col 0| [A-C]
+77|1 col 0| [
+87|1 col 0| []
+|1 col 1| EasyGrepTest GrepAdd -F ]
+53|5 col 0| [a-c]
+54|5 col 0| [A-C]
+79|1 col 0| ]
+87|2 col 0| []
+|1 col 1| EasyGrepTest GrepAdd -F ^
+80|1 col 0| ^
+|1 col 1| EasyGrepTest GrepAdd -F _
+81|1 col 0| _
+|1 col 1| EasyGrepTest GrepAdd -F {
+83|1 col 0| {
+89|1 col 0| {}
+|1 col 1| EasyGrepTest GrepAdd -F }
+85|1 col 0| }
+89|2 col 0| {}
+|1 col 1| EasyGrepTest GrepAdd -F ~
+86|1 col 0| ~

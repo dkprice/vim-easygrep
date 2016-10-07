@@ -9,10 +9,11 @@ let g:EasyGrepRecursive=0
 
 edit alphabet.in
 
-ResultListTag GrepAdd a
+ResultListTag EasyGrepTest GrepAdd a
 GrepAdd a
 
 cclose
+ResultListSanitize
 exe "ResultListSave ".testname.".out"
 quit!
 

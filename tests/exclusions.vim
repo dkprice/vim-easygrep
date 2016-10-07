@@ -9,19 +9,19 @@ cd allext/
 edit alphabet.a
 
 let EasyGrepFilesToExclude="*.b,*.c"
-ResultListTag GrepAdd a (exclude b c)
+ResultListTag EasyGrepTest GrepAdd a (exclude b c)
 GrepAdd a
-ResultListTag GrepAdd A (exclude b c)
+ResultListTag EasyGrepTest GrepAdd A (exclude b c)
 GrepAdd A
 let EasyGrepFilesToExclude="*.a,*.c"
-ResultListTag GrepAdd b (exclude a c)
+ResultListTag EasyGrepTest GrepAdd b (exclude a c)
 GrepAdd b
-ResultListTag GrepAdd B (exclude a c)
+ResultListTag EasyGrepTest GrepAdd B (exclude a c)
 GrepAdd B
 let EasyGrepFilesToExclude="*.a,*.b"
-ResultListTag GrepAdd c (exclude a b)
+ResultListTag EasyGrepTest GrepAdd c (exclude a b)
 GrepAdd c
-ResultListTag GrepAdd C (exclude a b)
+ResultListTag EasyGrepTest GrepAdd C (exclude a b)
 GrepAdd C
 
 cclose
