@@ -2870,21 +2870,21 @@ function! s:DoGrep(pattern, add, wholeword, count, escapeArgs, xgrep)
     catch /.*E303.*/
         " This error reports that a swap file could not be opened; this is not a critical error
         let failed = 0
+    catch /.*E480.*/
+        " This error reports that vimgrep found no matches
+        call s:WarnNoMatches(a:pattern)
+        try
+            " go to the last error list on no matches
+            if g:EasyGrepWindow == 0
+                silent colder
+            else
+                silent lolder
+            endif
+        catch
+        endtry
+        let failed = 1
     catch
-        if v:exception != 'E480'
-            call s:WarnNoMatches(a:pattern)
-            try
-                " go to the last error list on no matches
-                if g:EasyGrepWindow == 0
-                    silent colder
-                else
-                    silent lolder
-                endif
-            catch
-            endtry
-        else
-            call EasyGrep#Error("FIXME: exception not caught ".v:exception)
-        endif
+        call EasyGrep#Error("FIXME: exception not caught ".v:exception)
         let failed = 1
     endtry
 
