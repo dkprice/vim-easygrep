@@ -1774,7 +1774,7 @@ endfunction
 " IsModeFiltered {{{
 function! s:IsModeFiltered()
     call s:SanitizeMode()
-    return s:IsModeTracked() || s:IsModeUser()
+    return s:IsModeTracked() || s:IsModeUser() || s:IsModeMultipleChoice()
 endfunction
 " }}}
 " IsModeMultipleChoice {{{
