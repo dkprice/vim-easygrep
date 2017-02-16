@@ -172,7 +172,7 @@ endfunction
 "}}}
 " EscapeList/ShellEscapeList {{{
 function! EasyGrep#FileEscape(item)
-    return escape(a:item, ' \')
+    return '"'.escape(a:item, ' \').'"'
 endfunction
 function! EasyGrep#ShellEscape(item)
     return shellescape(a:item, 1)
