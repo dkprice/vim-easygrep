@@ -2427,11 +2427,11 @@ function! s:ConfigureGrepCommandParameters()
     call s:RegisterGrepProgram("git", {
                 \ 'req_str_programargs': 'grep -n',
                 \ 'req_bool_supportsexclusions': '0',
-                \ 'req_str_recurse': '-R',
+                \ 'req_str_recurse': '',
                 \ 'req_str_caseignore': '-i',
                 \ 'req_str_casematch': '',
                 \ 'opt_str_patternprefix': '"',
-                \ 'opt_str_patternpostfix': '"',
+                \ 'opt_str_patternpostfix': '" --',
                 \ 'opt_str_wholewordprefix': '',
                 \ 'opt_str_wholewordpostfix': '',
                 \ 'opt_str_wholewordoption': '-w ',
