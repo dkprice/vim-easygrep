@@ -2498,7 +2498,7 @@ function! s:ConfigureGrepCommandParameters()
                 \ 'opt_bool_directoryneedsbackslash': '0',
                 \ 'opt_bool_isinherentlyrecursive': '1',
                 \ 'opt_bool_isselffiltering': '0',
-                \ 'opt_bool_nofiletargets': '0',
+                \ 'opt_bool_nofiletargets': '1',
                 \ 'opt_str_mapinclusionsexpression': '"--file-search-regex=\"" .substitute(v:val, "^\\*\\.", "\\\\.", "")."\""',
                 \ 'opt_str_hiddenswitch': '--hidden',
                 \ 'opt_str_binaryswitch': '--search-binary',
