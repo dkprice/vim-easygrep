@@ -35,12 +35,18 @@ let s:EasyGrepNumModes=4
 let s:EasyGrepRepositoryList="search:.git,.hg,.svn"
 
 " Whether use perl style regexp
-if exists("g:EasyGrepPerlStyle") && g:EasyGrepPerlStyle==1
-    " perl style regexp require GNU grep
-    if match(system('grep --version'), "GNU") < 0
-        let g:EasyGrepPerlStyle=0
+function! s:usePerlStyle()
+    if exists("g:EasyGrepPerlStyle") && g:EasyGrepPerlStyle==1
+        " perl style regexp require GNU grep
+        if match(system('grep --version'), "GNU") < 0
+            return 0
+        else
+            return 1
+        endif
+    else
+        return 0
     endif
-endif
+endfunction
 
 if !exists("g:EasyGrepAutomatedTest")
     let g:EasyGrepAutomatedTest=0
@@ -2673,7 +2679,9 @@ function! s:GetGrepCommandLine(pattern, add, wholeword, count, escapeArgs, filte
 
     let commandParams = s:GetGrepCommandParameters()
 
-    if exists("g:EasyGrepCommand") && g:EasyGrepCommand==1 && exists("g:EasyGrepPerlStyle") && g:EasyGrepPerlStyle==1
+    let usePerlStyle = s:usePerlStyle()
+
+    if exists("g:EasyGrepCommand") && g:EasyGrepCommand==1 && usePerlStyle==1
         let commandParams = deepcopy(commandParams)
         let commandParams["opt_str_patternprefix"] = '"'
         let commandParams["opt_str_patternpostfix"] = '"'
@@ -2718,7 +2726,7 @@ function! s:GetGrepCommandLine(pattern, add, wholeword, count, escapeArgs, filte
         let opts .= s:CommandParameterOr(commandParams, "opt_str_wholewordoption", "")
     endif
 
-    if exists("g:EasyGrepCommand") && g:EasyGrepCommand==1 && exists("g:EasyGrepPerlStyle") && g:EasyGrepPerlStyle==1
+    if exists("g:EasyGrepCommand") && g:EasyGrepCommand==1 && usePerlStyle==1
         let opts .= "-P "
     endif
 
@@ -3058,7 +3066,10 @@ function! s:DoReplace(target, replacement, wholeword, escapeArgs)
     if wholeword
         let target = "\\<".target."\\>"
     endif
-    if exists("g:EasyGrepCommand") && g:EasyGrepCommand==1 && exists("g:EasyGrepPerlStyle") && g:EasyGrepPerlStyle==1
+
+    let usePerlStyle = s:usePerlStyle()
+
+    if exists("g:EasyGrepCommand") && g:EasyGrepCommand==1 && usePerlStyle==1
         try
             let target=E2v(target)
         catch
