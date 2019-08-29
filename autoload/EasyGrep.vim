@@ -150,7 +150,7 @@ endfunction
 " }}}
 " IsListOpen {{{
 function! EasyGrep#IsListOpen(name)
-    let bufoutput = EasyGrep#GetBuffersOutput(1)
+    let bufoutput = EasyGrep#GetBuffersOutput(0)
     return match(bufoutput, "\\[".a:name." List\\]", 0, 0) != -1
 endfunction
 " }}}
